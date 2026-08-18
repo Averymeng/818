@@ -388,11 +388,30 @@ def run_e11b_trend(conn):
 ASSERTS = {}
 
 
+# ---------------------------------------------------------------- 日志双写（终端 + run.log，供用户 tail -f 实时观看）
+class _Tee:
+    def __init__(self, log_path):
+        self._stdout = sys.stdout
+        self._log = open(log_path, "a", encoding="utf-8", buffering=1)
+
+    def write(self, s):
+        self._stdout.write(s)
+        self._log.write(s)
+
+    def flush(self):
+        self._stdout.flush()
+        self._log.flush()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--with-llm", action="store_true", help="真跑 LLM 用例")
     ap.add_argument("--cases", help="指定真跑用例，逗号分隔，如 E02,E08")
     args = ap.parse_args()
+
+    sys.stdout = _Tee(Path(__file__).parent / "run.log")
+    print(f"\n===== 评测启动 {__import__('datetime').datetime.now().strftime('%Y-%m-%d %H:%M:%S')} "
+          f"({'真跑模式' if args.with_llm else '零成本模式'}) =====", flush=True)
 
     # 前置检查：案例库（E15 依赖）
     conn = sqlite3.connect(DB)

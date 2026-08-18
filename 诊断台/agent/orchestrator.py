@@ -381,7 +381,7 @@ class ReviewOrchestrator:
                                       "action_plan": ["action/owner/date/expect_metric"]}}, ensure_ascii=False, default=str)}]
 
     def _rule_suggestions(self, anomalies, profile):
-        """8 条映射规则底座（dry_run / LLM 兜底）——内容与 system_prompt.md §3.5 一致，改一边必须同步另一边"""
+        """8 条映射规则底座（dry_run / LLM 兜底）——内容与 system_prompt.md 第 3.5 节一致，改一边必须同步另一边"""
         mapping = {
             "spend": "消耗下降→查基建（在投计划/笔记是否减少）→建议补量",
             "CPM": "CPM上涨→查版位结构变化（pp）→调整预算结构",
