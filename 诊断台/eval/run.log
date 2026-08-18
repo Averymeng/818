@@ -3,3 +3,21 @@
 
 硬断言: 42/42 通过
 结果已写入: /Users/zerzerrr/WorkBuddy/2026-08-18-14-34-17/诊断台/eval/artifacts/eval_results.json
+
+===== 评测启动 2026-08-18 23:54:52 (真跑模式) =====
+[run ] E04 拾光婚纱影像 ...
+  overall=需行动 llm_calls=3 cost=¥0.0614 task=26
+[run ] E09 素人写真馆 ...
+  overall=需关注 llm_calls=2 cost=¥0.0720 task=27
+真跑完成。
+
+硬断言: 42/42 通过
+结果已写入: /Users/zerzerrr/WorkBuddy/2026-08-18-14-34-17/诊断台/eval/artifacts/eval_results.json
+
+===== 评测启动 2026-08-18 23:56:12 (真跑模式) =====
+[run ] E04 拾光婚纱影像 ...
+  overall=需行动 llm_calls=3 cost=¥0.0623 task=30
+真跑完成。
+
+硬断言: 42/42 通过
+结果已写入: /Users/zerzerrr/WorkBuddy/2026-08-18-14-34-17/诊断台/eval/artifacts/eval_results.json

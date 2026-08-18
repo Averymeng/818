@@ -235,7 +235,15 @@ class ReviewOrchestrator:
             self.context["llm_case_compare"] = txt
             # E15: 引用案例留痕（相似点/关键差异优先取 LLM 结构化字段，否则原文兜底）
             cc = _parse_json(txt, {})
+            case_refs = []
             for c in cases["cases"]:
+                case_refs.append({
+                    "case_id": c["id"], "industry": c.get("industry"), "sector": c.get("sector"),
+                    "anomaly_signature": c.get("anomaly_signature"),
+                    "action_taken": c.get("action_taken"), "result_after": c.get("result_after"),
+                    "similarity_points": cc.get("similarity_points") if isinstance(cc, dict) else txt,
+                    "key_differences": cc.get("key_differences") if isinstance(cc, dict) else txt,
+                    "adopted": 1})
                 self.conn.execute(
                     """INSERT INTO case_ref_log(task_id, case_id, similarity_points, key_differences, adopted)
                        VALUES (?,?,?,?,1)""",
@@ -243,6 +251,7 @@ class ReviewOrchestrator:
                      str(cc.get("similarity_points") or txt)[:2000],
                      str(cc.get("key_differences") or txt)[:2000]))
             self.conn.commit()
+            self.context["case_refs"] = case_refs  # 第6章透出相似点/关键差异
             self._step("case_retrieval", "done", output_summary={"llm": "差异判断完成",
                                                                   "case_ref_log": len(cases["cases"])})
 

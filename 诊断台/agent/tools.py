@@ -438,8 +438,9 @@ def search_cases(conn, industry=None, sector=None, category=None, signature_term
     sql += " ORDER BY dc.created_at DESC LIMIT ?"
     args.append(limit)
     rows = conn.execute(sql, args).fetchall()
-    return {"cases": [dict(r) for r in rows], "n": len(rows),
-            "note": "案例库当前为空属正常（案例由审核通过的报告沉淀）"}
+    note = (f"召回 {len(rows)} 个可引用案例（已过滤 badcase）" if rows
+            else "案例库当前为空属正常（案例由审核通过的报告沉淀）")
+    return {"cases": [dict(r) for r in rows], "n": len(rows), "note": note}
 
 
 def verify_evidence(claims, fact_base):
@@ -504,7 +505,9 @@ def assemble_report(context):
         "4_分层诊断": context.get("layer_diagnosis", []),
         "5_异常与原因": {"top3_detail": context.get("llm_top3_detail", "（待 LLM 归因）"),
                          "watchlist": [{"location": e["location"], "change": e["change"]} for e in watch]},
-        "6_案例参考": context.get("cases", {"cases": [], "n": 0}),
+        "6_案例参考": ({"refs": context["case_refs"], "n": len(context["case_refs"])}
+                       if context.get("case_refs")
+                       else context.get("cases", {"cases": [], "n": 0})),
         "7_优化建议": context.get("llm_suggestions", []),
         "8_行动计划": context.get("llm_action_plan", []),
     }
