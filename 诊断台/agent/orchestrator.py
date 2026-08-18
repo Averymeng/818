@@ -205,6 +205,7 @@ class ReviewOrchestrator:
         if degraded:
             # 数据不足分支：不下钻、不打硬结论 → 直接轻量报告
             self.context["llm_summary"] = "上周或本周数据不完整，按红线约束不输出归因结论，仅呈现数据缺口与已核实的指标现状。"
+            self.context["llm_top3_detail"] = []
             s5 = self._step("drill_down", "skipped", output_summary="数据不足分支：跳过下钻")
             s6 = self._step("case_retrieval", "skipped", output_summary="数据不足分支：跳过案例比较")
             s7 = self._step("suggest", "skipped", output_summary="数据不足分支：建议仅限补数据")
@@ -241,7 +242,16 @@ class ReviewOrchestrator:
             self._step("suggest", "done", output_summary="dry_run：规则模板建议")
         else:
             txt = self._llm(s7, self._suggest_messages(profile, anomalies), json_mode=True)
-            self.context["llm_suggestions"] = _parse_json(txt, [])
+            sg = _parse_json(txt, {})
+            if isinstance(sg, list):
+                self.context["llm_suggestions"] = sg
+                self.context["llm_action_plan"] = []
+            elif isinstance(sg, dict):
+                self.context["llm_suggestions"] = sg.get("suggestions", [])
+                self.context["llm_action_plan"] = sg.get("action_plan", [])
+            else:
+                self.context["llm_suggestions"] = []
+                self.context["llm_action_plan"] = []
             self._step("suggest", "done", output_summary={"llm": "建议生成完成"})
 
         # 节点8 证据校验
@@ -320,15 +330,25 @@ class ReviewOrchestrator:
                     "task": "下钻解释", "mode": "positive" if positive else "negative",
                     "profile": profile, "top3": top3, "funnel": funnel,
                     "splits": splits, "new_old": newold,
-                    "trend_14d": self.context.get("trend")}, ensure_ascii=False, default=str)}]
+                    "trend_14d": self.context.get("trend"),
+                    "output_format": {"diagnosis": {
+                        "summary": "核心结论摘要（1-2句，含关键数字）",
+                        "top3_events": [{"rank": 1, "location": "事件位置", "reason": "归因解释",
+                                         "evidence": ["依据1", "依据2"], "confidence": "高/中/低"}],
+                        "drill_next": [{"obj_type": "note/plan/placement", "obj_id": None}]}}},
+                 ensure_ascii=False, default=str)}]
         txt = self._llm(step_seq, msgs, json_mode=True)
         plan = _parse_json(txt, {})
         self.context["llm_drill"] = plan
+        diag = plan.get("diagnosis") if isinstance(plan, dict) else None
+        diag = diag if isinstance(diag, dict) else {}
+        self.context["llm_summary"] = diag.get("summary") or plan.get("conclusion") or "（下钻未生成摘要）"
+        self.context["llm_top3_detail"] = diag.get("top3_events") or plan.get("top3_detail") or []
         # LLM 指定的深挖对象执行 drill_down_object（每个 ≤1 次）
-        for d in (plan.get("drill_next") or [])[:2]:
+        for d in (diag.get("drill_next") or plan.get("drill_next") or [])[:2]:
             res = self._call(step_seq, "drill_down_object", obj_type=d.get("obj_type", "note"),
                              obj_id=d.get("obj_id"), start=cs, end=ce)
-        self._step("drill_down", "done", output_summary={"llm_plan": plan.get("conclusion", "")[:200]})
+        self._step("drill_down", "done", output_summary={"llm_plan": (diag.get("summary") or "")[:200]})
 
     def _case_messages(self, profile, anomalies, cases):
         return [{"role": "system", "content": self.system_prompt()},
