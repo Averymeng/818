@@ -1,0 +1,334 @@
+{
+  "passed": 42,
+  "total": 42,
+  "scores": {
+    "E13": {
+      "pass": 3,
+      "total": 3,
+      "asserts": [
+        {
+          "name": "代码无 video_feed 引用",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "DB 版位仅 feed/search",
+          "ok": true,
+          "detail": "daily_metric=['feed', 'search'] plan=['feed', 'search']"
+        },
+        {
+          "name": "报告不出现'视频内流'",
+          "ok": true,
+          "detail": "无"
+        }
+      ]
+    },
+    "E14": {
+      "pass": 2,
+      "total": 2,
+      "asserts": [
+        {
+          "name": "代码无后链路计算",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "报告不出现后链路结论",
+          "ok": true,
+          "detail": "无"
+        }
+      ]
+    },
+    "E16": {
+      "pass": 3,
+      "total": 3,
+      "asserts": [
+        {
+          "name": "approve 落表 confirm 且状态 reviewed",
+          "ok": true,
+          "detail": "action=confirm status=reviewed"
+        },
+        {
+          "name": "reject(edit) 落表且前后内容留痕",
+          "ok": true,
+          "detail": "action=edit before=True after=True"
+        },
+        {
+          "name": "backflow 三态落表",
+          "ok": true,
+          "detail": "rows=3"
+        }
+      ]
+    },
+    "E17": {
+      "pass": 1,
+      "total": 1,
+      "asserts": [
+        {
+          "name": "dry-run ×2 指纹一致",
+          "ok": true,
+          "detail": "overall=正常/正常 fp=bf6b11e3"
+        }
+      ]
+    },
+    "E01": {
+      "pass": 4,
+      "total": 4,
+      "asserts": [
+        {
+          "name": "overall=正常",
+          "ok": true,
+          "detail": "正常"
+        },
+        {
+          "name": "top3 空",
+          "ok": true,
+          "detail": "[]"
+        },
+        {
+          "name": "八章节齐全",
+          "ok": true,
+          "detail": "1_封面,2_核心结论,3_指标与趋势,4_分层诊断,5_异常与原因,6_案例参考,7_优化建议,8_行动计划"
+        },
+        {
+          "name": "无占位符",
+          "ok": true,
+          "detail": "无"
+        }
+      ]
+    },
+    "E02": {
+      "pass": 3,
+      "total": 3,
+      "asserts": [
+        {
+          "name": "overall=需行动",
+          "ok": true,
+          "detail": "需行动"
+        },
+        {
+          "name": "top3 含 客户整体/消耗",
+          "ok": true,
+          "detail": "[{\"location\": \"客户整体/消耗\", \"change\": -0.3122365732511109, \"weight\": 0.3759, \"direction\": \"negative\"}]"
+        },
+        {
+          "name": "基建双门槛触发(plan层=显著)",
+          "ok": true,
+          "detail": "{\"layer\": \"plan\", \"status\": \"显著\", \"judgement\": \"在投计划双门槛\", \"evidence\": {\"cur\": 5, \"prev\": 8, \"delta\": -3, \"rel\": -0.375, \"hit\": true}}"
+        }
+      ]
+    },
+    "E03": {
+      "pass": 1,
+      "total": 1,
+      "asserts": [
+        {
+          "name": "top3 含 版位 feed/CPM",
+          "ok": true,
+          "detail": "[{\"location\": \"版位 feed/CPM\", \"change\": 0.48991935483870974, \"weight\": 0.3988, \"direction\": \"positive\"}, {\"location\": \"客户整体/CPM\", \"change\": 0.40322580645161277, \"weight\": 0.3641, \"direction\": \"positive\"}, {\"location\": \"客户整体/open_cost\", \"change\": 0.35764221668602525, \"weight\": 0.3459, \"direction\": \"positive\"}]"
+        }
+      ]
+    },
+    "E04": {
+      "pass": 2,
+      "total": 2,
+      "asserts": [
+        {
+          "name": "CTR 事件被检出(观察项)",
+          "ok": true,
+          "detail": "[{\"location\": \"客户整体/CTR\", \"change\": -0.3993951272960565}]"
+        },
+        {
+          "name": "CTR 不进 top3（权重设计预期）",
+          "ok": true,
+          "detail": "[{\"location\": \"客户整体/open_cost\", \"change\": 0.6449111839187674, \"weight\": 0.5168, \"direction\": \"positive\"}, {\"location\": \"客户整体/lead_cost\", \"change\": 0.5175136901333689, \"weight\": 0.5168, \"direction\": \"positive\"}, {\"location\": \"客户整体/CPC\", \"change\": 0.6257157193012133, \"weight\": 0.4335, \"direction\": \"positive\"}]"
+        }
+      ]
+    },
+    "E05": {
+      "pass": 1,
+      "total": 1,
+      "asserts": [
+        {
+          "name": "button_rate 事件被检出",
+          "ok": true,
+          "detail": "[{\"location\": \"客户整体/lead_cvr\", \"change\": -0.28792432349330654}, {\"location\": \"客户整体/button_rate\", \"change\": -0.23260157570351542}]"
+        }
+      ]
+    },
+    "E06": {
+      "pass": 1,
+      "total": 1,
+      "asserts": [
+        {
+          "name": "open_rate 事件被检出",
+          "ok": true,
+          "detail": "top3=[{\"location\": \"客户整体/open_cost\", \"change\": 0.7003683291464943, \"weight\": 0.4895, \"direction\": \"positive\"}, {\"location\": \"客户整体/lead_cost\", \"change\": 0.6476101310108952, \"weight\": 0.4895, \"direction\": \"p wl=[{\"location\": \"客户整体/lead_cvr\", \"change\": -0.3826097215667768}]"
+        }
+      ]
+    },
+    "E07": {
+      "pass": 1,
+      "total": 1,
+      "asserts": [
+        {
+          "name": "lead_rate 事件被检出",
+          "ok": true,
+          "detail": "top3=[{\"location\": \"客户整体/lead_cost\", \"change\": 0.924789048863358, \"weight\": 0.3247, \"direction\": \"positive\"}, {\"location\": \"客户整体/lead_cvr\", \"change\": -0.4953633611793426, \"weight\": 0.3116, \"direction\": \"ne wl=[]"
+        }
+      ]
+    },
+    "E08": {
+      "pass": 1,
+      "total": 1,
+      "asserts": [
+        {
+          "name": "lead_cost 进 top3",
+          "ok": true,
+          "detail": "[{\"location\": \"客户整体/open_cost\", \"change\": 0.866354732990159, \"weight\": 0.5812, \"direction\": \"positive\"}, {\"location\": \"客户整体/lead_cost\", \"change\": 0.9815447158920872, \"weight\": 0.5812, \"direction\": \"positive\"}, {\"location\": \"版位 search/CPM\", \"change\": 0.4059158945117607, \"weight\": 0.5436, \"direction\": \"positive\"}]"
+        }
+      ]
+    },
+    "E09": {
+      "pass": 2,
+      "total": 2,
+      "asserts": [
+        {
+          "name": "overall=需关注",
+          "ok": true,
+          "detail": "需关注"
+        },
+        {
+          "name": "top3 组合符合正向(消耗升+成本降)",
+          "ok": true,
+          "detail": "[{\"location\": \"客户整体/消耗\", \"change\": 0.18139158750884105, \"weight\": 0.2795, \"direction\": \"positive\"}, {\"location\": \"客户整体/lead_cost\", \"change\": -0.13864483325593788, \"weight\": 0.2624, \"direction\": \"negative\"}, {\"location\": \"客户整体/open_cost\", \"change\": -0.11864437122356303, \"weight\": 0.2544, \"direction\": \"negative\"}]"
+        }
+      ]
+    },
+    "E11a": {
+      "pass": 5,
+      "total": 5,
+      "asserts": [
+        {
+          "name": "overall=需行动",
+          "ok": true,
+          "detail": "需行动"
+        },
+        {
+          "name": "top3 空",
+          "ok": true,
+          "detail": "[]"
+        },
+        {
+          "name": "拒绝归因(摘要声明数据不足)",
+          "ok": true,
+          "detail": "\"上周或本周数据不完整，按红线约束不输出归因结论，仅呈现数据缺口与已核实的指标现状。\""
+        },
+        {
+          "name": "不输出 top3 归因",
+          "ok": true,
+          "detail": "[]"
+        },
+        {
+          "name": "标注数据缺口",
+          "ok": true,
+          "detail": "cur=[] prev=['2026-08-05', '2026-08-06', '2026-08-07']"
+        }
+      ]
+    },
+    "E11b": {
+      "pass": 6,
+      "total": 6,
+      "asserts": [
+        {
+          "name": "overall=需行动",
+          "ok": true,
+          "detail": "需行动"
+        },
+        {
+          "name": "top3 空",
+          "ok": true,
+          "detail": "[]"
+        },
+        {
+          "name": "拒绝归因(摘要声明数据不足)",
+          "ok": true,
+          "detail": "\"上周或本周数据不完整，按红线约束不输出归因结论，仅呈现数据缺口与已核实的指标现状。\""
+        },
+        {
+          "name": "不输出 top3 归因",
+          "ok": true,
+          "detail": "[]"
+        },
+        {
+          "name": "标注数据缺口",
+          "ok": true,
+          "detail": "cur=['2026-08-10', '2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15', '2026-08-16'] prev=[]"
+        },
+        {
+          "name": "趋势线如实呈现缺口(点数<14)",
+          "ok": true,
+          "detail": "points=7"
+        }
+      ]
+    },
+    "E12": {
+      "pass": 2,
+      "total": 2,
+      "asserts": [
+        {
+          "name": "银龄(open)用 open_cost 口径",
+          "ok": true,
+          "detail": "metric=open_cost"
+        },
+        {
+          "name": "拾光(lead)用 lead_cost 口径",
+          "ok": true,
+          "detail": "metric=lead_cost"
+        }
+      ]
+    },
+    "E15": {
+      "pass": 4,
+      "total": 4,
+      "asserts": [
+        {
+          "name": "search_cases 被调用",
+          "ok": true,
+          "detail": "check_data_completeness,check_data_completeness,get_customer_profile,get_period_comparison,get_period_comparison,get_funnel,get_infrastructure,get_trend,detect_anomalies,get_funnel,split_by_dimension,split_by_dimension"
+        },
+        {
+          "name": "引用的案例全部 referenceable=1 且非 badcase",
+          "ok": true,
+          "detail": "n=1 statuses=['reference']"
+        },
+        {
+          "name": "badcase 不出现",
+          "ok": true,
+          "detail": "n=1"
+        },
+        {
+          "name": "case_ref_log 留痕",
+          "ok": true,
+          "detail": "rows=1"
+        }
+      ]
+    }
+  },
+  "report_files": {
+    "E01": "码上AI学堂.json",
+    "E01b": "环球语言村.json",
+    "E02": "悦颜美容SPA.json",
+    "E03": "银龄声乐课堂.json",
+    "E04": "拾光婚纱影像.json",
+    "E05": "星光KTV.json",
+    "E06": "启航留学工作室.json",
+    "E07": "洁到家家政.json",
+    "E08": "云栖度假酒店.json",
+    "E09": "素人写真馆.json",
+    "E10": "巅峰密室.json",
+    "E11a": "山野民宿.json",
+    "E11b": "枕水人家客栈.json",
+    "E15": "拾光婚纱影像.json"
+  }
+}

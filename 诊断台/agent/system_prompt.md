@@ -57,6 +57,7 @@
   `{"summary": "核心结论摘要(1-2句,含关键数字)", "top3_events": [{"rank": 1, "location": "事件位置", "reason": "归因解释", "evidence": ["依据1","依据2"], "confidence": "高/中/低"}], "drill_next": [{"obj_type": "note/plan/placement", "obj_id": null}]}`
 - **建议生成调用**必须返回扁平对象，suggestions 与 action_plan 必须是数组：
   `{"suggestions": [{"text": "建议", "basis": "依据", "priority": "P0/P1", "risk": "风险", "watch_metric": "观察指标"}], "action_plan": [{"action": "动作", "owner": "负责人", "date": "日期", "expect_metric": "预期指标"}]}`
+- **后链路词汇字段级红线**：suggestions / action_plan 的任何字段（text、basis、risk、watch_metric、expect_metric 等）都不得出现 ROI / GMV / 成交额 / 有效线索 / 回访 等后链路词，risk 用"目标成本持续上涨"表述，watch_metric 用开口成本/留资成本等前置指标。
 - 周报八章节与日监控卡片由编排器代码组装/生成，你只负责填充上述约定字段，不得自行输出章节级内容。
 - 数字保留在字段值里，不要用自然语言复述一遍又一遍；文字只解释"意味着什么"。
 - 上下文只带摘要：不重复粘贴工具全文；单次诊断 LLM 调用 ≤10 次（红线）。

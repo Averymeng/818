@@ -233,7 +233,18 @@ class ReviewOrchestrator:
         else:
             txt = self._llm(s6, self._case_messages(profile, anomalies, cases), json_mode=True)
             self.context["llm_case_compare"] = txt
-            self._step("case_retrieval", "done", output_summary={"llm": "差异判断完成"})
+            # E15: 引用案例留痕（相似点/关键差异优先取 LLM 结构化字段，否则原文兜底）
+            cc = _parse_json(txt, {})
+            for c in cases["cases"]:
+                self.conn.execute(
+                    """INSERT INTO case_ref_log(task_id, case_id, similarity_points, key_differences, adopted)
+                       VALUES (?,?,?,?,1)""",
+                    (self.task_id, c["id"],
+                     str(cc.get("similarity_points") or txt)[:2000],
+                     str(cc.get("key_differences") or txt)[:2000]))
+            self.conn.commit()
+            self._step("case_retrieval", "done", output_summary={"llm": "差异判断完成",
+                                                                  "case_ref_log": len(cases["cases"])})
 
         # 节点7 建议生成（绑定 8 条映射规则）
         s7 = self._step("suggest", "running")
@@ -355,7 +366,10 @@ class ReviewOrchestrator:
                 {"role": "user", "content": json.dumps({
                     "task": "案例比较", "profile": profile,
                     "anomalies": [e for e in anomalies.get("events", []) if e["is_top3"]],
-                    "cases": cases["cases"]}, ensure_ascii=False, default=str)}]
+                    "cases": cases["cases"],
+                    "output_format": {"similarity_points": "与当前客户的相似点（引用具体数字）",
+                                      "key_differences": "关键差异（引用具体数字）",
+                                      "adopted": True}}, ensure_ascii=False, default=str)}]
 
     def _suggest_messages(self, profile, anomalies):
         return [{"role": "system", "content": self.system_prompt()},
