@@ -331,19 +331,19 @@ class ReviewOrchestrator:
                     "profile": profile, "top3": top3, "funnel": funnel,
                     "splits": splits, "new_old": newold,
                     "trend_14d": self.context.get("trend"),
-                    "output_format": {"diagnosis": {
+                    "output_format": {
                         "summary": "核心结论摘要（1-2句，含关键数字）",
                         "top3_events": [{"rank": 1, "location": "事件位置", "reason": "归因解释",
                                          "evidence": ["依据1", "依据2"], "confidence": "高/中/低"}],
-                        "drill_next": [{"obj_type": "note/plan/placement", "obj_id": None}]}}},
+                        "drill_next": [{"obj_type": "note/plan/placement", "obj_id": None}]}},
                  ensure_ascii=False, default=str)}]
         txt = self._llm(step_seq, msgs, json_mode=True)
         plan = _parse_json(txt, {})
         self.context["llm_drill"] = plan
         diag = plan.get("diagnosis") if isinstance(plan, dict) else None
         diag = diag if isinstance(diag, dict) else {}
-        self.context["llm_summary"] = diag.get("summary") or plan.get("conclusion") or "（下钻未生成摘要）"
-        self.context["llm_top3_detail"] = diag.get("top3_events") or plan.get("top3_detail") or []
+        self.context["llm_summary"] = diag.get("summary") or plan.get("summary") or plan.get("conclusion") or "（下钻未生成摘要）"
+        self.context["llm_top3_detail"] = diag.get("top3_events") or plan.get("top3_events") or plan.get("top3_detail") or []
         # LLM 指定的深挖对象执行 drill_down_object（每个 ≤1 次）
         for d in (diag.get("drill_next") or plan.get("drill_next") or [])[:2]:
             res = self._call(step_seq, "drill_down_object", obj_type=d.get("obj_type", "note"),
@@ -367,7 +367,7 @@ class ReviewOrchestrator:
                                       "action_plan": ["action/owner/date/expect_metric"]}}, ensure_ascii=False, default=str)}]
 
     def _rule_suggestions(self, anomalies, profile):
-        """8 条映射规则底座（dry_run / LLM 兜底）"""
+        """8 条映射规则底座（dry_run / LLM 兜底）——内容与 system_prompt.md §3.5 一致，改一边必须同步另一边"""
         mapping = {
             "spend": "消耗下降→查基建（在投计划/笔记是否减少）→建议补量",
             "CPM": "CPM上涨→查版位结构变化（pp）→调整预算结构",
