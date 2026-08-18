@@ -166,8 +166,11 @@ class ReviewOrchestrator:
         self.context.update({"profile": profile, "comparison": comparison,
                              "by_placement": by_placement, "funnel": funnel, "infra": infra})
 
-        # 节点3 分层诊断
+        # 节点3 分层诊断（含 14 天趋势线：目标成本指标日序列，供 LLM 区分一次性/持续波动）
         s3 = self._step("layer_diagnosis", "running")
+        target_metric = "open_cost" if profile["optimize_target"] == "open" else "lead_cost"
+        trend = self._call(s3, "get_trend", customer_id=customer_id, metric=target_metric, days=14, end=ce)
+        self.context["trend"] = trend
         layers = self._layer_diagnosis(degraded)
         for lay in layers:
             self.conn.execute(
@@ -316,7 +319,8 @@ class ReviewOrchestrator:
                 {"role": "user", "content": json.dumps({
                     "task": "下钻解释", "mode": "positive" if positive else "negative",
                     "profile": profile, "top3": top3, "funnel": funnel,
-                    "splits": splits, "new_old": newold}, ensure_ascii=False, default=str)}]
+                    "splits": splits, "new_old": newold,
+                    "trend_14d": self.context.get("trend")}, ensure_ascii=False, default=str)}]
         txt = self._llm(step_seq, msgs, json_mode=True)
         plan = _parse_json(txt, {})
         self.context["llm_drill"] = plan
