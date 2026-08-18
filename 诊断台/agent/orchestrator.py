@@ -23,7 +23,7 @@
 import json
 import sqlite3
 import time
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import tools
@@ -140,7 +140,8 @@ class ReviewOrchestrator:
         s0 = self._step("init", "running", input_summary={"customer_id": customer_id})
         self._step("init", "done", output_summary={"periods": [cs, ce, ps, pe], "sim_version": sim_version})
         self.context.update({"task_id": self.task_id, "cur_start": cs, "cur_end": ce,
-                             "cmp_start": ps, "cmp_end": pe})
+                             "cmp_start": ps, "cmp_end": pe,
+                             "generated_at": datetime.now().isoformat(timespec="seconds")})
 
         # 节点1 数据完整性
         s1 = self._step("data_check", "running")
@@ -204,13 +205,35 @@ class ReviewOrchestrator:
 
         if degraded:
             # 数据不足分支：不下钻、不打硬结论 → 直接轻量报告
-            self.context["llm_summary"] = "上周或本周数据不完整，按红线约束不输出归因结论，仅呈现数据缺口与已核实的指标现状。"
+            # 先区分"停投"与"缺数"（基建在投数与本期消耗均为 0 → 投放已停止）
+            cur_spend = (self.context.get("comparison", {}).get("cur", {}) or {}).get("spend") or 0
+            infra_cur = (self.context.get("infra", {}) or {}).get("cur", {}) or {}
+            stopped = (cur_spend == 0 and not infra_cur.get("plans") and not infra_cur.get("notes"))
+            if stopped:
+                self.context["llm_summary"] = (
+                    "本周数据不完整，且在投计划/笔记均为 0、消耗为 0——判断为投放已停止而非单纯缺数。"
+                    "按红线不输出归因结论，建议先向客户/代理商确认停止原因，再决定重新起量还是本期不评。")
+                self.context["llm_suggestions"] = [
+                    {"text": "本期投放已停止（在投计划 0、在投笔记 0、消耗 0）。先向客户/代理商确认停止原因，"
+                             "再决定重新起量还是本期不评；确认前不建议直接补数重跑复盘。",
+                     "basis": "get_infrastructure + get_period_comparison（消耗=0）", "priority": "P1"}]
+                self.context["llm_action_plan"] = [
+                    {"action": "向客户/代理商确认本期投放停止的原因（主动停投/预算耗尽/账户问题）",
+                     "date": self.context.get("generated_at", "")[:10],
+                     "expect_metric": "拿到停止原因：若重新起量，下期复盘恢复完整对比；若停投，下期跳过该客户"}]
+            else:
+                self.context["llm_summary"] = "上周或本周数据不完整，按红线约束不输出归因结论，仅呈现数据缺口与已核实的指标现状。"
+                self.context["llm_suggestions"] = [
+                    {"text": "补齐缺失日期数据后重新发起复盘（完整性检查未通过，无法归因）", "basis": "check_data_completeness", "priority": "P0"}]
+                self.context["llm_action_plan"] = [
+                    {"action": "联系数据对接方补齐缺失日期数据，补齐后重新触发周度复盘",
+                     "date": self.context.get("generated_at", "")[:10],
+                     "expect_metric": "数据完整性检查通过，复盘报告恢复归因与建议章节"}]
             self.context["llm_top3_detail"] = []
             s5 = self._step("drill_down", "skipped", output_summary="数据不足分支：跳过下钻")
             s6 = self._step("case_retrieval", "skipped", output_summary="数据不足分支：跳过案例比较")
-            s7 = self._step("suggest", "skipped", output_summary="数据不足分支：建议仅限补数据")
-            self.context["llm_suggestions"] = [
-                {"text": "补齐缺失日期数据后重新发起复盘（完整性检查未通过，无法归因）", "basis": "check_data_completeness", "priority": "P0"}]
+            s7 = self._step("suggest", "skipped",
+                            output_summary="数据不足分支：" + ("投放已停止→建议确认原因" if stopped else "建议仅限补数据"))
             report = self._finish()
             return report
 
@@ -259,6 +282,7 @@ class ReviewOrchestrator:
         s7 = self._step("suggest", "running")
         if dry_run:
             self.context["llm_suggestions"] = self._rule_suggestions(anomalies, profile)
+            self.context["llm_action_plan"] = []
             self._step("suggest", "done", output_summary="dry_run：规则模板建议")
         else:
             txt = self._llm(s7, self._suggest_messages(profile, anomalies), json_mode=True)
@@ -272,6 +296,7 @@ class ReviewOrchestrator:
             else:
                 self.context["llm_suggestions"] = []
                 self.context["llm_action_plan"] = []
+            self._sanitize_suggest(anomalies)
             self._step("suggest", "done", output_summary={"llm": "建议生成完成"})
 
         # 节点8 证据校验
@@ -371,13 +396,16 @@ class ReviewOrchestrator:
         self._step("drill_down", "done", output_summary={"llm_plan": (diag.get("summary") or "")[:200]})
 
     def _case_messages(self, profile, anomalies, cases):
+        comp = self.context.get("comparison", {})
         return [{"role": "system", "content": self.system_prompt()},
                 {"role": "user", "content": json.dumps({
                     "task": "案例比较", "profile": profile,
                     "anomalies": [e for e in anomalies.get("events", []) if e["is_top3"]],
+                    "cur_metrics": comp.get("metrics_cur"),
+                    "metrics_change": comp.get("metrics_change"),
                     "cases": cases["cases"],
                     "output_format": {"similarity_points": "与当前客户的相似点（引用具体数字）",
-                                      "key_differences": "关键差异（引用具体数字）",
+                                      "key_differences": "关键差异（引用具体数字；当前客户当期指标已在 cur_metrics/metrics_change 中给出，禁止写'数据未提供'）",
                                       "adopted": True}}, ensure_ascii=False, default=str)}]
 
     def _suggest_messages(self, profile, anomalies):
@@ -386,8 +414,41 @@ class ReviewOrchestrator:
                     "task": "建议生成", "profile": profile,
                     "anomalies": anomalies.get("events", []),
                     "drill": self.context.get("drill"),
+                    "report_generated_at": self.context.get("generated_at"),
                     "output_format": {"suggestions": ["text/basis/priority/risk/watch_metric"],
-                                      "action_plan": ["action/owner/date/expect_metric"]}}, ensure_ascii=False, default=str)}]
+                                      "action_plan": ["action/date/expect_metric（无 owner 字段；date 不早于 report_generated_at）"]}},
+                    ensure_ascii=False, default=str)}]
+
+    def _sanitize_suggest(self, anomalies):
+        """节点7产出护栏（确定性代码兜底，与 prompt 第7节红线配套）：
+        - 无异常事件（整体状态=正常）→ 建议与行动计划清空
+        - 无不利 Top3（整体状态=需关注）→ P0 一律降级 P1
+        - action_plan 删除 owner 字段；日期早于生成日的锚定为生成日
+        """
+        events = anomalies.get("events", [])
+        if not events:
+            self.context["llm_suggestions"] = []
+            self.context["llm_action_plan"] = []
+            return
+        adverse_top3 = any(e.get("is_adverse") for e in events if e.get("is_top3"))
+        for sg in self.context.get("llm_suggestions", []):
+            if isinstance(sg, dict):
+                p = sg.get("priority")
+                if p == "P0" and not adverse_top3:
+                    sg["priority"] = "P1"
+                elif p not in ("P0", "P1"):
+                    sg["priority"] = "P1"
+        gen = _d(self.context["generated_at"][:10])
+        ap = []
+        for a in self.context.get("llm_action_plan", []):
+            if not isinstance(a, dict):
+                continue
+            a.pop("owner", None)
+            d = _parse_date(a.get("date"))
+            if d is not None and d < gen:
+                a["date"] = gen.isoformat()
+            ap.append(a)
+        self.context["llm_action_plan"] = ap
 
     def _rule_suggestions(self, anomalies, profile):
         """8 条映射规则底座（dry_run / LLM 兜底）——内容与 system_prompt.md 第 3.5 节一致，改一边必须同步另一边"""
@@ -442,6 +503,25 @@ def _s(x):
         return x if isinstance(x, str) else json.dumps(x, ensure_ascii=False, default=str)
     except Exception:
         return str(x)
+
+
+def _parse_date(s):
+    """宽松解析 YYYY-MM-DD / M月D日 / YYYY/M/D，失败返回 None"""
+    import re
+    if not s:
+        return None
+    s = str(s).strip()
+    m = re.match(r"^(\d{4})[-/](\d{1,2})[-/](\d{1,2})", s)
+    if m:
+        return date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    m = re.match(r"^(\d{1,2})月(\d{1,2})日", s)
+    if m:
+        y = datetime.now().year
+        try:
+            return date(y, int(m.group(1)), int(m.group(2)))
+        except ValueError:
+            return None
+    return None
 
 
 def _parse_json(txt, default):

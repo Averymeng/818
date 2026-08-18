@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>诊断台 · 项目交接文档（接手必读）</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --line:#2a2f3a;
+    --txt:#e6e9ef; --mut:#9aa3b2; --acc:#4f9dff; --ok:#3ecf8e; --warn:#ffb454; --bad:#ff6b6b;
+    --code:#11151c; --kbd:#222833;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;}
+  a{color:var(--acc);text-decoration:none}
+  a:hover{text-decoration:underline}
+  header{padding:28px 32px 18px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#141821,#0f1115)}
+  header h1{margin:0 0 6px;font-size:24px}
+  header .sub{color:var(--mut);font-size:13px}
+  .wrap{display:flex;gap:24px;align-items:flex-start}
+  nav{position:sticky;top:0;align-self:flex-start;width:260px;flex:0 0 260px;padding:18px 16px;max-height:100vh;overflow:auto;border-right:1px solid var(--line)}
+  nav h3{font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 8px}
+  nav a{display:block;padding:5px 8px;border-radius:6px;color:var(--txt);font-size:13.5px}
+  nav a:hover{background:var(--panel2);text-decoration:none}
+  main{flex:1;min-width:0;padding:18px 32px 80px}
+  section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px 24px;margin:18px 0}
+  section>h2{margin:0 0 12px;font-size:20px;border-left:4px solid var(--acc);padding-left:10px}
+  h3{margin:20px 0 8px;font-size:16px;color:#cfd6e4}
+  p,li{color:#d6dbe6}
+  code{background:var(--kbd);padding:2px 6px;border-radius:5px;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:#ffd9a0}
+  pre{background:var(--code);border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow:auto;font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;color:#d7e2f4}
+  pre .c{color:#6f7b90} pre .k{color:#7fd1ff} pre .s{color:#9be8b0} pre .b{color:#ffb454}
+  table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#cfd6e4}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600}
+  .p-ok{background:rgba(62,207,142,.15);color:var(--ok)}
+  .p-warn{background:rgba(255,180,84,.15);color:var(--warn)}
+  .p-bad{background:rgba(255,107,107,.15);color:var(--bad)}
+  .p-acc{background:rgba(79,157,255,.15);color:var(--acc)}
+  .callout{border:1px solid var(--line);border-left:4px solid var(--warn);background:var(--panel2);border-radius:8px;padding:12px 16px;margin:12px 0}
+  .callout.bad{border-left-color:var(--bad)}
+  .callout.ok{border-left-color:var(--ok)}
+  .callout.acc{border-left-color:var(--acc)}
+  ul.tight li{margin:4px 0}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .small{font-size:12.5px;color:var(--mut)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:900px){.wrap{flex-direction:column}nav{width:100%;flex:none;border-right:none;border-bottom:1px solid var(--line);max-height:none}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>诊断台 · 项目交接文档</h1>
+  <div class="sub">小红书获客周报智能体（GitHub: <span class="mono">Averymeng/818</span>） · 接手本项目的下一位 AI 必读 · 生成于 2026-08-19</div>
+</header>
+
+<div class="wrap">
+<nav>
+  <h3>快速定位</h3>
+  <a href="#tldr">0. 一句话上手</a>
+  <a href="#status">1. 当前进度（最重要）</a>
+  <a href="#goal">2. 项目是什么</a>
+  <a href="#arch">3. 代码架构地图</a>
+  <a href="#eval">4. v2 三层评测体系</a>
+  <a href="#judge">5. Judge 评分系统</a>
+  <a href="#redlines">6. 红线 / 约定（别破坏）</a>
+  <a href="#concepts">7. 关键概念定义</a>
+  <a href="#api">8. API Key 与运行</a>
+  <a href="#task">9. 待办：下一步做什么</a>
+  <a href="#pitfalls">10. 踩过的坑（避坑）</a>
+  <a href="#prefs">11. 用户偏好</a>
+  <a href="#cmds">12. 命令速查</a>
+</nav>
+
+<main>
+
+<!-- ========== 0 ========== -->
+<section id="tldr">
+  <h2>0. 一句话上手</h2>
+  <p>这是一个<strong>小红书信息流投放获客的「周报诊断智能体」</strong>。输入一份客户投放数据（CSV/JSON），它产出一份八章节中文诊断报告（整体结论 + Top3 异常 + 下钻 + 行动建议）。我们刚搭好一套 <strong>v2 自动化评测体系</strong>来验证报告质量，并已完成首轮批量跑。</p>
+  <div class="callout acc">
+    <strong>你现在接手时，项目处于「首轮批量评测已跑完，还差最后一步收尾」的状态：</strong>
+    <ul class="tight">
+      <li>批量评测结果：<span class="pill p-ok">109 / 126 断言通过</span></li>
+      <li>唯一没过的是 <code>E14</code>，但它是<strong>评测脚本自身的误报（false-positive）</strong>，不是报告真错——下一位 AI 改 1 处脚本即可。</li>
+      <li>改完脚本跑一条零成本命令复核，然后写 <code>eval/eval_report_v2.md</code> 收尾。</li>
+    </ul>
+  </div>
+  <p class="small">本交接文档力求让一个新 AI 不看聊天记录也能独立推进。所有路径相对于项目根目录 <span class="mono">诊断台/</span>。</p>
+</section>
+
+<!-- ========== 1 ========== -->
+<section id="status">
+  <h2>1. 当前进度（最重要）</h2>
+  <h3>1.1 已完成的事（按时间线）</h3>
+  <table>
+    <tr><th>阶段</th><th>做了什么</th><th>产物</th></tr>
+    <tr><td>骨架</td><td>Agent 核心（提示词 + 工具 + 编排器）已能跑出八章节报告</td><td><span class="mono">agent/</span></td></tr>
+    <tr><td>v1 评测</td><td>硬断言 42/42，10 维评分 48.5/50</td><td><span class="mono">E01-E17 评测集设计稿.md</span></td></tr>
+    <tr><td>v2 评测设计</td><td>三层架构 + case 元数据 + 三档评分 + 人工试评校准流程</td><td><span class="mono">eval/评测集设计稿_v2.md</span></td></tr>
+    <tr><td>6 份人工试评</td><td>人工审 6 份报告，发现并修复 6+1 个缺口 + 4 个数字级错误</td><td><span class="mono">eval/artifacts/*.json</span>（6 份）+ <span class="mono">人工试评打分表.docx</span></td></tr>
+    <tr><td>Judge 校准</td><td>7 轮校准，3 票中位数投票，收敛并启用 judge</td><td><span class="mono">eval/judge.py / judge_prompt.md / judge_calibration_report.md / judge_baseline.json</span></td></tr>
+    <tr><td>3 个 agent 缺陷</td><td>周值/日值混淆、依据数字无出处、观察清单漏项 → 已修复</td><td>改 <span class="mono">agent/system_prompt.md</span> 第 7 节 + <span class="mono">agent/tools.py</span> + <span class="mono">eval/run_eval.py</span>(E24e)</td></tr>
+    <tr><td>首轮批量跑</td><td>24 个 case 真跑 + 硬断言 + judge，结果落盘</td><td><span class="mono">eval/artifacts/eval_results.json</span>（109/126）</td></tr>
+  </table>
+
+  <h3>1.2 批量跑结果（已跑完，别重跑浪费积分）</h3>
+  <p>结果文件：<code>eval/artifacts/eval_results.json</code>。顶层 <code>passed=109 / total=126</code>。逐 case 拆解后，<strong>只有 1 个 case 未满分</strong>：</p>
+  <table>
+    <tr><th>Case</th><th>结果</th><th>说明</th></tr>
+    <tr><td><code>E14</code>（后链路排除）</td><td><span class="pill p-bad">1 / 2</span></td><td>断言「报告不出现后链路结论」误报。根因：扫描脚本把 <code>judge_calibration.json</code>（内含 judge 推理文本里的 ROI/GMV 字样）当成了报告来扫。<strong>这是评测脚本 bug，不是报告错。</strong></td></tr>
+    <tr><td>其余所有 case（E01-E13/E15-E24）</td><td><span class="pill p-ok">全部满分</span></td><td>含 75 条横切硬断言（E24 组）全过、judge 三档评分全部产出。</td></tr>
+  </table>
+  <div class="callout">
+    <strong>解读口径（来自校准报告）：</strong>judge 的 D2/D3 名义分歧率 33% 已超 30%「红线」，但连续 7 轮证明残余分歧全是 <strong>2/3 边界上的 ±1 摇摆（LLM 温度噪声）</strong>，不是标准偏差；judge 对<strong>真错误的检出率 100%</strong>，从未出现 1↔3 跨档错判。所以 judge 分数看「1 分 / 跨份趋势」，单份 2/3 边界不做硬解读。
+  </div>
+
+  <h3>1.3 下一步（详见第 9 节）</h3>
+  <ol class="tight">
+    <li>修 <code>eval/run_eval.py</code> 里 E14 报告的扫描循环，跳过 <code>judge_calibration.json</code> 等非报告 JSON。</li>
+    <li>跑 <code>python3 eval/run_eval.py --static</code>（零成本，复用已有 artifacts 重算断言）。</li>
+    <li>确认 E14 变绿、总分 126/126（或明确剩余项），写 <code>eval/eval_report_v2.md</code> 收尾。</li>
+  </ol>
+</section>
+
+<!-- ========== 2 ========== -->
+<section id="goal">
+  <h2>2. 项目是什么</h2>
+  <ul class="tight">
+    <li><strong>业务背景：</strong>代理商用小红书信息流给客户做获客投放（开口 / 留资两类优化目标）。每周要出一份诊断周报。</li>
+    <li><strong>产品形态：</strong>一个 LLM Agent（DeepSeek）。输入客户一周投放数据，输出八章节诊断报告。报告既要「事实对」，也要「用户能直接用（有可执行建议）」。</li>
+    <li><strong>评测定位（v1→v2）：</strong>以「支持内部迭代」为主——找出 Agent 在哪些环节/场景不可靠、建立可复现回归基线、验证安全边界。明确<strong>不做</strong>：不虚构真实用户数据（全部仿真数据 + 模拟用户判断，报告中如实标注「模拟」）。</li>
+    <li><strong>GitHub：</strong><span class="mono">https://github.com/Averymeng/818.git</span>，分支 <span class="mono">main</span>。最近 commit 已含「旧账修复3项」。交接时建议先 <code>git pull</code> 确认本地与远端一致。</li>
+  </ul>
+</section>
+
+<!-- ========== 3 ========== -->
+<section id="arch">
+  <h2>3. 代码架构地图</h2>
+  <div class="grid">
+    <div>
+      <h3>agent/ （智能体本体）</h3>
+      <ul class="tight mono small">
+        <li><b>system_prompt.md</b> — 提示词，含第 7 节「输出约束红线」（最高频改动文件，所有行为约束在此）</li>
+        <li><b>orchestrator.py</b> — 编排器（537 行）：调度工具、组装报告、sanitize 建议/行动/日期</li>
+        <li><b>tools.py</b> — 工具集（560 行）：指标计算、下钻、assemble_report（观察清单在此组装）</li>
+        <li><b>llm.py</b> — DeepSeek 调用封装</li>
+        <li><b>metrics.py</b> — 9 项派生指标定义</li>
+        <li><b>run_review.py / review_actions.py</b> — 入口与审核回流</li>
+      </ul>
+    </div>
+    <div>
+      <h3>eval/ （评测体系）</h3>
+      <ul class="tight mono small">
+        <li><b>run_eval.py</b> — 评测执行器（698 行）：真跑 + 硬断言 + 落库 + judge 集成</li>
+        <li><b>judge.py</b> — judge LLM 封装：3 票取中位数</li>
+        <li><b>judge_prompt.md</b> — judge 评分标准（D1/D2/D3）</li>
+        <li><b>judge_baseline.json</b> — 人工基线分（已修正 3 处）</li>
+        <li><b>judge_calibration_report.md</b> — 7 轮校准记录</li>
+        <li><b>评测集设计稿_v2.md</b> — v2 设计（必读）</li>
+        <li><b>seed_cases.py</b> — 种案例（E15 依赖）</li>
+        <li><b>artifacts/</b> — 跑出来的报告 JSON + eval_results.json</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout acc">
+    <strong>读代码顺序建议：</strong>先读 <span class="mono">eval/评测集设计稿_v2.md</span>（搞懂评什么）→ 再读 <span class="mono">agent/system_prompt.md</span> 第 7 节（搞懂约束）→ 最后看 <span class="mono">eval/run_eval.py</span>（搞懂怎么判）。
+  </div>
+</section>
+
+<!-- ========== 4 ========== -->
+<section id="eval">
+  <h2>4. v2 三层评测体系</h2>
+  <p>设计稿第 2 节。三层互相独立，避免「最终报告对、中间环节错」被掩盖：</p>
+  <table>
+    <tr><th>层</th><th>评什么</th><th>判定方式</th></tr>
+    <tr><td><b>第一层 L1–L8</b><br>业务链路</td><td>逐环节行为：版位是否只含 feed/search、是否有后链路计算、审核回流三态落表、dry-run 复现性等</td><td>查 <span class="mono">agent_step / agent_tool_call</span> 落库表 + 代码级 grep 断言（<code>E13/E14/E16/E17</code>）</td></tr>
+    <tr><td><b>第二层 端到端 A</b><br>硬断言</td><td>报告内容对不对：整体状态、Top3 组合、阈值方向、命名、口径、owner 删除、日期不早于生成日、正常周禁派活、停投与缺数区分等</td><td>程序化断言（<code>E01–E12/E15/E22/E23/E24</code>）。E24 是横切扫描组，对所有报告全文扫 75 条规则。</td></tr>
+    <tr><td><b>第三层 端到端 B</b><br>judge</td><td>模拟用户视角：报告「能不能直接用」</td><td>judge LLM 三档评分 D1/D2/D3（<code>E02/E08/E10/E15</code> 等 judge 用例）</td></tr>
+  </table>
+  <h3>4.1 用例清单（v2 共 24 个）</h3>
+  <p class="small">E01 正常周 / E02 需行动 / E03 开口口径 / E04 留资口径 / E05 正向分叉 / E06 反向分叉 / E07 案例参考 / E08 judge / E09 锚定 / E10 指标冲突 / E11a 缺数(山野) / E11b 停投(枕水) / E12 口径切换 / E13 版位排除 / E14 后链路排除 / E15 审核回流 / E16 复现性 / E17 审核回流三态 / E18 口语化输入探针 / E19 主动触发 / E22 正常周禁派活 / E23 停投与缺数区分 / E24 横切扫描。</p>
+  <h3>4.2 MVP 门槛（方案 A）</h3>
+  <p>24 条中 <strong>23 条必过，E18 例外</strong>（探针，报错零成本）。13 条核心必过：E01/E01b/E02/E03/E04/E11a/E11b/E12/E13/E14/E15/E16/E19。当前 E14 这个「核心必过」是误报，修脚本后即达标。</p>
+</section>
+
+<!-- ========== 5 ========== -->
+<section id="judge">
+  <h2>5. Judge 评分系统</h2>
+  <p>文件：<span class="mono">eval/judge.py</span> + <span class="mono">eval/judge_prompt.md</span>。judge 是另一个 LLM（DeepSeek，temperature=0），对每份报告打三个维度，每维度三档：</p>
+  <table>
+    <tr><th>维度</th><th>含义</th><th>判什么</th></tr>
+    <tr><td><b>D1 事实与证据</b></td><td>数字对不对、有没有出处</td><td>摘要数字 vs 第 3 章表；下钻数字能否核验</td></tr>
+    <tr><td><b>D2 边界与安全</b></td><td>拦截/标注/禁词/夸大</td><td>只判 4 件事：拦截、标注、越界词、夸大。<strong>不判数字出处（归 D1）</strong></td></tr>
+    <tr><td><b>D3 行动性</b></td><td>建议能不能直接用</td><td>阈值有依据即算过；维度隔离，不重复扣分</td></tr>
+  </table>
+  <div class="callout acc">
+    <strong>3 票中位数机制（关键设计）：</strong>即使 temperature=0，LLM 在 2/3 边界仍会 ±1 摇摆。judge 每份跑 3 次取各维度中位数，专门消这种噪声。每轮约 0.02–0.05 元。<br>
+    <strong>校准结论：</strong>D1 17% / D2 33% / D3 33% 分歧，残余全是边界噪声；真错误检出率 100%。单份 2/3 边界不硬解读。
+  </div>
+  <h3>5.1 人工基线（judge_baseline.json 已修正 3 处）</h3>
+  <ul class="tight">
+    <li>码上 D1 3→2：摘要「24.28 元」实为 8/16 单日值，周值应 23.71（judge 对）。</li>
+    <li>码上 D3 3→2：feed 开口成本 25.40 超目标 25 但观察清单为空（judge 对）。</li>
+    <li>巅峰 D3 2→3：阈值与当前值挂钩（CPC 1.14→1.0），按规则有依据（judge 对）。</li>
+  </ul>
+</section>
+
+<!-- ========== 6 ========== -->
+<section id="redlines">
+  <h2>6. 红线 / 约定（千万别破坏）</h2>
+  <p>这些约束是反复试错（人工审 6 份报告 + judge 校准）沉淀下来的，<strong>全部写在 <span class="mono">agent/system_prompt.md</span> 第 7 节</strong>。改 prompt 时只能加、不能删；改代码（orchestrator/tools）时这些约束的行为不能被破坏。逐条如下：</p>
+
+  <h3>6.1 优先级与状态</h3>
+  <ul class="tight">
+    <li><b>P0 = 急需处理</b>（拿到报告当天执行，仅限止损类：目标成本超红线且仍在消耗、该停未停的持续亏损对象）。</li>
+    <li><b>P1 = 本周完成</b>（优化与测试类动作）。<strong>没有 P2。</strong></li>
+    <li><strong>整体状态=正常</strong> 时，<code>suggestions</code> 与 <code>action_plan</code> 必须是空数组；有观察价值的信息只能放第 5 章<strong>观察清单</strong>。</li>
+    <li>整体状态=需关注 时<strong>禁止 P0</strong>；禁止依据微小差异（环比 &lt;10% 或 &lt;0.5pp）派生 P0。</li>
+  </ul>
+
+  <h3>6.2 字段红线</h3>
+  <ul class="tight">
+    <li><b>行动字段只有三字段</b>：<code>action / date / expect_metric</code>。<strong>没有 owner / 负责人</strong>（用户明确删除该字段）。</li>
+    <li><b>date 用 YYYY-MM-DD，不得早于 report_generated_at</b>（报告生成日）。日期是系统性问题，靠编排器锚定，<u>不要逐份手修</u>。</li>
+    <li><b>后链路词禁用</b>：suggestions/action_plan 任何字段不得出现 ROI / GMV / 成交额 / 有效线索 / 回访。risk 用「目标成本持续上涨」，watch_metric 用开口成本/留资成本等前置指标。</li>
+  </ul>
+
+  <h3>6.3 数字与命名红线</h3>
+  <ul class="tight">
+    <li><b>周值/日值红线</b>：summary、top3 reason、建议 basis 引用整体指标时，数值必须逐字取自第 3 章周度表（<code>metrics_cur/metrics_prev</code>），<u>禁止用近 14 天趋势的某日值充当周值</u>（如周开口成本 22.19 不得写成某日 21.45）。逐日数据只描述趋势形状，引具体数须注明是某日值。</li>
+    <li><b>命名一致</b>：<code>lead_rate=留资率</code>、<code>lead_cvr=留资转化率</code>、<code>open_rate=开口率</code>、<code>button_rate=按钮率</code>。禁止把 lead_cvr（约 1%–3%）写成「留资率」。</li>
+    <li><b>口径标签</b>：「占比」只用于结构性占比（如 feed 消耗占比 82.5%）；贡献度必须写「贡献了 X 变化的 N%」，禁止简写「消耗占比 N%」。</li>
+    <li><b>阈值方向必须正确</b>：低于目标写「低于」，禁止「24.75 高于 25」这类方向颠倒。</li>
+    <li><b>持平措辞</b>：前后两值相等或环比为 0 必须写「持平/稳定」，禁止「微涨/微降/略升/略降」等不符方向措辞。</li>
+  </ul>
+
+  <h3>6.4 归因与依据红线</h3>
+  <ul class="tight">
+    <li><b>因果推断标注</b>：非数据恒等关系的因果表述（带动/导致/源于/受益于）属推断，confidence 最高「中」，且 reason/text 须含「推断」或「待验证」。</li>
+    <li><b>素材归因标注</b>：以标题/素材/封面/内容解释指标变化，text 必须含「（待验证假设）」——素材质量无数据字段佐证。</li>
+    <li><b>依据数字可核验</b>：suggestions 的 basis、watch_metric 引用的下钻数字必须是输入上下文已提供的；禁止引用报告第 4/5 章无法核验的数字，缺数就改用已有数字，不得自行估算补数。</li>
+  </ul>
+  <div class="callout">
+    <strong>为什么这些只能放 prompt 第 7 节：</strong>LLM 的行为约束几乎只能靠提示词红线约束；<u>代码能修的才放代码</u>（例如观察清单的组装逻辑在 <span class="mono">tools.py</span> 的 <code>assemble_report</code>，周值/日值扫描在 <span class="mono">run_eval.py</span> 的 E24e）。prompt 红线解决不了的（代码组装类）要去改代码，别硬塞进 prompt。
+  </div>
+</section>
+
+<!-- ========== 7 ========== -->
+<section id="concepts">
+  <h2>7. 关键概念定义</h2>
+  <table>
+    <tr><th>概念</th><th>定义 / 易混点</th></tr>
+    <tr><td>留资率 vs 留资转化率</td><td><code>lead_rate</code> 通常 &gt;10%（线索/点击）；<code>lead_cvr</code> 约 1%–3%（成单/线索）。<strong>两者量级差一个数量级，混用是高频错误。</strong></td></tr>
+    <tr><td>周值 vs 日值</td><td>周度表（metrics_cur/prev）是汇总值；近 14 天趋势是逐日值。报告整体结论必须用周值。</td></tr>
+    <tr><td>正常周</td><td>overall_status=正常 → 不出 P0/P1，有想法只放观察清单。</td></tr>
+    <tr><td>观察清单</td><td>「观察但不行动」的池子（如某版位成本略超目标但整体未触发异常）。<strong>不是 P2</strong>，是正常周的合法去处。</td></tr>
+    <tr><td>停投 vs 缺数</td><td>枕水人家=主动停止投放（结论应为「投放已停止，确认原因」）；山野=数据缺失（结论应为「数据不足，补数据」）。两者下一步动作完全不同，<u>别把停投当缺数</u>。</td></tr>
+    <tr><td>降级场景</td><td>数据不足分支也要产出完整 action_plan（动作/日期/预期结果），<u>不豁免</u>。</td></tr>
+    <tr><td>后链路</td><td>ROI/GMV/成交额/有效线索/回访——本 Agent 不计算也不该下结论（成本口径前置即可）。</td></tr>
+  </table>
+</section>
+
+<!-- ========== 8 ========== -->
+<section id="api">
+  <h2>8. API Key 与运行环境</h2>
+  <ul class="tight">
+    <li><strong>DeepSeek API Key：</strong><span class="mono">~/.zshrc</span> 里有 3 行 <code>export DEEPSEEK_API_KEY=</code>，<u>前两行是占位符</u>，必须用带真实 <code>sk-</code> 且不含「你的key」的那行：<br>
+    <code>grep -h "^export DEEPSEEK_API_KEY=sk-" ~/.zshrc | grep -v "你的key" | tail -1</code></li>
+    <li><strong>真跑成本：</strong>单份报告真跑约 0.02–0.05 元；judge 3 票约 0.05 元/份。整轮 24 case 真跑 + judge 约 25 分钟、几块钱。<strong>能复用已有 artifacts 就别重跑。</strong></li>
+    <li><strong>长任务提醒：</strong>任何 &gt;1 分钟的脚本，给用户提示「跑得比较久，可 <code>tail -f 诊断台/eval/run.log</code> 看进度」。</li>
+  </ul>
+</section>
+
+<!-- ========== 9 ========== -->
+<section id="task">
+  <h2>9. 待办：下一步做什么</h2>
+  <div class="callout bad">
+    <strong>当前唯一阻塞项 = E14 误报。</strong> 批量跑已结束，别重跑整轮（浪费积分）。按下面 3 步收尾即可。
+  </div>
+
+  <h3>步骤 1：修评测脚本的 E14 误报</h3>
+  <p>文件 <span class="mono">eval/run_eval.py</span>，约 171–177 行的 E14 报告扫描循环。现状只跳过了 <code>eval_results.json</code>，但把 <code>judge_calibration.json</code>（内含 judge 推理里的 ROI/GMV 字样）也扫了，导致误报。改成和 E24 一样的「只扫真实报告」守卫：</p>
+  <pre><span class="c"># 改前（误报）</span>
+posts = []
+<span class="k">for</span> f <span class="k">in</span> sorted(ART.glob(<span class="s">"*.json"</span>)):
+    <span class="k">if</span> f.name == <span class="s">"eval_results.json"</span>:
+        <span class="k">continue</span>
+    t = f.read_text(encoding=<span class="s">"utf-8"</span>)
+    <span class="k">for</span> w <span class="k">in</span> POST_LINK_WORDS:
+        <span class="k">if</span> w <span class="k">in</span> t:
+            posts.append(f<span class="s">"{f.name}-&gt;{w}"</span>)
+
+<span class="c"># 改后（只扫真实报告 JSON，复用 E24 的守卫）</span>
+posts = []
+<span class="k">for</span> f <span class="k">in</span> sorted(ART.glob(<span class="s">"*.json"</span>)):
+    <span class="k">if</span> f.name <span class="k">in</span> (<span class="s">"eval_results.json"</span>, <span class="s">"judge_calibration.json"</span>):
+        <span class="k">continue</span>
+    <span class="k">try</span>:
+        r = json.loads(f.read_text(encoding=<span class="s">"utf-8"</span>))
+    <span class="k">except</span> Exception:
+        <span class="k">continue</span>
+    <span class="k">if</span> <span class="k">not</span> isinstance(r.get(<span class="s">"chapters"</span>), dict):
+        <span class="k">continue</span>   <span class="c"># 非报告 JSON 跳过</span>
+    t = _text(r)
+    <span class="k">for</span> w <span class="k">in</span> POST_LINK_WORDS:
+        <span class="k">if</span> w <span class="k">in</span> t:
+            posts.append(f<span class="s">"{f.name}-&gt;{w}"</span>)</pre>
+
+  <h3>步骤 2：零成本重算断言</h3>
+  <pre><span class="c"># 复用已有 artifacts 重跑所有硬断言（含 E14/E24 扫描），不调 LLM、不重跑 judge</span>
+python3 eval/run_eval.py --static
+<span class="c"># 看末尾 passed/total，应变为 126/126（或仅剩你确认的真实项）</span></pre>
+  <p class="small">注意：<code>--static</code> 不会重跑 judge（judge 结果已缓存在 artifacts）。如果之前没跑过 judge 或想刷新，再用 <code>python3 eval/run_eval.py --with-llm --no-judge</code> 之类按需跑——但当前 judge 已完整，无需重跑。</p>
+
+  <h3>步骤 3：写收尾报告</h3>
+  <p>把批量评测结果整理成 <span class="mono">eval/eval_report_v2.md</span>，至少包含：三层评测通过率、逐 case 结论、E14 误报说明与修复、judge 校准结论（D1 17%/D2 33%/D3 33%，残余为边界噪声）、MVP 门槛是否达成（方案 A：23/24，E18 例外）。可参考已有的 <span class="mono">eval/eval_report.md</span>（v1 版）格式。</p>
+
+  <h3>如果交接后要做更多（可选方向）</h3>
+  <ul class="tight">
+    <li>把 <code>eval_results.json</code> 里 75 条 E24 横切断言固化成 CI 回归基线。</li>
+    <li>若要对齐「方案 B（13 必过 + 容忍 2）」，在 <span class="mono">评测集设计稿_v2.md</span> 第 7 节和用户确认后落地。</li>
+    <li>真实数据接入（用户曾问「能否实时更新」）——当前是仿真数据，接入真实数据源是后续大项，需单独评估。</li>
+  </ul>
+</section>
+
+<!-- ========== 10 ========== -->
+<section id="pitfalls">
+  <h2>10. 踩过的坑（避坑清单）</h2>
+  <ul class="tight">
+    <li><span class="pill p-bad">坑</span> <b>zshrc 里 3 行 API Key</b>：前两行是占位符，取真实行要过滤 <code>sk-</code> 且排除「你的key」，否则拿到假 key 跑空。</li>
+    <li><span class="pill p-bad">坑</span> <b>周值/日值混淆是系统性缺陷</b>：2/6 报告犯过（码上 24.28、巅峰 21.45）。靠 prompt 第 7 节红线 + run_eval 的 E24e 扫描兜住，别以为修一份就完了。</li>
+    <li><span class="pill p-bad">坑</span> <b>建议依据引用下钻数字但报告没展示</b>：用户审报告发现「依据的数字我在报告里看不见」。prompt 加「依据数字可核验」红线。</li>
+    <li><span class="pill p-bad">坑</span> <b>观察清单漏项</b>：版位/计划成本超目标但整体未触发异常时，应进观察清单（码上 feed 25.40&gt;25 曾漏）。这是<strong>代码组装</strong>问题，prompt 红线修不了，要在 <span class="mono">tools.py</span> 的 <code>assemble_report</code> 修。</li>
+    <li><span class="pill p-bad">坑</span> <b>日期早于生成日</b>：过期日期（8/17、8/18 已过）是系统性问题，靠编排器用 <code>report_generated_at</code> 锚定，<u>别逐份手修</u>。</li>
+    <li><span class="pill p-bad">坑</span> <b>judge 温度噪声</b>：temperature=0 也会在 2/3 边界摇摆，单份分数别硬解读，用 3 票中位数 + 看跨份趋势。</li>
+    <li><span class="pill p-bad">坑</span> <b>prompt 红线 vs 代码修复</b>：LLM 行为只能靠 prompt 红线；代码组装类（观察清单、扫描）要在 .py 里修，别硬塞进 prompt。</li>
+    <li><span class="pill p-warn">坑</span> <b>真跑整轮很贵也慢</b>：先确认能否复用 artifacts；E18 探针报错零成本；改断言逻辑后用 <code>--static</code> 复核。</li>
+  </ul>
+</section>
+
+<!-- ========== 11 ========== -->
+<section id="prefs">
+  <h2>11. 用户偏好（长期）</h2>
+  <ul class="tight">
+    <li><strong>不要「装 b」</strong>：输出直白、讲人话，不要堆砌术语或故作高深。</li>
+    <li><strong>不要 § 符号 / 奇怪排版</strong>：用户明确反感，用普通标题即可。</li>
+    <li><strong>不要另写「大白话」段落</strong>：解释就融进正文，别单列一段「说人话版」。</li>
+    <li><strong>用户想看代码实时跑</strong>：长任务提示他用 <code>tail -f</code> 看日志。</li>
+    <li><strong>先讨论再动手</strong>：涉及定义/取值/方向类决策（如 P0/P1 定义、删 owner 字段），先对齐再改，别直接动代码。</li>
+    <li><strong>站在客观视角 + 用户思维</strong>：自检/打分要有「人」的判断力，别纯机械过断言。</li>
+  </ul>
+</section>
+
+<!-- ========== 12 ========== -->
+<section id="cmds">
+  <h2>12. 命令速查</h2>
+  <pre><span class="c"># 种案例（E15 依赖，先跑一次）</span>
+python3 eval/seed_cases.py
+
+<span class="c"># 零成本复核（复用已有报告重算硬断言，不调 LLM）</span>
+python3 eval/run_eval.py --static
+
+<span class="c"># 真跑指定 case（不重跑已有 artifacts，除非 --fresh）</span>
+python3 eval/run_eval.py --with-llm --cases E02,E08,E15
+
+<span class="c"># 全量真跑 + judge（约 25 分钟、几块钱，慎跑）</span>
+python3 eval/run_eval.py --with-llm --fresh
+
+<span class="c"># 看进度（长任务）</span>
+tail -f eval/run.log
+
+<span class="c"># 取真实 API Key</span>
+grep -h "^export DEEPSEEK_API_KEY=sk-" ~/.zshrc | grep -v "你的key" | tail -1
+
+<span class="c"># 看批量结果</span>
+cat eval/artifacts/eval_results.json | python3 -m json.tool | less</pre>
+  <p class="small">项目根：<span class="mono">诊断台/</span> ；本文档应随项目一起提交到 GitHub，确保下一位接手者能直接看到。</p>
+</section>
+
+</main>
+</div>
+</body>
+</html>

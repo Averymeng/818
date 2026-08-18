@@ -1,6 +1,6 @@
 {
-  "passed": 42,
-  "total": 42,
+  "passed": 126,
+  "total": 126,
   "scores": {
     "E13": {
       "pass": 3,
@@ -97,6 +97,27 @@
         }
       ]
     },
+    "E22": {
+      "pass": 3,
+      "total": 3,
+      "asserts": [
+        {
+          "name": "正常周建议为空",
+          "ok": true,
+          "detail": "n_sug=0"
+        },
+        {
+          "name": "正常周行动计划为空",
+          "ok": true,
+          "detail": "n_act=0"
+        },
+        {
+          "name": "正常周观察清单非空(有超目标项须记录)",
+          "ok": true,
+          "detail": "[{\"location\": \"版位 feed/open_cost\", \"change\": \"25.40 元，超目标 25.0 元，整体未达异常门槛，持续观察\"}]"
+        }
+      ]
+    },
     "E02": {
       "pass": 3,
       "total": 3,
@@ -136,7 +157,7 @@
         {
           "name": "CTR 事件被检出(观察项)",
           "ok": true,
-          "detail": "[{\"location\": \"客户整体/CTR\", \"change\": -0.3993951272960565}]"
+          "detail": "[{\"location\": \"客户整体/CTR\", \"change\": -0.3993951272960565}, {\"location\": \"版位 feed/lead_cost\", \"change\": \"280.22 元，超目标 180.0 元，整体未达异常门槛，持续观察\"}, {\"location\": \"版位 search/lead_cost\", \"change\": \"277.98 元，超目标 180.0 元，整体未达异常门槛，持续观察\"}]"
         },
         {
           "name": "CTR 不进 top3（权重设计预期）",
@@ -152,7 +173,7 @@
         {
           "name": "button_rate 事件被检出",
           "ok": true,
-          "detail": "[{\"location\": \"客户整体/lead_cvr\", \"change\": -0.28792432349330654}, {\"location\": \"客户整体/button_rate\", \"change\": -0.23260157570351542}]"
+          "detail": "[{\"location\": \"客户整体/lead_cvr\", \"change\": -0.28792432349330654}, {\"location\": \"客户整体/button_rate\", \"change\": -0.23260157570351542}, {\"location\": \"版位 search/lead_cost\", \"change\": \"103.55 元，超目标 75.0 元，整体未达异常门槛，持续观察\"}, {\"location\": \"版位 feed/lead_cost\", \"change\": \"125.06 元，超目标 75.0 元，整体未达异常门槛，持续观察\"}]"
         }
       ]
     },
@@ -163,7 +184,7 @@
         {
           "name": "open_rate 事件被检出",
           "ok": true,
-          "detail": "top3=[{\"location\": \"客户整体/open_cost\", \"change\": 0.7003683291464943, \"weight\": 0.4895, \"direction\": \"positive\"}, {\"location\": \"客户整体/lead_cost\", \"change\": 0.6476101310108952, \"weight\": 0.4895, \"direction\": \"p wl=[{\"location\": \"客户整体/lead_cvr\", \"change\": -0.3826097215667768}]"
+          "detail": "top3=[{\"location\": \"客户整体/open_cost\", \"change\": 0.7003683291464943, \"weight\": 0.4895, \"direction\": \"positive\"}, {\"location\": \"客户整体/lead_cost\", \"change\": 0.6476101310108952, \"weight\": 0.4895, \"direction\": \"p wl=[{\"location\": \"客户整体/lead_cvr\", \"change\": -0.3826097215667768}, {\"location\": \"版位 feed/lead_cost\", \"change\": \"321.60 元，超目标 200.0 元，整体未达异常门槛，持续观察\"}]"
         }
       ]
     },
@@ -206,37 +227,6 @@
       ]
     },
     "E11a": {
-      "pass": 5,
-      "total": 5,
-      "asserts": [
-        {
-          "name": "overall=需行动",
-          "ok": true,
-          "detail": "需行动"
-        },
-        {
-          "name": "top3 空",
-          "ok": true,
-          "detail": "[]"
-        },
-        {
-          "name": "拒绝归因(摘要声明数据不足)",
-          "ok": true,
-          "detail": "\"上周或本周数据不完整，按红线约束不输出归因结论，仅呈现数据缺口与已核实的指标现状。\""
-        },
-        {
-          "name": "不输出 top3 归因",
-          "ok": true,
-          "detail": "[]"
-        },
-        {
-          "name": "标注数据缺口",
-          "ok": true,
-          "detail": "cur=[] prev=['2026-08-05', '2026-08-06', '2026-08-07']"
-        }
-      ]
-    },
-    "E11b": {
       "pass": 6,
       "total": 6,
       "asserts": [
@@ -263,7 +253,53 @@
         {
           "name": "标注数据缺口",
           "ok": true,
+          "detail": "cur=[] prev=['2026-08-05', '2026-08-06', '2026-08-07']"
+        },
+        {
+          "name": "降级场景行动计划完整(动作/日期/预期)",
+          "ok": true,
+          "detail": "[{\"action\": \"联系数据对接方补齐缺失日期数据，补齐后重新触发周度复盘\", \"date\": \"2026-08-19\", \"expect_metric\": \"数据完整性检查通过，复盘报告恢复归因与建议章节\"}]"
+        }
+      ]
+    },
+    "E11b": {
+      "pass": 8,
+      "total": 8,
+      "asserts": [
+        {
+          "name": "overall=需行动",
+          "ok": true,
+          "detail": "需行动"
+        },
+        {
+          "name": "top3 空",
+          "ok": true,
+          "detail": "[]"
+        },
+        {
+          "name": "拒绝归因(摘要声明数据不足)",
+          "ok": true,
+          "detail": "\"本周数据不完整，且在投计划/笔记均为 0、消耗为 0——判断为投放已停止而非单纯缺数。按红线不输出归因结论，建议先向客"
+        },
+        {
+          "name": "不输出 top3 归因",
+          "ok": true,
+          "detail": "[]"
+        },
+        {
+          "name": "标注数据缺口",
+          "ok": true,
           "detail": "cur=['2026-08-10', '2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15', '2026-08-16'] prev=[]"
+        },
+        {
+          "name": "降级场景行动计划完整(动作/日期/预期)",
+          "ok": true,
+          "detail": "[{\"action\": \"向客户/代理商确认本期投放停止的原因（主动停投/预算耗尽/账户问题）\", \"date\": \"2026-08-19\", \"expect_metric\": \"拿到停止原因：若重新起量，下期复盘恢复完整对比；若停投，下期"
+        },
+        {
+          "name": "识别停投(含'停止'且指向确认原因)",
+          "ok": true,
+          "detail": "停止"
         },
         {
           "name": "趋势线如实呈现缺口(点数<14)",
@@ -285,6 +321,387 @@
           "name": "拾光(lead)用 lead_cost 口径",
           "ok": true,
           "detail": "metric=lead_cost"
+        }
+      ]
+    },
+    "E24": {
+      "pass": 75,
+      "total": 75,
+      "asserts": [
+        {
+          "name": "[云栖度假酒店] 阈值比较方向正确",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[云栖度假酒店] 留资率/留资转化率命名不混用",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[云栖度假酒店] 无后链路词",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[云栖度假酒店] 无 owner 字段",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[云栖度假酒店] 行动日期不早于生成日",
+          "ok": true,
+          "detail": "early=[] gen=2026-08-19"
+        },
+        {
+          "name": "[云栖度假酒店] 摘要无周值/日值混淆",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[启航留学工作室] 阈值比较方向正确",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[启航留学工作室] 留资率/留资转化率命名不混用",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[启航留学工作室] 无后链路词",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[启航留学工作室] 无 owner 字段",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[启航留学工作室] 行动日期不早于生成日",
+          "ok": true,
+          "detail": "early=[] gen=2026-08-19"
+        },
+        {
+          "name": "[启航留学工作室] 摘要无周值/日值混淆",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[山野民宿] 阈值比较方向正确",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[山野民宿] 留资率/留资转化率命名不混用",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[山野民宿] 无后链路词",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[山野民宿] 无 owner 字段",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[山野民宿] 行动日期不早于生成日",
+          "ok": true,
+          "detail": "early=[] gen=2026-08-19"
+        },
+        {
+          "name": "[山野民宿] 摘要无周值/日值混淆",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[巅峰密室] 阈值比较方向正确",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[巅峰密室] 留资率/留资转化率命名不混用",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[巅峰密室] 无后链路词",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[巅峰密室] 无 owner 字段",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[巅峰密室] 行动日期不早于生成日",
+          "ok": true,
+          "detail": "early=[] gen=2026-08-19"
+        },
+        {
+          "name": "[巅峰密室] 摘要无周值/日值混淆",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[悦颜美容SPA] 阈值比较方向正确",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[悦颜美容SPA] 无后链路词",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[悦颜美容SPA] 无 owner 字段",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[悦颜美容SPA] 行动日期不早于生成日",
+          "ok": true,
+          "detail": "early=[] gen=2026-08-19"
+        },
+        {
+          "name": "[悦颜美容SPA] 摘要无周值/日值混淆",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[拾光婚纱影像] 阈值比较方向正确",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[拾光婚纱影像] 留资率/留资转化率命名不混用",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[拾光婚纱影像] 无后链路词",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[拾光婚纱影像] 无 owner 字段",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[拾光婚纱影像] 行动日期不早于生成日",
+          "ok": true,
+          "detail": "early=[] gen=2026-08-19"
+        },
+        {
+          "name": "[拾光婚纱影像] 摘要无周值/日值混淆",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[星光KTV] 阈值比较方向正确",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[星光KTV] 无后链路词",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[星光KTV] 无 owner 字段",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[星光KTV] 行动日期不早于生成日",
+          "ok": true,
+          "detail": "early=[] gen=2026-08-19"
+        },
+        {
+          "name": "[星光KTV] 摘要无周值/日值混淆",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[枕水人家客栈] 阈值比较方向正确",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[枕水人家客栈] 无后链路词",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[枕水人家客栈] 无 owner 字段",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[枕水人家客栈] 行动日期不早于生成日",
+          "ok": true,
+          "detail": "early=[] gen=2026-08-19"
+        },
+        {
+          "name": "[枕水人家客栈] 摘要无周值/日值混淆",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[洁到家家政] 阈值比较方向正确",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[洁到家家政] 留资率/留资转化率命名不混用",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[洁到家家政] 无后链路词",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[洁到家家政] 无 owner 字段",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[洁到家家政] 行动日期不早于生成日",
+          "ok": true,
+          "detail": "early=[] gen=2026-08-19"
+        },
+        {
+          "name": "[洁到家家政] 摘要无周值/日值混淆",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[环球语言村] 阈值比较方向正确",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[环球语言村] 留资率/留资转化率命名不混用",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[环球语言村] 无后链路词",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[环球语言村] 无 owner 字段",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[环球语言村] 行动日期不早于生成日",
+          "ok": true,
+          "detail": "early=[] gen=2026-08-19"
+        },
+        {
+          "name": "[环球语言村] 摘要无周值/日值混淆",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[码上AI学堂] 阈值比较方向正确",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[码上AI学堂] 留资率/留资转化率命名不混用",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[码上AI学堂] 无后链路词",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[码上AI学堂] 无 owner 字段",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[码上AI学堂] 行动日期不早于生成日",
+          "ok": true,
+          "detail": "early=[] gen=2026-08-19"
+        },
+        {
+          "name": "[码上AI学堂] 摘要无周值/日值混淆",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[素人写真馆] 阈值比较方向正确",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[素人写真馆] 留资率/留资转化率命名不混用",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[素人写真馆] 无后链路词",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[素人写真馆] 无 owner 字段",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[素人写真馆] 行动日期不早于生成日",
+          "ok": true,
+          "detail": "early=[] gen=2026-08-19"
+        },
+        {
+          "name": "[素人写真馆] 摘要无周值/日值混淆",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[银龄声乐课堂] 阈值比较方向正确",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[银龄声乐课堂] 留资率/留资转化率命名不混用",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[银龄声乐课堂] 无后链路词",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[银龄声乐课堂] 无 owner 字段",
+          "ok": true,
+          "detail": "无"
+        },
+        {
+          "name": "[银龄声乐课堂] 行动日期不早于生成日",
+          "ok": true,
+          "detail": "early=[] gen=2026-08-19"
+        },
+        {
+          "name": "[银龄声乐课堂] 摘要无周值/日值混淆",
+          "ok": true,
+          "detail": "无"
         }
       ]
     },
@@ -311,6 +728,27 @@
           "name": "case_ref_log 留痕",
           "ok": true,
           "detail": "rows=1"
+        }
+      ]
+    },
+    "E19": {
+      "pass": 3,
+      "total": 3,
+      "asserts": [
+        {
+          "name": "cur_end=最新完整周日",
+          "ok": true,
+          "detail": "cur_end=2026-08-16 expected=2026-08-16 max_date=2026-08-17"
+        },
+        {
+          "name": "cur 为完整周一~周日",
+          "ok": true,
+          "detail": "cur=2026-08-10~2026-08-16"
+        },
+        {
+          "name": "对比窗口为紧邻上一周",
+          "ok": true,
+          "detail": "prev=2026-08-03~2026-08-09"
         }
       ]
     }

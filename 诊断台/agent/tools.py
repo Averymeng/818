@@ -476,6 +476,16 @@ def assemble_report(context):
     anomalies = context["anomalies"]
     top3 = [e for e in anomalies["events"] if e["is_top3"]]
     watch = [e for e in anomalies["events"] if not e["is_top3"]]
+    # 版位级成本超目标但整体未达异常门槛 → 进观察清单（judge 校准发现 v1 漏记此类项）
+    prof_target = prof.get("target_cost")
+    if prof_target:
+        tcm = "open_cost" if prof.get("optimize_target") == "open" else "lead_cost"
+        splits = (context.get("drill") or {}).get("splits") or {}
+        for it in (splits.get("placement") or {}).get("items", []):
+            v = (it.get("cur_metrics") or {}).get(tcm)
+            if v and v > prof_target and not any(str(it.get("name")) in str(w.get("location", "")) for w in watch):
+                watch.append({"location": f"版位 {it.get('name')}/{tcm}",
+                              "change": f"{v:.2f} 元，超目标 {prof_target} 元，整体未达异常门槛，持续观察"})
     adverse_top3 = [e for e in top3 if e.get("is_adverse")]
     degraded = bool((context.get("data_check") or {}).get("degraded"))
     if degraded:
@@ -491,7 +501,8 @@ def assemble_report(context):
     chapters = {
         "1_封面": {"customer": prof["name"], "industry": prof["industry"], "sector": prof["sector"],
                    "categories": prof["categories"], "period": f"{context['cur_start']}~{context['cur_end']} vs {context['cmp_start']}~{context['cmp_end']}",
-                   "version": context.get("report_version", 1), "generated_at": datetime.now().isoformat(timespec="seconds")},
+                   "version": context.get("report_version", 1),
+                   "generated_at": context.get("generated_at") or datetime.now().isoformat(timespec="seconds")},
         "2_核心结论": {"overall_status": overall,
                        "data_status": "数据不足" if degraded else "完整",
                        "data_check": {"cur_missing": data_check.get("cur", {}).get("missing_days", []),

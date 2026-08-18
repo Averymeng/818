@@ -168,9 +168,16 @@ def run_static(conn):
     _a("E14", "代码无后链路计算", not hits_post, "; ".join(hits_post) or "无")
     posts = []
     for f in sorted(ART.glob("*.json")):
-        if f.name == "eval_results.json":
+        # 只扫真实报告 JSON；跳过评测产物（eval_results / judge_calibration 内含 judge 推理文本里的 ROI/GMV 字样，会误报）
+        if f.name in ("eval_results.json", "judge_calibration.json"):
             continue
-        t = f.read_text(encoding="utf-8")
+        try:
+            r = json.loads(f.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if not isinstance(r.get("chapters"), dict):
+            continue
+        t = _text(r)
         for w in POST_LINK_WORDS:
             if w in t:
                 posts.append(f"{f.name}->{w}")
@@ -247,6 +254,18 @@ def run_reports_asserts(conn):
         t = _text(r)
         ph = [p for p in PLACEHOLDERS if p in t]
         _a("E01", "无占位符", not ph, "; ".join(ph) or "无")
+
+    # ---- E22 正常周禁派活（judge 校准轮发现观察清单漏项，一并断言）----
+    if r:
+        sg = r.get("chapters", {}).get("7_优化建议", []) or []
+        ap = r.get("chapters", {}).get("8_行动计划", []) or []
+        _a("E22", "正常周建议为空", r["overall_status"] != "正常" or sg == [],
+           f"n_sug={len(sg)}")
+        _a("E22", "正常周行动计划为空", r["overall_status"] != "正常" or ap == [],
+           f"n_act={len(ap)}")
+        wl = watchlist_of(r)
+        _a("E22", "正常周观察清单非空(有超目标项须记录)", r["overall_status"] != "正常" or len(wl) > 0,
+           _text(wl)[:120] or "空")
 
     # ---- E02 消耗下降 ----
     r = load("E02")
@@ -338,6 +357,20 @@ def run_reports_asserts(conn):
         miss_all = (miss.get("cur_missing") or []) + (miss.get("prev_missing") or [])
         _a(case, "标注数据缺口", bool(miss_all),
            f"cur={miss.get('cur_missing')} prev={miss.get('prev_missing')}")
+        # 降级场景也要有完整行动计划（动作/日期/预期结果）
+        ap = ch.get("8_行动计划", []) or []
+        ap_ok = bool(ap) and all(
+            isinstance(a, dict) and a.get("action") and a.get("date") and a.get("expect_metric")
+            for a in ap)
+        _a(case, "降级场景行动计划完整(动作/日期/预期)", ap_ok, _text(ap)[:120])
+
+    # ---- E11b 停投与缺数区分 ----
+    r = load("E11b")
+    if r:
+        t = _text(r)
+        _a("E11b", "识别停投(含'停止'且指向确认原因)",
+           ("停止" in t or "停投" in t) and ("确认" in t),
+           "停止" if ("停止" in t or "停投" in t) else "未提及停止")
 
     # ---- E12 口径切换（复用 E03/E04 报告）----
     r3, r4 = load("E03"), load("E04")
@@ -346,6 +379,86 @@ def run_reports_asserts(conn):
         m4 = task_trend(r4).get("metric")
         _a("E12", "银龄(open)用 open_cost 口径", m3 == "open_cost", f"metric={m3}")
         _a("E12", "拾光(lead)用 lead_cost 口径", m4 == "lead_cost", f"metric={m4}")
+
+    # ---- 横切断言：全量报告扫数值方向 / 命名口径 / 后链路 / owner / 日期 ----
+    run_sweep_asserts()
+
+
+def run_sweep_asserts():
+    """横切硬断言（E24 组）：对所有 artifacts 报告全文扫描。
+    来源：人工试评发现的数字级错误（v1 断言未覆盖）
+    - 阈值方向：X 高于/超过 Y 但数值上 X < Y（及反向）
+    - 命名口径：把 lead_cvr 的数值（<5%）叫"留资率"（真留资率 lead_rate 通常 >10%）
+    - 后链路词 / owner 字段残留 / 行动日期早于生成日
+    """
+    import re
+    if not ART.exists():
+        return
+    for f in sorted(ART.glob("*.json")):
+        name = f.stem
+        try:
+            r = json.loads(f.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if not isinstance(r.get("chapters"), dict):
+            continue  # 非报告 JSON（如 eval_results）
+        t = _text(r)
+
+        # E24a 阈值方向：抓 "A 高于/超过/低于 B" 且 A、B 都是数字
+        bad_dir = []
+        for m in re.finditer(r"(\d+(?:\.\d+)?)\s*元?\s*(?:均?高于|超过|超出|不低于)\s*(?:目标[^。]{0,12}?)?(\d+(?:\.\d+)?)", t):
+            a, b = float(m.group(1)), float(m.group(2))
+            if a < b:
+                bad_dir.append(m.group(0)[:40])
+        for m in re.finditer(r"(\d+(?:\.\d+)?)\s*元?\s*(?:均?低于|不超过)\s*(?:目标[^。]{0,12}?)?(\d+(?:\.\d+)?)", t):
+            a, b = float(m.group(1)), float(m.group(2))
+            if a > b:
+                bad_dir.append(m.group(0)[:40])
+        _a("E24", f"[{name}] 阈值比较方向正确", not bad_dir, "; ".join(bad_dir) or "无")
+
+        # E24b 命名口径：留资率 lead_rate 值 >10% 时，正文不得把 <5% 的数叫"留资率"
+        m_ch = r.get("chapters", {}).get("3_指标与趋势", {})
+        lr = (m_ch.get("metrics_cur") or {}).get("lead_rate")
+        if lr is not None and lr > 0.10:
+            bad_name = [m.group(0)[:40] for m in re.finditer(
+                r"留资率[^。]{0,20}?(\d+(?:\.\d+)?)%", t)
+                if float(m.group(1)) < 5]
+            _a("E24", f"[{name}] 留资率/留资转化率命名不混用", not bad_name, "; ".join(bad_name) or "无")
+
+        # E24c 后链路词 / owner 残留
+        posts = [w for w in POST_LINK_WORDS if w in t]
+        _a("E24", f"[{name}] 无后链路词", not posts, "; ".join(posts) or "无")
+        _a("E24", f"[{name}] 无 owner 字段", '"owner"' not in t, "有残留" if '"owner"' in t else "无")
+
+        # E24d 行动日期不早于生成日
+        gen = str(r.get("chapters", {}).get("1_封面", {}).get("generated_at", ""))[:10]
+        dates = [str(a.get("date", "")) for a in
+                 r.get("chapters", {}).get("8_行动计划", []) or [] if isinstance(a, dict)]
+        early = [d for d in dates if d and gen and d < gen]
+        _a("E24", f"[{name}] 行动日期不早于生成日", not early, f"early={early} gen={gen}")
+
+        # E24e 周值/日值混淆：摘要中出现的成本指标数值不得只匹配逐日值而非周值
+        ch3 = r.get("chapters", {}).get("3_指标与趋势", {})
+        summary = str((r.get("chapters", {}).get("2_核心结论", {}) or {}).get("summary", ""))
+        bad_wd = []
+        cost_keys = ("open_cost", "lead_cost", "CPM", "CPC")
+        weekly = set()
+        for k in cost_keys:
+            for src in (ch3.get("metrics_cur") or {}, ch3.get("metrics_prev") or {}):
+                v = src.get(k)
+                if v is not None:
+                    weekly.add(f"{float(v):.2f}")
+        trend = ch3.get("trend_14d") or {}
+        for d in (trend.get("daily") or []):
+            v = d.get("value")
+            if v is None:
+                continue
+            s = f"{float(v):.2f}"
+            # 数值≥5（避开环比/差值类小数字）、出现在摘要、且不等于任何周值 → 疑似日值冒充周值
+            if float(v) >= 5 and s not in weekly and s in summary:
+                bad_wd.append(f"{s}(日值{d.get('date')})")
+        _a("E24", f"[{name}] 摘要无周值/日值混淆", not bad_wd,
+           "; ".join(bad_wd) or "无")
 
 
 def run_e15(conn):
@@ -384,6 +497,90 @@ def run_e11b_trend(conn):
     _a("E11b", "趋势线如实呈现缺口(点数<14)", len(daily) < 14, f"points={len(daily)}")
 
 
+def run_e18_probe():
+    """E18 输入容错探针（不设门槛）：模糊客户名"码上"的行为记录"""
+    from datetime import datetime
+    behavior = "未执行"
+    try:
+        orch = ReviewOrchestrator(db_path=str(DB))
+        r = orch.run(customer_name="码上")
+        if "error" in r:
+            behavior = f"拦截返回: {r['error']}"
+        else:
+            cover = (r.get("chapters", {}) or {}).get("1_封面", {}) or {}
+            matched = cover.get("customer", "")
+            behavior = (f"模糊名被接受, 实际跑了 '{matched}'"
+                        + ("（误匹配）" if matched != "码上AI学堂" else "（精确解析）"))
+        orch.close()
+    except Exception as e:
+        behavior = f"报错: {str(e)[:120]}"
+    (ART / "E18_probe.json").write_text(
+        json.dumps({"case": "E18", "input": "码上", "behavior": behavior,
+                    "probed_at": datetime.now().isoformat(timespec="seconds")},
+                   ensure_ascii=False, indent=1), encoding="utf-8")
+    # 探针不计入门槛：只记录，恒 pass
+    _a("E18", "行为记录(探针,不计门槛)", True, behavior)
+
+
+def run_e19_anchor(conn):
+    """E19 周期锚点：init periods 必须锚定全库最新完整日历周，对比窗口为紧邻上一周"""
+    row = conn.execute(
+        "SELECT output_summary FROM agent_step WHERE name='init' AND output_summary IS NOT NULL "
+        "ORDER BY id DESC LIMIT 1").fetchone()
+    if not row:
+        _a("E19", "init 步骤存在", False, "无 init 记录")
+        return
+    out = json.loads(row["output_summary"])
+    periods = out.get("periods") or []
+    if len(periods) != 4:
+        _a("E19", "periods 结构完整", False, str(periods))
+        return
+    cs, ce, ps, pe = periods
+    # 全库最新日期 → 最新完整周（最后一天为周日）
+    max_date = conn.execute("SELECT MAX(date) FROM daily_metric").fetchone()[0]
+    from datetime import date, timedelta
+    md = date.fromisoformat(max_date)
+    last_sunday = md - timedelta(days=(md.weekday() + 1) % 7)
+    _a("E19", "cur_end=最新完整周日", ce == last_sunday.isoformat(),
+       f"cur_end={ce} expected={last_sunday.isoformat()} max_date={max_date}")
+    _a("E19", "cur 为完整周一~周日", cs == (last_sunday - timedelta(days=6)).isoformat(), f"cur={cs}~{ce}")
+    _a("E19", "对比窗口为紧邻上一周",
+       ps == (last_sunday - timedelta(days=13)).isoformat() and pe == (last_sunday - timedelta(days=7)).isoformat(),
+       f"prev={ps}~{pe}")
+
+
+def run_judge_all():
+    """端到端 B 层：judge 对全量报告打 D1/D2/D3（三票中位数），软判断不计门槛"""
+    try:
+        sys.path.insert(0, str(HERE))
+        import judge as judge_mod
+    except Exception as e:
+        print(f"judge 模块加载失败: {e}")
+        return None
+    prompt = (HERE / "judge_prompt.md").read_text(encoding="utf-8")
+    scores = {}
+    for f in sorted(ART.glob("*.json")):
+        if f.stem in ("eval_results", "judge_scores", "judge_calibration", "E18_probe"):
+            continue
+        try:
+            d = json.loads(f.read_text(encoding="utf-8"))
+            if "chapters" not in d:
+                continue
+        except Exception:
+            continue
+        print(f"[judge] {f.stem} ...", flush=True)
+        res = judge_mod.judge_one(f.stem, d, prompt)
+        if "error" in res:
+            print(f"  !! {res['error']}")
+            continue
+        scores[f.stem] = res
+        print(f"  D1={res['scores']['D1']} D2={res['scores']['D2']} D3={res['scores']['D3']} "
+              f"(轮间波动 {res['spread']})", flush=True)
+    (ART / "judge_scores.json").write_text(
+        json.dumps(scores, ensure_ascii=False, indent=1), encoding="utf-8")
+    return scores
+
+
 # ---------------------------------------------------------------- 主流程
 ASSERTS = {}
 
@@ -407,6 +604,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--with-llm", action="store_true", help="真跑 LLM 用例")
     ap.add_argument("--cases", help="指定真跑用例，逗号分隔，如 E02,E08")
+    ap.add_argument("--fresh", action="store_true", help="忽略已有 artifacts，全部重新真跑")
+    ap.add_argument("--judge", action="store_true", help="跑 judge（端到端 B 层，软判断）")
+    ap.add_argument("--no-judge", action="store_true", help="跳过 judge（默认：--with-llm 且非 --cases 时自动跑）")
     args = ap.parse_args()
 
     sys.stdout = _Tee(Path(__file__).parent / "run.log")
@@ -430,7 +630,7 @@ def main():
         for case in targets:
             customer = REAL_CASES[case][0]
             f = ART / f"{customer}.json"
-            if case != "E15" and f.exists() and not args.cases:
+            if case != "E15" and f.exists() and not args.cases and not args.fresh:
                 print(f"[skip] {case} {customer} 已有报告")
                 continue
             print(f"[run ] {case} {customer} ...", flush=True)
@@ -440,6 +640,10 @@ def main():
             else:
                 print(f"  overall={r['overall_status']} llm_calls={r['llm_calls']} "
                       f"cost=¥{r.get('llm_cost_yuan', 0):.4f} task={tid}", flush=True)
+        # E18 探针（模糊输入，一次真跑）
+        if not args.cases:
+            print("[run ] E18 模糊名探针 '码上' ...", flush=True)
+            run_e18_probe()
         print("真跑完成。", flush=True)
 
     # 静态用例（E13/E16/E17）
@@ -449,6 +653,13 @@ def main():
     run_reports_asserts(conn)
     run_e11b_trend(conn)
     run_e15(conn)
+    run_e19_anchor(conn)
+
+    # ---- judge（端到端 B 层）----
+    judge_scores = None
+    if args.judge or (args.with_llm and not args.cases and not args.no_judge):
+        print("\n----- judge 端到端 B 层（三票中位数，软判断）-----", flush=True)
+        judge_scores = run_judge_all()
 
     # ---- 汇总 ----
     passed = sum(1 for a in ASSERTS.values() for x in a if x["ok"])
@@ -457,7 +668,7 @@ def main():
 
     # ---- 落 eval_case / eval_run ----
     ev_cases = []
-    for case in list(REAL_CASES.keys()) + ["E12", "E13", "E14", "E16", "E17"]:
+    for case in list(REAL_CASES.keys()) + ["E12", "E13", "E14", "E16", "E17", "E19", "E24"]:
         if case in REAL_CASES:
             name = REAL_CASES[case][0]
             cid = conn.execute("SELECT id FROM customer WHERE name=?", (name,)).fetchone()
@@ -468,14 +679,17 @@ def main():
         conn.execute(
             """INSERT INTO eval_case(name, scenario, sim_version, customer_id, expected_json)
                VALUES (?,?,?,?,?)""",
-            (case, "见评测集设计稿", "sim-v1.0.0", cid,
+            (case, "见评测集设计稿v2", "sim-v1.0.0", cid,
              json.dumps({"asserts": ASSERTS.get(case, [])}, ensure_ascii=False)))
     scores = {k: {"pass": sum(1 for x in v if x["ok"]), "total": len(v), "asserts": v}
               for k, v in ASSERTS.items()}
+    if judge_scores:
+        scores["_judge"] = {n: {"scores": r["scores"], "spread": r.get("spread")}
+                            for n, r in judge_scores.items()}
     conn.execute(
         """INSERT INTO eval_run(agent_version, eval_set_version, scores_json, passed, ran_at)
            VALUES (?,?,?,?,datetime('now','localtime'))""",
-        ("agent-v1.1", "E01-E17-v1",
+        ("agent-v1.2", "E01-E24-v2",
          json.dumps(scores, ensure_ascii=False), passed == total))
     conn.commit()
 
