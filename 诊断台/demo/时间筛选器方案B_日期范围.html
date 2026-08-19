@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>时间筛选器方案 B · 日期范围</title>
+<style>
+  :root{--bg:#F8F9FC;--card:#FFFFFF;--ink:#1F2937;--sub:#94A3B8;--line:#E9EDF5;--blue:#3B9DFF;--blue-dark:#1E6FD9;}
+  *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;}
+  body{background:var(--bg);padding:60px;color:var(--ink);font-size:13px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;max-width:720px;margin:0 auto;}
+  h1{font-size:16px;margin-bottom:20px;}
+  .date-filter{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .date-filter input[type=date]{padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:12px;background:#fff;}
+  .sep{color:var(--sub);}
+  .preset{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+  .preset span{padding:6px 12px;border:1px solid var(--line);border-radius:16px;font-size:12px;color:var(--sub);cursor:pointer;}
+  .preset span.on{background:var(--blue);color:#fff;border-color:var(--blue);}
+  .hint{color:var(--sub);font-size:12px;margin-top:14px;}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>方案 B：起止日期范围</h1>
+  <div class="date-filter">
+    <input type="date" value="2026-08-04">
+    <span class="sep">至</span>
+    <input type="date" value="2026-08-17">
+  </div>
+  <div class="preset">
+    <span>今天</span><span>昨天</span><span class="on">近14天</span><span>近30天</span><span>本月</span><span>自定义</span>
+  </div>
+  <p class="hint">适合：需要精确对比任意两段日期；上半部分显示当前选中的起止范围，下半部分用快捷标签覆盖常见场景。</p>
+</div>
+</body>
+</html>

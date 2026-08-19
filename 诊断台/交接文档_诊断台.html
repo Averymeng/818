@@ -324,6 +324,20 @@ python3 eval/run_eval.py --static
     <li>若要对齐「方案 B（13 必过 + 容忍 2）」，在 <span class="mono">评测集设计稿_v2.md</span> 第 7 节和用户确认后落地。</li>
     <li>真实数据接入（用户曾问「能否实时更新」）——当前是仿真数据，接入真实数据源是后续大项，需单独评估。</li>
   </ul>
+
+  <h3>前端 Phase 3 待办（2026-08-19 由用户明确）</h3>
+  <div class="callout acc">
+    <strong>当前正在进行前端 Phase 3 设计与 demo 确认，以下待办按用户最新要求记录：</strong>
+  </div>
+  <ul class="tight">
+    <li><span class="pill p-warn">进行中</span> 前端设计确认：「当日监控」替代原「数据总览」；「客户详情」替代原「周度复盘」；侧边栏、顶部标题同步更名。</li>
+    <li><span class="pill p-warn">进行中</span> 客户详情页结构：卡片网格进入详情 → 详情区增加「近14天折线图」+「近14天每日数据列表」+ 截图要求的比率字段（CTR、按钮率、表单CVR、留资CVR、CPC）。</li>
+    <li><span class="pill p-warn">进行中</span> 筛选器统一为 5 个 tab：行业 / 赛道 / 品类 / 客户 / 状态；右上角日期改为时间筛选器（demo 多方案待用户选择）。</li>
+    <li><span class="pill p-acc">待搭建</span> 生成复盘报告按钮移至详情区右上角；同时支持站内弹层预览 + 独立 HTML 分享链接。</li>
+    <li><span class="pill p-bad">延后</span> <strong>分享报告的独立 HTML 后端真正落地</strong>：需要后端动态生成可分享的 HTML 文件并持久化到 <code>reports/</code>，属于较大工作项，用户明确「现在不做，以后再说」。记入待办，等后续排期。</li>
+    <li><span class="pill p-ok">已取消</span> 改参数重算（阈值滑块）、对比多周、各指标环比、多维归因、卡片状态口径——均不再做或延后到接入 LLM 后。</li>
+  </ul>
+  <p class="small">以上条目随 demo 确认 / 代码落地同步更新；其中「分享报告后端 HTML 生成」因难度较大明确延后，不在本轮实现。</p>
 </section>
 
 <!-- ========== 10 ========== -->
