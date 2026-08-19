@@ -96,16 +96,28 @@
       <div class="view" id="ingestView">
         <div class="card">
           <h3 style="font-size:14px;font-weight:800;margin-bottom:10px;">手动录入</h3>
-          <p class="ingest-note">按下方 JSON 结构录入客户（客户 + 计划 + 笔记 + 日度指标），提交后写入数据库，source='upload'，不会被每日模拟刷新覆盖。字段说明见 <code>data/sample_customer_upload.json</code>。</p>
-          <textarea class="ingest-area" id="ingJson" spellcheck="false" placeholder='{
-  "customer":  {"name": "客户名", "industry": "到综服务", "sector": "所属赛道", "categories": ["品类"], "optimize_target": "lead", "target_cost": 80},
-  "plans":     [{"key": 0, "name": "计划名", "category": "品类", "placement": "feed|search", "created_date": "2026-08-01", "status": "在投", "daily_budget": 500}],
-  "notes":     [{"key": 0, "plan_key": 0, "category": "品类", "title": "笔记标题", "material_form": "图文|视频", "created_date": "2026-08-01", "status": "在投"}],
-  "daily_metrics": [{"plan_key": 0, "note_key": 0, "category": "品类", "placement": "feed", "date": "2026-08-18", "spend": 480, "impressions": 12000, "note_clicks": 360, "button_clicks": 90, "open_msg": 12, "lead_cnt": 6}]
-}'></textarea>
+          <p class="ingest-note">填表式录入：下行空格内只填名称/数值，系统自动组装 JSON 写入数据库（source='upload'，不会被每日模拟刷新覆盖），提交成功后自动生成 LLM 诊断报告。灰色小字为填写示例。</p>
+          <div class="ing-form">
+            <div class="ing-row ing-head">
+              <div>日期</div><div>客户名</div><div>行业</div><div>赛道</div><div>品类</div>
+              <div>消耗¥</div><div>曝光</div><div>笔记点击</div><div>按钮点击</div><div>私信开口</div><div>留资数</div>
+            </div>
+            <div class="ing-row">
+              <input id="iDate" type="date">
+              <input id="iName"  placeholder="如：XX品牌_护肤">
+              <input id="iInd"   placeholder="如：到综服务">
+              <input id="iSec"   placeholder="如：美妆个护">
+              <input id="iCat"   placeholder="如：护肤">
+              <input id="iSpend" placeholder="如：480" inputmode="decimal">
+              <input id="iImp"   placeholder="如：12000" inputmode="numeric">
+              <input id="iNc"    placeholder="如：360" inputmode="numeric">
+              <input id="iBc"    placeholder="如：90" inputmode="numeric">
+              <input id="iOpen"  placeholder="如：12" inputmode="numeric">
+              <input id="iLead"  placeholder="如：6" inputmode="numeric">
+            </div>
+          </div>
           <div style="display:flex;gap:10px;">
-            <button style="background:var(--blue);color:#fff;border:none;padding:8px 18px;border-radius:8px;font-weight:700;cursor:pointer;" onclick="doIngest()">提交录入</button>
-            <button style="background:#fff;border:1px solid var(--line);padding:8px 18px;border-radius:8px;font-weight:700;cursor:pointer;" onclick="fillSample()">填充示例</button>
+            <button style="background:var(--blue);color:#fff;border:none;padding:8px 18px;border-radius:8px;font-weight:700;cursor:pointer;" onclick="doIngestForm()">提交录入并生成诊断</button>
           </div>
           <div class="ingest-res" id="ingRes"></div>
         </div>

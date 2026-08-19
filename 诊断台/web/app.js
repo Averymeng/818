@@ -528,36 +528,39 @@ function renderOverview(){
     +'</div>';
 }
 
-/* ---------------- 手动录入 ---------------- */
-const ING_SAMPLE={
-  "customer": {"name": "示例上传客户_美妆个护", "industry": "到综服务", "sector": "美妆个护", "categories": ["护肤"], "optimize_target": "lead", "target_cost": 80},
-  "plans": [
-    {"key": 0, "name": "信息流_护肤主推", "category": "护肤", "placement": "feed", "created_date": "2026-08-01", "status": "在投", "daily_budget": 500},
-    {"key": 1, "name": "搜索_护肤词包", "category": "护肤", "placement": "search", "created_date": "2026-08-05", "status": "在投", "daily_budget": 300}
-  ],
-  "notes": [
-    {"key": 0, "plan_key": 0, "category": "护肤", "title": "夏日护肤图文A", "material_form": "图文", "created_date": "2026-08-01", "status": "在投"},
-    {"key": 1, "plan_key": 1, "category": "护肤", "title": "护肤搜索视频B", "material_form": "视频", "created_date": "2026-08-05", "status": "在投"}
-  ],
-  "daily_metrics": [
-    {"plan_key": 0, "note_key": 0, "category": "护肤", "placement": "feed", "date": "2026-08-18", "spend": 480, "impressions": 12000, "note_clicks": 360, "button_clicks": 90, "open_msg": 12, "lead_cnt": 6},
-    {"plan_key": 1, "note_key": 1, "category": "护肤", "placement": "search", "date": "2026-08-18", "spend": 290, "impressions": 8000, "note_clicks": 240, "button_clicks": 70, "open_msg": 9, "lead_cnt": 5}
-  ]
-};
-function fillSample(){
-  document.getElementById('ingJson').value=JSON.stringify(ING_SAMPLE,null,2);
-}
-async function doIngest(){
-  const ta=document.getElementById('ingJson'), res=document.getElementById('ingRes');
+/* ---------------- 手动录入（填表式：上行指标名，下行只填值） ---------------- */
+async function doIngestForm(){
+  const res=document.getElementById('ingRes');
+  const g=id=>document.getElementById(id).value.trim();
+  const date=g('iDate'), name=g('iName'), ind=g('iInd')||'到综服务', sec=g('iSec')||ind, cat=g('iCat')||'通用';
+  const num=(id)=>{const v=parseFloat(g(id));return isNaN(v)?0:v;};
+  const spend=num('iSpend'), imp=num('iImp'), nc=num('iNc'), bc=num('iBc'), open=num('iOpen'), lead=num('iLead');
+  if(!date){ res.style.display='block'; res.textContent='请填写日期'; return; }
+  if(!name){ res.style.display='block'; res.textContent='请填写客户名'; return; }
+  if(!spend&&!imp&&!nc&&!lead){ res.style.display='block'; res.textContent='至少填写一项指标数值'; return; }
+  const payload={
+    customer:{name:name, industry:ind, sector:sec, categories:[cat], optimize_target:'lead', target_cost:80},
+    plans:[{key:0, name:'录入计划_'+cat, category:cat, placement:'feed', created_date:date, status:'在投', daily_budget:Math.max(1,Math.round(spend))}],
+    notes:[{key:0, plan_key:0, category:cat, title:'录入笔记_'+cat, material_form:'图文', created_date:date, status:'在投'}],
+    daily_metrics:[{plan_key:0, note_key:0, category:cat, placement:'feed', date:date,
+      spend:spend, impressions:imp, note_clicks:nc, button_clicks:bc, open_msg:open, lead_cnt:lead}]
+  };
   res.style.display='block'; res.textContent='提交中…';
   try{
     const out=await fetch('/api/ingest',{
-      method:'POST', headers:{'Content-Type':'application/json'}, body:ta.value
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
     }).then(r=>r.json());
-    res.textContent=JSON.stringify(out,null,2);
-    if(!out.error){
-      boot();  // 重新拉数据，让新客户出现在列表
-    }
+    if(out.error){ res.textContent='录入失败：'+out.error; return; }
+    res.textContent='录入成功：'+JSON.stringify(out)+'\n正在生成 LLM 诊断报告…';
+    await boot();                                   // 新客户出现在首页/列表
+    // 把时间窗口切到录入日，并定位到新客户
+    document.getElementById('fDate').value=date;
+    document.getElementById('fRange').value='今日';
+    await onTimeChange();
+    const i=CUSTOMERS.findIndex(c=>c.name===name);
+    if(i>=0){ curIdx=i; openDetail(i); }
+    await generateReport();                          // 自动 LLM 诊断
+    res.textContent='录入成功：'+JSON.stringify(out)+'\n诊断报告已生成（见弹层）。';
   }catch(e){
     res.textContent='请求失败：'+(e.message||e);
   }
@@ -572,6 +575,7 @@ async function boot(){
   DAILY=daily.customers||{};
   META.maxd=daily.maxd||'';
   document.getElementById('fDate').value=META.maxd;
+  const iDate=document.getElementById('iDate'); if(iDate&&!iDate.value) iDate.value=META.maxd;
   CUSTOMERS=(custs||[]).map(c=>({
     id:c.id, name:c.name, ind:c.industry, sector:c.sector, cats:c.categories,
     st:'正常', spend:0, delta:0, imp:0, click:0, open:0, lead:0, cpl:0, cplPrev:0, cplRise:0, series:[]
