@@ -56,7 +56,8 @@ global.fetch=(u,o)=>realFetch('http://127.0.0.1:8000'+u,o);
   await new Promise(r=>setTimeout(r,1500));
   const attrEls=Object.keys(els).filter(k=>/^attr-\d+$/.test(k));
   const attrPatched=attrEls.filter(k=>els[k].textContent.includes('消耗环比')).length;
-  console.log('attribution:', {items: attrEls.length, patchedWithReason: attrPatched});
+  const attrReal=attrEls.filter(k=>/未见显著异常|基建|转化下滑|成本/.test(els[k].textContent)).length;
+  console.log('attribution:', {items: attrEls.length, patchedWithReason: attrPatched, realBackendReason: attrReal});
   console.log('overview modules:', {
     kpi: ov.includes('总消耗')&&ov.includes('留资数')&&ov.includes('留资成本'),
     trend: ov.includes('polyline'),

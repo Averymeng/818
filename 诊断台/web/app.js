@@ -228,6 +228,9 @@ function openDetail(i){
 }
 
 /* ---------------- 重点变化归因（后端确定性归因，无 LLM） ---------------- */
+function attribFallback(c){
+  return '日均消耗 ¥'+fmt(c.spend)+'（环比 '+(c.delta>=0?'+':'')+c.delta+'%）· 留资 '+c.lead+'/天 · 留资成本 ¥'+Math.round(c.cpl)+'（环比 '+(c.cplRise>=0?'+':'')+c.cplRise+'%）';
+}
 async function loadAttrib(list, token){
   const ids=[...new Set(list.map(c=>c.id).filter(x=>x))];
   if(!ids.length) return;
@@ -237,13 +240,21 @@ async function loadAttrib(list, token){
       method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify({ids:ids, cur_start:WIN.start, cur_end:WIN.end, cmp_start:pw.start, cmp_end:pw.end})
     }).then(r=>r.json());
-    if(token!==ATTR_TOKEN || !res || res.error || !res.reasons) return;
+    if(token!==ATTR_TOKEN || !res || !res.reasons) return;
     for(const c of list){
       const el=document.getElementById('attr-'+c.id);
+      if(!el) continue;
       const t=res.reasons[String(c.id)];
-      if(el && t) el.textContent=t;
+      if(t) el.textContent=t;
+      else if(res.error) el.textContent='归因失败：'+res.error;
     }
-  }catch(e){ /* 归因失败保留占位文案 */ }
+  }catch(e){
+    console.error('归因请求失败:', e);
+    for(const c of list){
+      const el=document.getElementById('attr-'+c.id);
+      if(el && el.textContent==='归因计算中…') el.textContent=attribFallback(c);
+    }
+  }
 }
 
 /* ---------------- 报告生成（真实 LLM） ---------------- */
@@ -478,7 +489,7 @@ function renderOverview(){
   const topDrop=[...CS].sort((a,b)=>a.delta-b.delta).slice(0,5);
   const topRise=[...CS].sort((a,b)=>b.delta-a.delta).slice(0,5);
   function attribHTML(c){
-    return '<div class="ov-attrib-item'+(c.delta>=0?' up':'')+'"><div class="t">'+esc(c.name)+' <span style="color:var(--sub);font-weight:700">'+esc(c.ind)+'</span></div><div class="d" id="attr-'+c.id+'">归因计算中…</div></div>';
+    return '<div class="ov-attrib-item'+(c.delta>=0?' up':'')+'"><div class="t">'+esc(c.name)+' <span style="color:var(--sub);font-weight:700">'+esc(c.ind)+'</span></div><div class="d" id="attr-'+c.id+'">'+esc(attribFallback(c))+'</div></div>';
   }
   ATTR_TOKEN++;
   loadAttrib([...topDrop,...topRise], ATTR_TOKEN);
