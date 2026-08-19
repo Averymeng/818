@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>诊断台 · 整体项目进度 Plan</title>
+<style>
+  :root{
+    --bg:#0f1115; --card:#171a21; --card2:#1d212b; --line:#2a2f3a;
+    --txt:#e6e9ef; --sub:#9aa3b2; --acc:#4f8cff; --ok:#3ecf8e; --warn:#f5a623; --bad:#ff5d5d;
+    --pill-ok:#16351f; --pill-warn:#3a2f10; --pill-bad:#3a1717; --pill-acc:#15294a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,"PingFang SC","Microsoft YaHei",Segoe UI,Roboto,sans-serif;line-height:1.65;font-size:15px}
+  .wrap{max-width:960px;margin:0 auto;padding:32px 22px 60px}
+  h1{font-size:26px;margin:0 0 4px;letter-spacing:.5px}
+  h2{font-size:19px;margin:34px 0 12px;padding-left:10px;border-left:4px solid var(--acc)}
+  h3{font-size:16px;margin:20px 0 8px;color:#cfe0ff}
+  .sub{color:var(--sub);font-size:13px;margin:0 0 18px}
+  p{margin:8px 0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:14px 0}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:14px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--sub);font-weight:600;background:var(--card2)}
+  tr:last-child td{border-bottom:none}
+  .pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+  .p-ok{background:var(--pill-ok);color:var(--ok)}
+  .p-warn{background:var(--pill-warn);color:var(--warn)}
+  .p-bad{background:var(--pill-bad);color:var(--bad)}
+  .p-acc{background:var(--pill-acc);color:#8fb8ff}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;background:var(--card2);padding:1px 6px;border-radius:5px;color:#bcd}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;background:var(--card2);padding:1px 6px;border-radius:5px;color:#bcd}
+  .tight{margin:6px 0;padding-left:20px}
+  .tight li{margin:5px 0}
+  .callout{border-radius:10px;padding:14px 16px;margin:14px 0;border:1px solid var(--line)}
+  .acc{background:#111c2e;border-color:#1d3a5c}
+  .warn{background:#241c0c;border-color:#4a3a14}
+  .ok{background:#0f2318;border-color:#1c3f2b}
+  .step{display:flex;gap:14px;align-items:flex-start;padding:12px 0;border-bottom:1px dashed var(--line)}
+  .step:last-child{border-bottom:none}
+  .num{flex:0 0 34px;height:34px;border-radius:50%;background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
+  .num.done{background:var(--ok)}
+  .num.part{background:var(--warn)}
+  .num.todo{background:#3a4150;color:#cfd6e2}
+  .step .body{flex:1}
+  .step .body b{color:#fff}
+  .tag{font-size:12px;color:var(--sub);margin-left:6px}
+  ul.tight2{margin:6px 0;padding-left:18px}
+  ul.tight2 li{margin:4px 0}
+  .foot{color:var(--sub);font-size:12px;margin-top:30px;text-align:center}
+  a{color:var(--acc)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>诊断台 · 整体项目进度 Plan</h1>
+  <p class="sub">小红书投流周报智能体（GitHub: Averymeng/818 · 分支 main）｜ 最后更新：2026-08-19 ｜ 文档状态：规划稿</p>
+
+  <div class="callout acc">
+    <strong>一句话定位：</strong>输入客户一周投放数据，输出八章节诊断周报（整体结论 / Top3 异动 / 拆解 / 案例 / 建议 / 行动 / 观察清单 / 数据质量）。当前已完成「智能体能出报告 + 质量有自动评测保障」这一核心闭环，下一阶段是把案例库、真实数据、前端补齐，走向可上线产品。
+  </div>
+
+  <h2>一、你刚问的三个问题（先直接答）</h2>
+
+  <h3>1. badcase 什么时候做？是现在评测的 badcase，还是上线后积累的？</h3>
+  <p><b>两头都有，但性质不同，归宿都是「案例库」。</b></p>
+  <ul class="tight2">
+    <li><b>评测期 badcase（已做且闭环）：</b>我们靠评测 + 你的逐份人工审，已经挖出 <span class="pill p-acc">3 个智能体缺陷</span>——①周值/日值混淆 ②建议依据数字不可核验 ③观察清单漏项（码上 feed 超目标没进清单）。另外 judge 校准期还有若干评分分歧。这些就是<b>第一批 badcase</b>，已经通过 system prompt 第 7 节红线修掉，相当于「已知缺陷已清除」。</li>
+    <li><b>上线后 badcase（待积累）：</b>真实用户使用踩的坑，会持续进「案例库」（<span class="mono">diag_case</span> 表），再反哺评测和 prompt。这是长期滚动的部分。</li>
+    <li><b>结论：</b>badcase 不是「以后才做」——评测发现的缺陷就是现在的 badcase，且已修。正式案例库在 Phase 1 把这批评测缺陷<b>固化为种子案例</b>，上线后继续长。</li>
+  </ul>
+
+  <h3>2. system prompt 有没有迭代？怎么迭代的？</h3>
+  <p><b>迭代过，而且完全是被评测/人工审驱动的，不是凭空改文案。</b>git 历史能看到清晰的 4 步：</p>
+  <table>
+    <tr><th>提交</th><th>版本</th><th>做了什么</th></tr>
+    <tr><td><span class="mono">a2133e7</span></td><td>v1 初版</td><td>14 工具 + 10 节点编排 + 初版 prompt（dry-run 验证）</td></tr>
+    <tr><td><span class="mono">82f93a0</span></td><td>v1.1</td><td>§3.5 内联 8 条指标映射规则 + §7 钉死扁平输出结构</td></tr>
+    <tr><td><span class="mono">14c7c0d</span></td><td>旧账修复</td><td>案例章节透出、止损线数字、素材归因标注</td></tr>
+    <tr><td><span class="mono">7296e82</span></td><td>v2 红线</td><td>第 7 节加「周值/日值」「命名一致」「口径标签」「因果推断标注」「持平措辞」等硬红线</td></tr>
+  </table>
+  <p><b>迭代方法（核心经验）：</b>每发现一个真实翻车案例 → 把它转化成第 7 节<b>一条显式红线</b>（硬性约束）。因为 LLM 只能靠系统提示里的明红线约束，靠「语气/建议」没用。所以第 7 节是<a href="诊断台/agent/system_prompt.md">system_prompt.md</a> 里唯一「只能加、不能删」的区——它是反复试错沉淀的护栏。</p>
+
+  <h3>3. 真实数据接入 / 定时模拟 —— 现状是什么？</h3>
+  <p>你没记错，我之前确实提过「可以用定时任务模拟实时更新」。但<b>现状是还没落地</b>：</p>
+  <ul class="tight2">
+    <li><b>当前数据：</b>智能体读 <span class="mono">data/ad_review.db</span>（sqlite），数据是 <span class="mono">eval/seed_cases.py</span> 灌的<b>仿真数据</b>。grep 确认仓库里<b>没有任何 scheduler / 定时代码</b>。</li>
+    <li><b>模拟实时（过渡方案）：</b>加一个定时任务（系统 cron 或 Python APScheduler），周期性重灌/拉取数据，让 DB 看起来「在更新」。这块代码还没写。</li>
+    <li><b>真数据源：</b>把 seed 换成真实投放后台的 API/导出即可。接口已经留好——orchestrator 里 <span class="mono">ReviewOrchestrator("data/ad_review.db")</span> 这一层把数据源抽象成了 DB，换源不伤智能体主体。</li>
+    <li><b>所以「定时模拟」是真实接入之前的演示过渡</b>：先让产品跑起来、展示「数据在更新」的效果，再接真 API。</li>
+  </ul>
+
+  <h2>二、整体进度总览（组件状态表）</h2>
+  <table>
+    <tr><th>组件</th><th>状态</th><th>说明</th></tr>
+    <tr><td>智能体核心<br><span class="sub">14 工具 + 10 节点 + system prompt</span></td><td><span class="pill p-ok">已完成</span></td><td>git 起 a2133e7，经 v1.1→旧账修复→v2 红线 4 步沉淀</td></tr>
+    <tr><td>数据层<br><span class="sub">sqlite ad_review.db + seed_cases</span></td><td><span class="pill p-ok">已完成（仿真）</span></td><td>数据源已抽象成表，换真数据不伤主体</td></tr>
+    <tr><td>三层评测体系<br><span class="sub">硬断言 + judge + 24 case</span></td><td><span class="pill p-ok">已完成</span></td><td>硬断言 126/126（含 E24 横切 75 条）；judge 13 份无中位分&lt;2</td></tr>
+    <tr><td>CI 自动回归<br><span class="sub">ci_check.py + GitHub Actions</span></td><td><span class="pill p-ok">已完成</span></td><td>替代原 A/B 手动门槛；push/PR 跑静态回归，每周一定时全量真跑</td></tr>
+    <tr><td>案例库种子 + RAG<br><span class="sub">search_cases 工具</span></td><td><span class="pill p-warn">部分</span></td><td><span class="mono">diag_case</span> 表 + seed 已建；<b>语义检索工具未建</b></td></tr>
+    <tr><td>真实数据接入<br><span class="sub">定时模拟 / 真 API</span></td><td><span class="pill p-bad">未开始</span></td><td>无 scheduler 代码；架构已留接口层</td></tr>
+    <tr><td>前端页面</td><td><span class="pill p-bad">未开始</span></td><td>无 frontend 目录；最后做</td></tr>
+    <tr><td>badcase 积累闭环</td><td><span class="pill p-warn">机制待建</span></td><td>评测期 3 缺陷已修；正式案例库待 Phase 1</td></tr>
+  </table>
+
+  <h2>三、阶段路线图（Phase 0 ~ 4）</h2>
+
+  <div class="step"><div class="num done">0</div><div class="body">
+    <b>基础闭环</b><span class="tag">已完成</span>
+    <p>智能体核心 + 数据层 + 三层评测 + CI。等于「能出报告，且质量有自动保障」。</p>
+  </div></div>
+
+  <div class="step"><div class="num part">1</div><div class="body">
+    <b>案例库种子 + RAG（search_cases）</b><span class="tag">下一步建议先做</span>
+    <p>把评测期发现的 3 个智能体缺陷固化为种子案例；建语义检索工具，让智能体写报告时能引用历史相似案例（你提到的「案例库种子 + RAG」）。价值：报告从「套规则」走向「有经验」。</p>
+  </div></div>
+
+  <div class="step"><div class="num todo">2</div><div class="body">
+    <b>真实数据接入</b><span class="tag">未开始</span>
+    <p>先定时模拟（scheduler 周期重灌/拉取，演示「数据在更新」），再接真实投放 API。接口层已留好，主要工作是写 scheduler + 适配真数据字段。</p>
+  </div></div>
+
+  <div class="step"><div class="num todo">3</div><div class="body">
+    <b>前端页面</b><span class="tag">未开始 · 最后做</span>
+    <p>周报可视化展示 + 交互。放最后是因为后端稳了再做界面性价比最高，避免反复改。</p>
+  </div></div>
+
+  <div class="step"><div class="num todo">4</div><div class="body">
+    <b>上线 + badcase 闭环</b><span class="tag">未开始</span>
+    <p>真实用户踩坑进案例库 → 反哺评测与 system prompt，形成「用得越多越准」的飞轮。这是长期运营阶段。</p>
+  </div></div>
+
+  <h2>四、建议的下一步顺序</h2>
+  <div class="card">
+    <ol class="tight">
+      <li><b>Phase 1：案例库 + RAG（search_cases）</b>——成本最低、直接提升报告质量，且把已有评测成果固化下来。</li>
+      <li><b>Phase 2：真实数据定时模拟</b>——先让数据「活」起来做演示，再谈真 API 对接（真 API 涉及账号/权限，需你提供数据源）。</li>
+      <li><b>Phase 3：前端页面</b>——有了稳定后端再上界面。</li>
+      <li><b>Phase 4：上线与 badcase 闭环</b>——进入运营期。</li>
+    </ol>
+  </div>
+
+  <h2>五、风险 / 待你确认</h2>
+  <div class="callout warn">
+    <ul class="tight2">
+      <li><b>真实数据源未定：</b>Phase 2 的真 API 需要你提供投放后台的数据出口（导出/接口），否则只能停留在「仿真 + 定时模拟」。</li>
+      <li><b>RAG 是否必要：</b>当前案例量很小（评测 24 条 + 缺陷 3 条），先用简单 SQL 匹配即可，上向量检索可等案例量起来再做——这条可按你判断取舍。</li>
+      <li><b>前端范围：</b>是纯展示周报，还是要交互（改参数重算、对比多周）？范围影响工期，需你定。</li>
+    </ul>
+  </div>
+
+  <p class="foot">本 Plan 随项目推进更新；当前评测报告见 <a href="诊断台/eval/eval_report_v2.md">eval_report_v2.md</a>，评测设计见 <a href="诊断台/eval/评测集设计稿_v2.md">评测集设计稿_v2.md</a>。</p>
+
+</div>
+</body>
+</html>
