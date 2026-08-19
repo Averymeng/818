@@ -651,7 +651,7 @@ function renderOverview(){
       +'<select id="ovFCat"><option>全部品类</option></select>'
       +'<select id="ovFCust"><option>全部客户</option></select>'
       +'<select id="ovFSt"><option>全部状态</option></select>'
-      +'<button onclick="void(0)">应用</button>'
+      +'<button onclick="void(0)">应用筛选</button>'
     +'</div></div>'
     +'</div>'
 
@@ -667,7 +667,7 @@ function renderOverview(){
         +'</div>'
       +'</div>'
       +'<div class="card ov-progress">'
-        +'<div class="tabs"><span class="tab on">销售业绩</span><span class="tab">消耗维度</span></div>'
+        +'<div class="tabs"><span class="tab on">销售业绩</span></div>'
         +'<div class="big">¥'+fmt(sales)+'</div>'
         +'<div class="meta">月目标 <b>¥'+fmt(MONTH_TARGET)+'</b></div>'
         +'<div class="bar"><div class="fill" style="width:'+pctDone+'%"></div></div>'
@@ -675,18 +675,17 @@ function renderOverview(){
       +'</div>'
     +'</div>'
 
-    /* === 模块 3: 过程数据 + 基础数据 === */
+    /* === 模块 3: 过程数据 + 基建情况 === */
     +'<div class="ov-row2b">'
       +'<div class="card"><div class="t" style="font-size:12px;color:var(--sub);font-weight:800;margin-bottom:12px;">过程数据</div>'
         +'<div class="ov-mini-grid">'
           +'<div class="ov-mini-card"><div class="lab">CTR</div><div class="v">'+CTR.toFixed(1)+'%</div>'+ptDelta(+(CTR-CTRprev).toFixed(2))+'</div>'
           +'<div class="ov-mini-card"><div class="lab">按钮率</div><div class="v">'+BR.toFixed(1)+'%</div>'+ptDelta(+(BR-BRprev).toFixed(2))+'</div>'
-          +'<div class="ov-mini-card"><div class="lab">表单CVR</div><div class="v">'+FCVR.toFixed(2)+'%</div><span class="delta flat">—</span></div>'
           +'<div class="ov-mini-card"><div class="lab">留资CVR</div><div class="v">'+LCVR.toFixed(2)+'%</div>'+ptDelta(+(LCVR-LCVRprev).toFixed(2))+'</div>'
           +'<div class="ov-mini-card"><div class="lab">CPC</div><div class="v">¥'+CPC.toFixed(2)+'</div>'+deltaBadge(pctDelta(CPC,CPCprev),true)+'</div>'
         +'</div>'
       +'</div>'
-      +'<div class="card"><div class="t" style="font-size:12px;color:var(--sub);font-weight:800;margin-bottom:12px;">基础数据</div>'
+      +'<div class="card"><div class="t" style="font-size:12px;color:var(--sub);font-weight:800;margin-bottom:12px;">基建情况</div>'
         +'<div class="ov-mini-grid">'
           +'<div class="ov-mini-card"><div class="lab">在投笔记</div><div class="v">'+BASE_DATA.in_notes+'</div>'+deltaBadge(inNoteDelta,false)+'</div>'
           +'<div class="ov-mini-card"><div class="lab">新投笔记</div><div class="v">'+BASE_DATA.new_notes+'</div>'+deltaBadge(newNoteDelta,false)+'</div>'
