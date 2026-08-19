@@ -75,7 +75,7 @@ global.fetch=(u,o)=>realFetch('http://127.0.0.1:8000'+u,o);
   });
   console.log('WIN:', T.WIN);
   // 应用筛选：选一个行业 → KPI 应变小、监控表只剩该行业
-  const kpiSpend=html=>{const m=html.match(/总消耗<\/div><div class="v">¥([\d,]+)/);return m?m[1]:'?';};
+  const kpiSpend=html=>{const m=html.match(/总消耗<\/div><div class="main"><span class="v">¥([\d,]+)/);return m?m[1]:'?';};
   const before=kpiSpend(document.getElementById('overviewView').innerHTML);
   const pickInd=T.CUSTOMERS[0].ind;
   const nInd=T.CUSTOMERS.filter(c=>c.ind===pickInd).length;

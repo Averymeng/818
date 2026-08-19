@@ -512,9 +512,9 @@ function renderOverview(){
   document.getElementById('overviewView').innerHTML=
     /* 模块 1: 顶部 KPI + 筛选器 */
     '<div class="ov-top-kpis">'
-    +'<div class="card ov-kpi-b"><div class="lab">总消耗</div><div class="v">¥'+fmt(sales)+'</div>'+deltaBadge(totalSpendDelta,false)+'</div>'
-    +'<div class="card ov-kpi-b"><div class="lab">留资数</div><div class="v">'+fmt(cur.lead)+'</div>'+deltaBadge(totalLeadDelta,false)+'</div>'
-    +'<div class="card ov-kpi-b"><div class="lab">留资成本</div><div class="v">¥'+Math.round(CPL)+'</div>'+deltaBadge(CPLdelta,true)+'</div>'
+    +'<div class="card ov-kpi-c k-spend"><div class="ico">💰</div><div class="body"><div class="lab">总消耗</div><div class="main"><span class="v">¥'+fmt(sales)+'</span>'+deltaBadge(totalSpendDelta,false)+'</div></div></div>'
+    +'<div class="card ov-kpi-c k-lead"><div class="ico">🎯</div><div class="body"><div class="lab">留资数</div><div class="main"><span class="v">'+fmt(cur.lead)+'</span>'+deltaBadge(totalLeadDelta,false)+'</div></div></div>'
+    +'<div class="card ov-kpi-c k-cpl"><div class="ico">📉</div><div class="body"><div class="lab">留资成本</div><div class="main"><span class="v">¥'+Math.round(CPL)+'</span>'+deltaBadge(CPLdelta,true)+'</div></div></div>'
     +'<div class="card ov-filter-card"><div class="filt-title">筛选器</div><div class="filter-bar">'
       +'<select id="ovFInd">'+ovOpts(ovInds,'全部行业',ovKeep.ind)+'</select>'
       +'<select id="ovFSec">'+ovOpts(ovSecs,'全部赛道',ovKeep.sec)+'</select>'
