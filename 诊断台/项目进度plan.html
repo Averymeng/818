@@ -99,11 +99,11 @@
     <tr><td>数据层<br><span class="sub">sqlite ad_review.db + seed_cases</span></td><td><span class="pill p-ok">已完成（仿真）</span></td><td>数据源已抽象成表，换真数据不伤主体</td></tr>
     <tr><td>三层评测体系<br><span class="sub">硬断言 + judge + 24 case</span></td><td><span class="pill p-ok">已完成</span></td><td>硬断言 126/126（含 E24 横切 75 条）；judge 13 份无中位分&lt;2</td></tr>
     <tr><td>CI 自动回归<br><span class="sub">ci_check.py + GitHub Actions</span></td><td><span class="pill p-ok">已完成</span></td><td>替代原 A/B 手动门槛；push/PR 跑静态回归，每周一定时全量真跑</td></tr>
-    <tr><td>参考案例库 + RAG<br><span class="sub">diag_case + search_cases</span></td><td><span class="pill p-warn">部分</span></td><td><span class="mono">diag_case</span> 表(参考案例,referenceable=1) + seed 已建；<b>语义检索工具 search_cases 未建</b></td></tr>
-    <tr><td>badcase 库（独立）<br><span class="sub">diag_badcase 缺陷追踪</span></td><td><span class="pill p-bad">未开始</span></td><td>现状 badcase 仅以 <span class="mono">diag_case.referenceable=0</span> 混在同表；用户要求<b>物理独立</b>→新建 <span class="mono">diag_badcase</span>（错误输出/根因/红线修复/关联评测用例/状态）；评测期 3 缺陷首批入库</td></tr>
-    <tr><td>数据层：定时刷新 + 手动录入<br><span class="sub">全模拟 + 客户录入（字段不变）</span></td><td><span class="pill p-bad">未开始</span></td><td>数据 seed_cases.py 自生成；无 scheduler 代码；需加 ①每天8点定时重灌 ②客户经「前端小入口」或「直改绑定本地表」录入（字段不变、只增行），后端入参函数本阶段做，UI 归 Phase 3</td></tr>
+    <tr><td>参考案例库 + RAG<br><span class="sub">diag_case + search_cases</span></td><td><span class="pill p-ok">已完成</span></td><td><span class="mono">diag_case</span> 表(纯参考案例,referenceable=1) 纯化+seed 完成；语义检索工具 <span class="mono">search_cases</span> 已实现（按行业/赛道/品类/signature 召回，自动过滤 badcase）</td></tr>
+    <tr><td>badcase 库（独立）<br><span class="sub">diag_badcase 缺陷追踪</span></td><td><span class="pill p-ok">已完成</span></td><td>用户要求物理独立→新建 <span class="mono">diag_badcase</span> 表（错误输出/根因/红线修复/关联评测用例/状态）；<span class="mono">data/seed_badcase.py</span> 已将评测期 3 缺陷首批入库；<span class="mono">seed_cases.py</span> 同步把 diag_case 净化为纯参考案例</td></tr>
+    <tr><td>数据层：定时刷新 + 手动录入<br><span class="sub">全模拟 + 客户录入（字段不变）</span></td><td><span class="pill p-part">部分</span></td><td><b>手动录入后端已完成</b>（<span class="mono">data/ingest.py</span>：JSON/CSV 录入，daily_metric 标 source='upload'，字段不变只增行）；<b>每天8点定时重灌未开始</b>（无 scheduler 代码）；录入入口 UI 归 Phase 3</td></tr>
     <tr><td>前端页面</td><td><span class="pill p-bad">未开始</span></td><td>无 frontend 目录；最后做</td></tr>
-    <tr><td>badcase 积累闭环</td><td><span class="pill p-warn">机制待建</span></td><td>评测期 3 缺陷已修；正式案例库待 Phase 1</td></tr>
+    <tr><td>badcase 积累闭环</td><td><span class="pill p-ok">已完成（库+首批）</span></td><td>diag_badcase 库已建，评测期 3 缺陷首批入库；上线后持续累积待 Phase 4</td></tr>
   </table>
 
   <h2>三、阶段路线图（Phase 0 ~ 4）</h2>
@@ -113,14 +113,14 @@
     <p>智能体核心 + 数据层 + 三层评测 + CI。等于「能出报告，且质量有自动保障」。</p>
   </div></div>
 
-  <div class="step"><div class="num part">1</div><div class="body">
-    <b>案例库 + RAG + 独立 badcase 库</b><span class="tag">下一步建议先做</span>
-    <p>两块：<b>①参考案例库（RAG 源）</b>= 现有 <span class="mono">diag_case</span> 表（只放 referenceable=1 的可引用好案例），补建语义检索工具 <span class="mono">search_cases</span>，让智能体写报告时引用历史相似案例，报告从「套规则」走向「有经验」。<b>②badcase 库（独立）</b>= 新建 <span class="mono">diag_badcase</span> 表，与参考案例库<b>物理分离</b>：每条 = 错误输出 + 根因 + 对应红线修复 + 关联评测用例 + 状态(开/已修/回归)。评测期挖出的 <span class="pill p-acc">3 个智能体缺陷</span>作为首批入库（不再塞进 diag_case）。价值：badcase 库驱动 prompt 迭代与评测回归，形成「踩坑→修→防复发」飞轮。</p>
+  <div class="step"><div class="num done">1</div><div class="body">
+    <b>案例库 + RAG + 独立 badcase 库</b><span class="tag">已完成</span>
+    <p>两块：<b>①参考案例库（RAG 源）</b>= <span class="mono">diag_case</span> 表（纯 referenceable=1 可引用好案例，已 seed）；语义检索工具 <span class="mono">search_cases</span> 已实现（按行业/赛道/品类/signature 召回，自动过滤 badcase）。<b>②badcase 库（独立）</b>= 新建 <span class="mono">diag_badcase</span> 表，与参考案例库<b>物理分离</b>：每条 = 错误输出 + 根因 + 对应红线修复 + 关联评测用例 + 状态。评测期 <span class="pill p-acc">3 个智能体缺陷</span>经 <span class="mono">data/seed_badcase.py</span> 首批入库。价值：badcase 库驱动 prompt 迭代与评测回归，形成「踩坑→修→防复发」飞轮。</p>
   </div></div>
 
-  <div class="step"><div class="num todo">2</div><div class="body">
-    <b>数据层：定时刷新 + 手动录入</b><span class="tag">未开始 · 全模拟 + 用户自灌</span>
-    <p>两部分：<b>①自动端</b>——数据由 <span class="mono">seed_cases.py</span> 自己造（无外部真数据源），加定时器（cron / APScheduler）<b>每天 8 点周期重灌</b>，演示「数据在更新」，无需任何账号。<br><b>②手动端（真体感来源）</b>——客户在<b>前端页面小入口</b>或<b>直接编辑与前端绑定的本地数据表</b>添加数据；<b>字段不变</b>（沿用现有 customer/daily_metric/plan/note 等表结构，只增数据行，不动态建表）。后端录入函数放本阶段，入口 UI 归 Phase 3 前端。报告生成不区分来源（加 <span class="mono">data_source</span> 字段区分 mock/用户）。这是把「只能看 demo」升级成「能自用」的关键。</p>
+  <div class="step"><div class="num part">2</div><div class="body">
+    <b>数据层：定时刷新 + 手动录入</b><span class="tag">部分 · 手动录入后端已完成</span>
+    <p>两部分：<b>①自动端（未开始）</b>——数据由 <span class="mono">seed_cases.py</span> 自己造（无外部真数据源），加定时器（cron / APScheduler）<b>每天 8 点周期重灌</b>，演示「数据在更新」，无需任何账号。<br><b>②手动端（后端已完成）</b>——<span class="mono">data/ingest.py</span> 已实现：客户在<b>前端页面小入口</b>或<b>直接编辑与前端绑定的本地数据表</b>添加数据；<b>字段不变</b>（沿用现有 customer/daily_metric/plan/note 等表结构，只增数据行，不动态建表），daily_metric 写入标 <span class="mono">source='upload'</span>。入口 UI 归 Phase 3 前端。报告生成不区分来源。这是把「只能看 demo」升级成「能自用」的关键。</p>
   </div></div>
 
   <div class="step"><div class="num todo">3</div><div class="body">
@@ -136,10 +136,10 @@
   <h2>四、建议的下一步顺序</h2>
   <div class="card">
     <ol class="tight">
-      <li><b>Phase 1：参考案例库 + RAG + 独立 badcase 库</b>——成本最低、直接提升报告质量，且把评测成果（3 缺陷→badcase 库首批）固化下来。</li>
-      <li><b>Phase 2：数据层——8点定时刷新 + 用户手动录入</b>——自动演示「数据在更新」+ 用户粘贴/新增表自灌真实数据，才有真体感（全模拟，无需外部源）。</li>
-      <li><b>Phase 3：前端页面</b>——有了稳定后端再上界面。</li>
-      <li><b>Phase 4：上线与 badcase 闭环</b>——进入运营期。</li>
+      <li><b>Phase 1：参考案例库 + RAG + 独立 badcase 库</b>——<span class="pill p-ok">已完成</span>。search_cases 已实现并自动过滤 badcase；diag_badcase 独立建表 + 3 缺陷入库；diag_case 净化为纯参考。</li>
+      <li><b>Phase 2：数据层——手动录入后端已完成；剩「每天8点定时重灌」未做</b>——自动端待加 scheduler。</li>
+      <li><b>Phase 3：前端页面</b>——含手动录入小入口 UI；有了稳定后端再上界面。</li>
+      <li><b>Phase 4：上线与 badcase 闭环</b>——进入运营期，真实踩坑持续进 diag_badcase。</li>
     </ol>
   </div>
 

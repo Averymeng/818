@@ -232,6 +232,23 @@ CREATE TABLE IF NOT EXISTS case_ref_log (
     adopted          INTEGER
 );
 
+-- ---------- Badcase 缺陷库（与参考案例库 diag_case 物理分离） ----------
+-- 用途：沉淀「踩坑→根因→修复」闭环，驱动 system_prompt 红线迭代与评测回归；
+--       不进入 search_cases 检索范围（参考案例库 diag_case 才是 RAG 源）。
+CREATE TABLE IF NOT EXISTS diag_badcase (
+    id                 INTEGER PRIMARY KEY,
+    source_report_id   INTEGER REFERENCES report(id),
+    customer_id        INTEGER REFERENCES customer(id),
+    title              TEXT NOT NULL,                 -- 一句话缺陷描述
+    category           TEXT,                          -- 周值日值混淆/依据不可核验/观察清单漏项...
+    error_output       TEXT,                          -- 错误输出 / 现象
+    root_cause         TEXT,                          -- 根因
+    red_line_fix       TEXT,                          -- 对应 system_prompt 红线 / 代码修复
+    eval_case          TEXT,                          -- 关联评测用例（如 E24e）
+    status             TEXT NOT NULL DEFAULT 'fixed', -- open / fixed / regressed
+    created_at         TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
 CREATE TABLE IF NOT EXISTS eval_case (
     id          INTEGER PRIMARY KEY,
     name        TEXT NOT NULL,

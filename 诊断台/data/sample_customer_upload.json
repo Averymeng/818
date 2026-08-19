@@ -1,0 +1,22 @@
+{
+  "customer": {
+    "name": "示例上传客户_美妆个护",
+    "industry": "到综服务",
+    "sector": "美妆个护",
+    "categories": ["护肤"],
+    "optimize_target": "lead",
+    "target_cost": 80
+  },
+  "plans": [
+    {"key": 0, "name": "信息流_护肤主推", "category": "护肤", "placement": "feed", "created_date": "2026-08-01", "status": "在投", "daily_budget": 500},
+    {"key": 1, "name": "搜索_护肤词包", "category": "护肤", "placement": "search", "created_date": "2026-08-05", "status": "在投", "daily_budget": 300}
+  ],
+  "notes": [
+    {"key": 0, "plan_key": 0, "category": "护肤", "title": "夏日护肤图文A", "material_form": "图文", "created_date": "2026-08-01", "status": "在投"},
+    {"key": 1, "plan_key": 1, "category": "护肤", "title": "护肤搜索视频B", "material_form": "视频", "created_date": "2026-08-05", "status": "在投"}
+  ],
+  "daily_metrics": [
+    {"plan_key": 0, "note_key": 0, "category": "护肤", "placement": "feed", "date": "2026-08-11", "spend": 480, "impressions": 12000, "note_clicks": 360, "button_clicks": 90, "open_msg": 12, "lead_cnt": 6},
+    {"plan_key": 1, "note_key": 1, "category": "护肤", "placement": "search", "date": "2026-08-11", "spend": 290, "impressions": 8000, "note_clicks": 240, "button_clicks": 70, "open_msg": 9, "lead_cnt": 5}
+  ]
+}

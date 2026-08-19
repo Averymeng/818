@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""E15 前置：种 2 个案例到 diag_case（幂等，可重复执行）
-①可引用案例：婚纱摄影 lead_cost上涨+CTR下降→素材疲劳（referenceable=1）
-②badcase：无数据断言响应慢（referenceable=0），与案例①同行业/赛道
-signature 均含 lead_cost 词元，确保 search_cases 按拾光 top3 词元 OR 匹配时能召回到①、且②被过滤。
+"""E15 前置：种参考案例到 diag_case（幂等，可重复执行）
+
+注意：diag_case 仅放「可引用参考案例」（referenceable=1）。badcase 已物理独立到
+diag_badcase 表（见 data/seed_badcase.py），不再混入本表——search_cases 只检索 diag_case，
+天然不会引用 badcase。
+
+signature 含 lead_cost 词元，确保 search_cases 按拾光 top3 词元 OR 匹配时能召回到本案例。
 用法: python3 诊断台/eval/seed_cases.py
 """
 import json
@@ -24,18 +27,6 @@ CASES = [
         "result_after": "CTR 回升 18pp，lead_cost 回落 22%，恢复目标成本",
         "status": "reference",
         "referenceable": 1,
-    },
-    {
-        "industry_id": 2,
-        "sector_id": 4,
-        "category_id": 21,
-        "optimize_target": "lead",
-        "anomaly_signature": "lead_cost上涨（无数据断言响应慢）",
-        "key_evidence_json": {"note": "该客户无私信回复/响应速度数据，严禁断言响应慢"},
-        "action_taken": "-",
-        "result_after": "-",
-        "status": "badcase",
-        "referenceable": 0,
     },
 ]
 

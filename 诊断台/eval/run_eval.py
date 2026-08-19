@@ -613,14 +613,18 @@ def main():
     print(f"\n===== 评测启动 {__import__('datetime').datetime.now().strftime('%Y-%m-%d %H:%M:%S')} "
           f"({'真跑模式' if args.with_llm else '零成本模式'}) =====", flush=True)
 
-    # 前置检查：案例库（E15 依赖）
+    # 前置检查：案例库（E15 依赖）+ badcase 库
     conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
-    ncase = conn.execute("SELECT COUNT(*) FROM diag_case").fetchone()[0]
+    ncase = conn.execute("SELECT COUNT(*) FROM diag_case WHERE status='reference'").fetchone()[0]
     if ncase == 0:
-        print("警告：diag_case 为空，E15 断言必然失败。先执行 python3 eval/seed_cases.py")
-    if ncase < 2:
-        print("警告：diag_case 不足 2 条（需要 1 reference + 1 badcase），请重新 seed_cases.py")
+        print("警告：diag_case 无 reference 案例，E15 引用断言可能失败。先执行 python3 eval/seed_cases.py")
+    try:
+        nbad = conn.execute("SELECT COUNT(*) FROM diag_badcase").fetchone()[0]
+        if nbad == 0:
+            print("警告：diag_badcase 为空，badcase 库未播种。先执行 python3 data/seed_badcase.py")
+    except sqlite3.OperationalError:
+        print("警告：diag_badcase 表不存在，请先应用 db/schema.sql 并执行 data/seed_badcase.py")
 
     # 真跑阶段
     if args.with_llm:
