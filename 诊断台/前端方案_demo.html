@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>销售工作台 · 前端方案 Demo</title>
+<style>
+  :root{
+    --red:#FF2442; --red-soft:#FFE9ED; --ink:#1A1A1A; --sub:#8A8A8A;
+    --line:#EEE; --bg:#F7F7F8; --card:#FFF; --green:#1FB87A; --amber:#F5A623;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;}
+  body{background:var(--bg);color:var(--ink);font-size:14px;}
+  /* 顶部导航 */
+  .topbar{height:56px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 20px;gap:28px;position:sticky;top:0;z-index:10;}
+  .brand{font-weight:700;font-size:16px;color:var(--red);display:flex;align-items:center;gap:8px;}
+  .brand .dot{width:10px;height:10px;border-radius:3px;background:var(--red);}
+  .nav{display:flex;gap:6px;}
+  .nav a{padding:8px 14px;border-radius:8px;color:var(--sub);text-decoration:none;font-weight:600;cursor:pointer;}
+  .nav a.active{background:var(--red-soft);color:var(--red);}
+  .nav a:hover{color:var(--ink);}
+  .topbar .refresh{margin-left:auto;font-size:12px;color:var(--sub);}
+  .topbar .refresh b{color:var(--ink);}
+  /* 布局切换条 */
+  .switch{display:flex;gap:8px;padding:14px 20px 0;}
+  .switch button{border:1px solid var(--line);background:#fff;padding:7px 14px;border-radius:20px;cursor:pointer;font-weight:600;color:var(--sub);}
+  .switch button.on{background:var(--red);color:#fff;border-color:var(--red);}
+  .switch .hint{margin-left:auto;color:var(--sub);font-size:12px;align-self:center;}
+  .wrap{max-width:1180px;margin:0 auto;padding:18px 20px 60px;}
+  .view{display:none;}
+  .view.on{display:block;}
+  /* 卡片通用 */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;}
+  .card h3{font-size:13px;color:var(--sub);font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+  .badge{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:700;}
+  .b-action{background:var(--red);color:#fff;}
+  .b-watch{background:var(--amber);color:#fff;}
+  .b-normal{background:#E8F7F0;color:var(--green);}
+  .b-future{background:#F0F0F2;color:var(--sub);}
+  /* KPI */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px;}
+  .kpi .v{font-size:24px;font-weight:800;}
+  .kpi .d{font-size:12px;margin-top:4px;}
+  .up{color:var(--red);} .down{color:var(--green);}
+  /* 图表占位 */
+  .chart{height:180px;display:flex;align-items:flex-end;gap:10px;padding-top:10px;}
+  .chart .bar{flex:1;background:linear-gradient(180deg,#FF6B85,#FF2442);border-radius:6px 6px 0 0;position:relative;}
+  .chart .bar span{position:absolute;top:-16px;left:0;right:0;text-align:center;font-size:10px;color:var(--sub);}
+  .grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:16px;}
+  .grid2b{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+  /* 漏斗 */
+  .funnel{display:flex;flex-direction:column;gap:6px;}
+  .funnel .step{background:var(--red-soft);color:var(--red);border-radius:8px;padding:8px 12px;font-weight:700;display:flex;justify-content:space-between;font-size:13px;}
+  .funnel .step small{color:var(--sub);font-weight:600;}
+  /* 客户表 */
+  table{width:100%;border-collapse:collapse;}
+  th,td{text-align:left;padding:11px 10px;border-bottom:1px solid var(--line);font-size:13px;}
+  th{color:var(--sub);font-weight:600;font-size:12px;}
+  td .name{font-weight:700;}
+  /* 客户墙 */
+  .wall{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .cust-card .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .cust-card .spend{font-size:20px;font-weight:800;}
+  .cust-card .delta{font-size:12px;}
+  .spark{height:36px;margin-top:8px;}
+  /* 今日要务 hero */
+  .hero{background:linear-gradient(120deg,#FF2442,#FF5C73);color:#fff;border-radius:16px;padding:20px 24px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;}
+  .hero .big{font-size:26px;font-weight:800;}
+  .hero .sub{opacity:.9;margin-top:4px;}
+  .hero ul{list-style:none;font-size:13px;line-height:1.9;}
+  .hero .pill{background:rgba(255,255,255,.22);padding:3px 10px;border-radius:20px;margin-right:8px;font-weight:700;}
+  /* 个人业绩占位 */
+  .perf{background:#FAFAFB;border:1px dashed #DDD;border-radius:14px;padding:16px;}
+  .perf .ph{font-size:22px;text-align:center;color:#C8C8CC;margin:18px 0;}
+  /* 周度复盘页 */
+  .report-cover{background:linear-gradient(120deg,#1A1A1A,#3A3A3A);color:#fff;border-radius:16px;padding:28px;margin-bottom:18px;}
+  .report-cover .tag{background:var(--red);display:inline-block;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;}
+  .report-cover h1{font-size:26px;margin:14px 0 6px;}
+  .report-cover .meta{opacity:.85;font-size:13px;}
+  .chap{margin-bottom:14px;}
+  .act-table td .p0{color:var(--red);font-weight:800;}
+  .act-table td .p1{color:var(--amber);font-weight:800;}
+  .section-title{font-size:15px;font-weight:800;margin:22px 0 10px;padding-left:10px;border-left:4px solid var(--red);}
+  .note{font-size:12px;color:var(--sub);background:#FFF8E6;border:1px solid #FBE6B0;border-radius:10px;padding:10px 12px;margin:10px 0;line-height:1.6;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><span class="dot"></span>销售工作台</div>
+  <div class="nav">
+    <a id="navHome" class="active" onclick="show('home')">数据总览</a>
+    <a id="navWeek" onclick="show('weekly')">周度复盘</a>
+  </div>
+  <div class="refresh">数据最后刷新：<b>今日 08:00</b> · 每日自动</div>
+</div>
+
+<!-- ============ 首页：三方案切换 ============ -->
+<div class="switch" id="switchBar">
+  <span style="align-self:center;color:var(--sub);font-weight:600;">首页布局方案：</span>
+  <button class="on" onclick="setOpt('A',this)">A · 今日要务驱动</button>
+  <button onclick="setOpt('B',this)">B · 仪表盘总览</button>
+  <button onclick="setOpt('C',this)">C · 客户监控墙</button>
+  <span class="hint">顶部导航可切到「周度复盘」独立页 ↓</span>
+</div>
+
+<div class="wrap">
+
+  <!-- ===== 方案 A：今日要务驱动 ===== -->
+  <div class="view on" id="optA">
+    <div class="hero">
+      <div>
+        <div class="big">今日诊断速览</div>
+        <div class="sub">3 个客户需关注 · 其中 2 项 P0 需当天止损</div>
+      </div>
+      <ul>
+        <li><span class="pill">P0</span>客户D 服饰 · 消耗暴涨 42%，疑似定向异常</li>
+        <li><span class="pill">P0</span>客户A 美妆 · 留资转化率跌破阈值</li>
+        <li><span class="pill">P1</span>客户F 家居 · 周环比下滑 8%，建议优化</li>
+      </ul>
+    </div>
+    <div class="kpis">
+      <div class="card kpi"><div class="v">¥148,200</div><div class="d up">本周总消耗 ▲12%</div></div>
+      <div class="card kpi"><div class="v">1,284</div><div class="d up">总留资 ▲9%</div></div>
+      <div class="card kpi"><div class="v">3.2%</div><div class="d down">整体转化率 ▼0.3pt</div></div>
+      <div class="card kpi"><div class="v" style="color:var(--red)">3</div><div class="d">异常客户数</div></div>
+    </div>
+    <div class="grid2">
+      <div class="card"><h3>近 7 日 消耗 / 线索趋势</h3>
+        <div class="chart">
+          <div class="bar" style="height:45%"><span>一</span></div>
+          <div class="bar" style="height:60%"><span>二</span></div>
+          <div class="bar" style="height:52%"><span>三</span></div>
+          <div class="bar" style="height:70%"><span>四</span></div>
+          <div class="bar" style="height:80%"><span>五</span></div>
+          <div class="bar" style="height:66%"><span>六</span></div>
+          <div class="bar" style="height:90%"><span>日</span></div>
+        </div>
+      </div>
+      <div class="card"><h3>整体转化漏斗</h3>
+        <div class="funnel">
+          <div class="step">曝光 120万 <small>100%</small></div>
+          <div class="step" style="width:80%">点击 9.6万 <small>8.0%</small></div>
+          <div class="step" style="width:55%">按钮 2.88万 <small>30%</small></div>
+          <div class="step" style="width:35%">开口 6,200 <small>21.5%</small></div>
+          <div class="step" style="width:22%">留资 1,284 <small>20.7%</small></div>
+        </div>
+      </div>
+    </div>
+    <div class="card"><h3>客户每日监控</h3>
+      <table>
+        <tr><th>客户</th><th>行业</th><th>今日消耗</th><th>环比</th><th>状态</th><th>今日要务</th></tr>
+        <tr><td class="name">客户A</td><td>美妆</td><td>¥2,340</td><td class="up">+18%</td><td><span class="badge b-action">需行动</span></td><td>留资转化跌破阈值</td></tr>
+        <tr><td class="name">客户B</td><td>3C</td><td>¥1,120</td><td class="down">-5%</td><td><span class="badge b-watch">观察</span></td><td>—</td></tr>
+        <tr><td class="name">客户C</td><td>食品</td><td>¥890</td><td class="up">+2%</td><td><span class="badge b-normal">正常</span></td><td>—</td></tr>
+        <tr><td class="name">客户D</td><td>服饰</td><td>¥3,010</td><td class="up">+42%</td><td><span class="badge b-action">需行动</span></td><td>消耗暴涨，疑似定向异常</td></tr>
+        <tr><td class="name">客户E</td><td>教育</td><td>¥760</td><td class="up">+1%</td><td><span class="badge b-normal">正常</span></td><td>—</td></tr>
+        <tr><td class="name">客户F</td><td>家居</td><td>¥1,540</td><td class="down">-8%</td><td><span class="badge b-watch">观察</span></td><td>周环比下滑</td></tr>
+      </table>
+    </div>
+    <div class="section-title">销售个人业绩 <span class="badge b-future">规划中</span></div>
+    <div class="perf">
+      <div class="ph">📊 个人业绩看板（即将接入独立数据源）</div>
+      <div class="note">此区块与诊断台数据<b>相互独立</b>：诊断台提供「客户监控」，业绩区将来从独立表接入「目标达成 / 线索转化 / 成交额」。两者并排展示，互不依赖，不影响诊断台逻辑。</div>
+    </div>
+  </div>
+
+  <!-- ===== 方案 B：仪表盘总览 ===== -->
+  <div class="view" id="optB">
+    <div class="kpis">
+      <div class="card kpi"><div class="v">¥148,200</div><div class="d up">本周总消耗 ▲12%</div></div>
+      <div class="card kpi"><div class="v">1,284</div><div class="d up">总留资 ▲9%</div></div>
+      <div class="card kpi"><div class="v">3.2%</div><div class="d down">整体转化率 ▼0.3pt</div></div>
+      <div class="card kpi"><div class="v" style="color:var(--red)">3</div><div class="d">异常客户数</div></div>
+    </div>
+    <div class="grid2">
+      <div class="card"><h3>近 7 日 消耗 / 线索趋势</h3>
+        <div class="chart">
+          <div class="bar" style="height:45%"><span>一</span></div>
+          <div class="bar" style="height:60%"><span>二</span></div>
+          <div class="bar" style="height:52%"><span>三</span></div>
+          <div class="bar" style="height:70%"><span>四</span></div>
+          <div class="bar" style="height:80%"><span>五</span></div>
+          <div class="bar" style="height:66%"><span>六</span></div>
+          <div class="bar" style="height:90%"><span>日</span></div>
+        </div>
+      </div>
+      <div class="card"><h3>整体转化漏斗</h3>
+        <div class="funnel">
+          <div class="step">曝光 120万 <small>100%</small></div>
+          <div class="step" style="width:80%">点击 9.6万 <small>8.0%</small></div>
+          <div class="step" style="width:55%">按钮 2.88万 <small>30%</small></div>
+          <div class="step" style="width:35%">开口 6,200 <small>21.5%</small></div>
+          <div class="step" style="width:22%">留资 1,284 <small>20.7%</small></div>
+        </div>
+      </div>
+    </div>
+    <div class="grid2b">
+      <div class="card"><h3>客户每日监控</h3>
+        <table>
+          <tr><th>客户</th><th>今日消耗</th><th>环比</th><th>状态</th></tr>
+          <tr><td class="name">客户A</td><td>¥2,340</td><td class="up">+18%</td><td><span class="badge b-action">需行动</span></td></tr>
+          <tr><td class="name">客户B</td><td>¥1,120</td><td class="down">-5%</td><td><span class="badge b-watch">观察</span></td></tr>
+          <tr><td class="name">客户C</td><td>¥890</td><td class="up">+2%</td><td><span class="badge b-normal">正常</span></td></tr>
+          <tr><td class="name">客户D</td><td>¥3,010</td><td class="up">+42%</td><td><span class="badge b-action">需行动</span></td></tr>
+          <tr><td class="name">客户E</td><td>¥760</td><td class="up">+1%</td><td><span class="badge b-normal">正常</span></td></tr>
+          <tr><td class="name">客户F</td><td>¥1,540</td><td class="down">-8%</td><td><span class="badge b-watch">观察</span></td></tr>
+        </table>
+      </div>
+      <div class="card perf"><h3>销售个人业绩 <span class="badge b-future">规划中</span></h3>
+        <div class="ph">📊 目标达成 / 线索转化 / 成交额<br>（独立数据源，后续接入）</div>
+        <div class="note">与诊断台客户监控并排，互不联动，不影响诊断台模块。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 方案 C：客户监控墙 ===== -->
+  <div class="view" id="optC">
+    <div class="kpis">
+      <div class="card kpi"><div class="v">¥148,200</div><div class="d up">本周总消耗 ▲12%</div></div>
+      <div class="card kpi"><div class="v">3</div><div class="d">异常客户</div></div>
+      <div class="card kpi"><div class="v">6</div><div class="d">在监控客户</div></div>
+      <div class="card kpi"><div class="v">08:00</div><div class="d">今日已刷新</div></div>
+    </div>
+    <div class="wall">
+      <div class="card cust-card"><div class="top"><span class="name">客户A</span><span class="badge b-action">需行动</span></div>
+        <div class="spend">¥2,340</div><div class="delta up">今日 +18%</div>
+        <svg class="spark" viewBox="0 0 100 36" preserveAspectRatio="none"><polyline points="0,28 20,24 40,26 60,18 80,20 100,8" fill="none" stroke="#FF2442" stroke-width="2"/></svg></div>
+      <div class="card cust-card"><div class="top"><span class="name">客户B</span><span class="badge b-watch">观察</span></div>
+        <div class="spend">¥1,120</div><div class="delta down">今日 -5%</div>
+        <svg class="spark" viewBox="0 0 100 36" preserveAspectRatio="none"><polyline points="0,14 20,18 40,16 60,22 80,20 100,24" fill="none" stroke="#F5A623" stroke-width="2"/></svg></div>
+      <div class="card cust-card"><div class="top"><span class="name">客户C</span><span class="badge b-normal">正常</span></div>
+        <div class="spend">¥890</div><div class="delta up">今日 +2%</div>
+        <svg class="spark" viewBox="0 0 100 36" preserveAspectRatio="none"><polyline points="0,20 20,19 40,21 60,18 80,20 100,19" fill="none" stroke="#1FB87A" stroke-width="2"/></svg></div>
+      <div class="card cust-card"><div class="top"><span class="name">客户D</span><span class="badge b-action">需行动</span></div>
+        <div class="spend">¥3,010</div><div class="delta up">今日 +42%</div>
+        <svg class="spark" viewBox="0 0 100 36" preserveAspectRatio="none"><polyline points="0,30 20,26 40,22 60,16 80,10 100,4" fill="none" stroke="#FF2442" stroke-width="2"/></svg></div>
+      <div class="card cust-card"><div class="top"><span class="name">客户E</span><span class="badge b-normal">正常</span></div>
+        <div class="spend">¥760</div><div class="delta up">今日 +1%</div>
+        <svg class="spark" viewBox="0 0 100 36" preserveAspectRatio="none"><polyline points="0,18 20,19 40,18 60,19 80,18 100,18" fill="none" stroke="#1FB87A" stroke-width="2"/></svg></div>
+      <div class="card cust-card"><div class="top"><span class="name">客户F</span><span class="badge b-watch">观察</span></div>
+        <div class="spend">¥1,540</div><div class="delta down">今日 -8%</div>
+        <svg class="spark" viewBox="0 0 100 36" preserveAspectRatio="none"><polyline points="0,12 20,14 40,16 60,18 80,22 100,26" fill="none" stroke="#F5A623" stroke-width="2"/></svg></div>
+    </div>
+    <div class="grid2" style="margin-top:16px;">
+      <div class="card"><h3>整体转化漏斗</h3>
+        <div class="funnel">
+          <div class="step">曝光 120万 <small>100%</small></div>
+          <div class="step" style="width:80%">点击 9.6万 <small>8.0%</small></div>
+          <div class="step" style="width:55%">按钮 2.88万 <small>30%</small></div>
+          <div class="step" style="width:35%">开口 6,200 <small>21.5%</small></div>
+          <div class="step" style="width:22%">留资 1,284 <small>20.7%</small></div>
+        </div>
+      </div>
+      <div class="card perf"><h3>销售个人业绩 <span class="badge b-future">规划中</span></h3>
+        <div class="ph">📊 业绩看板（独立数据源）</div>
+        <div class="note">与监控墙并排，将来接入，不影响诊断台。</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============ 周度复盘独立页 ============ -->
+<div class="wrap">
+  <div class="view" id="weekly">
+    <div class="report-cover">
+      <span class="tag">周度复盘报告</span>
+      <h1>客户A · 美妆行业 · 第 33 周复盘</h1>
+      <div class="meta">周期 08/11–08/17 · 整体结论：<b style="color:#FF6B85">需行动（P0 当天止损）</b> · 由诊断台 Agent 生成</div>
+    </div>
+    <div class="section-title">一、本期摘要</div>
+    <div class="card">本周消耗 ¥14,639，环比 +12%；留资转化 2.8% 跌破行业阈值 3.5%，需当天干预素材与定向。</div>
+    <div class="section-title">二、周值对比</div>
+    <div class="card"><table>
+      <tr><th>指标</th><th>本期</th><th>上期</th><th>环比</th></tr>
+      <tr><td>消耗</td><td>¥14,639</td><td>¥13,070</td><td class="up">+12%</td></tr>
+      <tr><td>留资转化</td><td>2.8%</td><td>3.6%</td><td class="down">-0.8pt</td></tr>
+      <tr><td>留资数</td><td>142</td><td>168</td><td class="down">-15%</td></tr>
+    </table></div>
+    <div class="section-title">三、转化漏斗（异常环节标红）</div>
+    <div class="card"><div class="funnel">
+      <div class="step">曝光 86万</div>
+      <div class="step" style="width:80%">点击 6.9万</div>
+      <div class="step" style="width:55%">按钮 2.1万</div>
+      <div class="step" style="width:35%;background:#FFE9ED;color:#FF2442">开口 4,200 ⚠ 掉量</div>
+      <div class="step" style="width:22%;background:#FFE9ED;color:#FF2442">留资 142 ⚠ 跌破阈值</div>
+    </div></div>
+    <div class="section-title">四、Top3 异动</div>
+    <div class="grid2b">
+      <div class="card"><b>① 留资转化跌破阈值</b><br><span style="color:var(--sub)">严重度 P0 · 证据：2.8%<3.5% · 建议：当日替换低质素材</span></div>
+      <div class="card"><b>② 曝光成本上升</b><br><span style="color:var(--sub)">严重度 P1 · 证据：CPM +9% · 建议：收紧定向包</span></div>
+      <div class="card" style="grid-column:1/3"><b>③ 周末时段转化优于工作日</b><br><span style="color:var(--sub)">机会点 · 建议：周末预算 +20%</span></div>
+    </div>
+    <div class="section-title">五、行动计划</div>
+    <div class="card"><table class="act-table">
+      <tr><th>优先级</th><th>动作</th><th>负责</th><th>时限</th></tr>
+      <tr><td class="p0">P0</td><td>替换低质素材 A/B 组</td><td>优化师</td><td>当日</td></tr>
+      <tr><td class="p1">P1</td><td>收紧定向包降 CPM</td><td>优化师</td><td>本周</td></tr>
+    </table></div>
+    <div class="section-title">六~八、案例对比 / 观察清单 / 附录</div>
+    <div class="card">（参考案例命中 2 条 · 观察清单 1 项 · 数据来源 sim）</div>
+    <div class="note">周度复盘是诊断台模块的独立页面，从首页「客户卡片 → 生成复盘」或导航进入，与首页每日监控互不耦合。</div>
+  </div>
+</div>
+
+<script>
+  function show(v){
+    document.getElementById('home').style.display = v==='home'?'block':'none';
+    document.getElementById('weekly').classList.toggle('on', v==='weekly');
+    document.getElementById('navHome').classList.toggle('active', v==='home');
+    document.getElementById('navWeek').classList.toggle('active', v==='weekly');
+    document.getElementById('switchBar').style.display = v==='home'?'flex':'none';
+    if(v==='weekly') window.scrollTo(0,0);
+  }
+  function setOpt(o,btn){
+    ['A','B','C'].forEach(x=>document.getElementById('opt'+x).classList.toggle('on', x===o));
+    document.querySelectorAll('#switchBar button').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+  }
+</script>
+</body>
+</html>
