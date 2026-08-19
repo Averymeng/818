@@ -61,6 +61,19 @@
   .mon-table td{padding:8px 10px;border-bottom:1px solid var(--line);}
   .mon-table tr:hover{background:var(--bg);}
 
+  /* detail charts (variant B) */
+  .small-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .small-cell{border:1px solid var(--line);border-radius:10px;padding:10px;}
+  .small-cell .t{font-size:11px;font-weight:800;color:var(--sub);margin-bottom:4px;display:flex;justify-content:space-between;align-items:baseline;}
+  .small-cell .t b{color:var(--ink);font-size:13px;}
+  /* daily data table */
+  .table-wrap{overflow-x:auto;}
+  .daily{width:100%;border-collapse:collapse;font-size:11px;white-space:nowrap;}
+  .daily th{text-align:left;color:var(--sub);font-size:10px;font-weight:800;padding:7px 8px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;}
+  .daily td{padding:7px 8px;border-bottom:1px solid var(--line);}
+  .daily tr:hover{background:var(--bg);}
+  .daily td.num{text-align:right;font-variant-numeric:tabular-nums;}
+
   .detail-cover{background:linear-gradient(135deg,var(--blue-dark),var(--blue));color:#fff;border-radius:12px;padding:22px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;}
   .detail-cover h1{font-size:20px;font-weight:800;}
   .detail-cover .meta{opacity:.9;font-size:12px;margin-top:4px;}
@@ -160,6 +173,14 @@
           </div>
         </div>
         <div class="kpi-row" id="dKpi"></div>
+        <div class="card" style="margin-bottom:14px;">
+          <h3 style="font-size:12px;color:var(--sub);font-weight:800;margin-bottom:12px;" id="chartSecTitle">趋势</h3>
+          <div id="detailCharts"></div>
+        </div>
+        <div class="card" style="margin-bottom:14px;">
+          <h3 style="font-size:12px;color:var(--sub);font-weight:800;margin-bottom:12px;" id="tableSecTitle">每日数据</h3>
+          <div class="table-wrap"><table class="daily" id="detailTable"></table></div>
+        </div>
         <div class="card">
           <h3 style="font-size:12px;color:var(--sub);font-weight:800;margin-bottom:12px;">生成复盘报告</h3>
           <p style="font-size:12px;color:var(--sub);margin-bottom:12px;">点击后由 LLM 生成八章节诊断报告；可站内预览，也可生成独立 HTML 链接分享给客户。</p>
@@ -292,6 +313,84 @@ function showView(v){
   document.getElementById('topRight').style.display=(v==='ingest')?'none':'flex';
   if(v==='overview') renderOverview();
 }
+/* ---- detail charts (variant B) + daily table ---- */
+function fmtAxis(v, unit){
+  if(unit==='%') return v.toFixed(1)+'%';
+  if(unit==='元') return '¥'+(Math.round(v*10)/10);
+  return Math.round(v).toLocaleString('en-US');
+}
+function xTicks(n, maxTicks){
+  const step=Math.max(1, Math.round(n/maxTicks));
+  const idx=[];
+  for(let i=0;i<n;i+=step) idx.push(i);
+  if(idx[idx.length-1]!==n-1) idx.push(n-1);
+  return idx;
+}
+function lineSVG(values, dates, o){
+  o=o||{};
+  const w=o.w||660, h=o.h||210, color=o.color||'#3B9DFF', unit=o.unit||'cnt';
+  const PL=40, PR=12, PT=12, PB=20;
+  const pw=w-PL-PR, ph=h-PT-PB;
+  if(!values.length) return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" height="'+h+'"></svg>';
+  const max=Math.max(...values), min=Math.min(...values), rng=(max-min)||1;
+  const n=values.length;
+  const X=i=> PL + (n===1?pw/2:i*pw/(n-1));
+  const Y=v=> PT + ph - (v-min)/rng*ph;
+  const pts=values.map((v,i)=>X(i).toFixed(1)+','+Y(v).toFixed(1)).join(' ');
+  const area='M'+X(0).toFixed(1)+','+(PT+ph).toFixed(1)+' L'+pts.split(' ').join(' L ')+' L'+X(n-1).toFixed(1)+','+(PT+ph).toFixed(1)+' Z';
+  const dots=values.map((v,i)=>'<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(v).toFixed(1)+'" r="2.1" fill="'+color+'"/>').join('');
+  const mid=(max+min)/2;
+  const yaxis='<line x1="'+PL+'" y1="'+PT+'" x2="'+PL+'" y2="'+(PT+ph).toFixed(1)+'" stroke="#E9EDF5" stroke-width="1"/>'
+    +'<line x1="'+PL+'" y1="'+Y(mid).toFixed(1)+'" x2="'+(PL+pw).toFixed(1)+'" y2="'+Y(mid).toFixed(1)+'" stroke="#F1F4F9" stroke-width="1" stroke-dasharray="3 3"/>'
+    +'<text x="'+(PL-5)+'" y="'+(PT+3)+'" text-anchor="end" font-size="9" fill="#94A3B8">'+fmtAxis(max,unit)+'</text>'
+    +'<text x="'+(PL-5)+'" y="'+(PT+ph).toFixed(1)+'" text-anchor="end" font-size="9" fill="#94A3B8">'+fmtAxis(min,unit)+'</text>';
+  const ticks=xTicks(n, o.maxTicks||7);
+  let xaxis='<line x1="'+PL+'" y1="'+(PT+ph).toFixed(1)+'" x2="'+(PL+pw).toFixed(1)+'" y2="'+(PT+ph).toFixed(1)+'" stroke="#E9EDF5" stroke-width="1"/>';
+  ticks.forEach(i=>{ xaxis+='<text x="'+X(i).toFixed(1)+'" y="'+(PT+ph+13).toFixed(1)+'" text-anchor="middle" font-size="9" fill="#94A3B8">'+(dates[i]||'').slice(5)+'</text>'; });
+  const last=values[n-1];
+  const lastLabel='<text x="'+(PL+pw).toFixed(1)+'" y="'+(Y(last)-6).toFixed(1)+'" text-anchor="end" font-size="10" font-weight="800" fill="'+color+'">'+fmtAxis(last,unit)+'</text>';
+  return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" height="'+h+'">'
+    +'<defs><linearGradient id="g'+color.replace('#','')+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+color+'" stop-opacity=".18"/><stop offset="100%" stop-color="'+color+'" stop-opacity="0"/></linearGradient></defs>'
+    +'<path d="'+area+'" fill="url(#g'+color.replace('#','')+')"/>'
+    +yaxis+xaxis
+    +'<polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
+    +dots+lastLabel+'</svg>';
+}
+function winDays(name){
+  return (DAILY[name]||[]).filter(d=>d.date>=WIN.start && d.date<=WIN.end).slice();
+}
+function renderDetailCharts(){
+  const c=CUSTOMERS[curIdx];
+  const ds=winDays(c.name), dates=ds.map(d=>d.date);
+  const keys=['spend','ctr','lcvr','cpl'];
+  const colors={spend:'#3B9DFF',ctr:'#32D583',lcvr:'#FDB022',cpl:'#F97066'};
+  const labels={spend:'消耗(元)',ctr:'点击率(%)',lcvr:'留资CVR(%)',cpl:'留资成本(元)'};
+  const units={spend:'元',ctr:'%',lcvr:'%',cpl:'元'};
+  document.getElementById('chartSecTitle').innerText=WIN.short+'趋势 · 多指标分面 ('+WIN.start.slice(5)+' – '+WIN.end.slice(5)+')';
+  if(!ds.length){ document.getElementById('detailCharts').innerHTML='<div style="color:var(--sub);font-size:12px;padding:20px;text-align:center;">该区间无数据</div>'; return; }
+  document.getElementById('detailCharts').innerHTML='<div class="small-grid">'+keys.map(k=>{
+    const vals=ds.map(d=>d[k]);
+    const last=vals[vals.length-1];
+    return '<div class="small-cell"><div class="t"><span>'+labels[k]+'</span><b>'+fmtAxis(last,units[k])+'</b></div>'+lineSVG(vals,dates,{w:300,h:150,color:colors[k],unit:units[k],maxTicks:3})+'</div>';
+  }).join('')+'</div>';
+}
+function renderDetailTable(){
+  const c=CUSTOMERS[curIdx];
+  const ds=winDays(c.name);
+  const cols=[['date','日期',null],['spend','消耗',2],['imp','曝光',0],['nc','笔记点击',0],['bc','按钮点击',0],['open','私信开口',0],['lead','留资',0],['ctr','点击率%',2],['br','按钮率%',2],['lcvr','留资CVR%',2],['cpc','CPC',2],['cpl','留资成本',2]];
+  document.getElementById('tableSecTitle').innerText=WIN.short+'每日数据 ('+WIN.start.slice(5)+' – '+WIN.end.slice(5)+')';
+  if(!ds.length){ document.getElementById('detailTable').innerHTML='<tbody><tr><td style="color:var(--sub);padding:20px;">该区间无数据</td></tr></tbody>'; return; }
+  let h='<thead><tr>'+cols.map(c=>'<th'+(c[2]===null?'':' class="num"')+'>'+c[1]+'</th>').join('')+'</tr></thead><tbody>';
+  ds.forEach(d=>{
+    h+='<tr>'+cols.map(c=>{
+      const v=d[c[0]];
+      const txt=(c[2]==null)? v : (v==null?'':Number(v).toLocaleString('en-US',{minimumFractionDigits:c[2],maximumFractionDigits:c[2]}));
+      return '<td'+(c[2]==null?'':' class="num"')+'>'+txt+'</td>';
+    }).join('')+'</tr>';
+  });
+  h+='</tbody>';
+  document.getElementById('detailTable').innerHTML=h;
+}
 function openDetail(i){
   curIdx=i; const c=CUSTOMERS[i];
   document.getElementById('dName').innerText=c.name+' · '+c.ind+' · '+WIN.label+' 详细数据';
@@ -304,6 +403,8 @@ function openDetail(i){
     +'<div class="card kpi"><div class="lab">开口(日均)</div><div class="v">'+fmt(c.open)+'</div></div>'
     +'<div class="card kpi"><div class="lab">留资(日均)</div><div class="v">'+fmt(c.lead)+'</div></div>';
   document.getElementById('shareLink').classList.remove('on');
+  renderDetailCharts();
+  renderDetailTable();
   showView('detail');
 }
 function generateReport(){
