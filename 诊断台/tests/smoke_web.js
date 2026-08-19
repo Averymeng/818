@@ -36,9 +36,10 @@ global.fetch=(u,o)=>realFetch('http://127.0.0.1:8000'+u,o);
 
 (async ()=>{
   const code=fs.readFileSync(path.join(__dirname,'..','web','app.js'),'utf8')
-    + '\n;global.__T={showView, onTimeChange, openDetail};'
+    + '\n;global.__T={showView, onTimeChange, openDetail, ovApply};'
     + 'Object.defineProperty(global.__T,"WIN",{get:()=>WIN});'
-    + 'Object.defineProperty(global.__T,"CUSTOMERS",{get:()=>CUSTOMERS});';
+    + 'Object.defineProperty(global.__T,"CUSTOMERS",{get:()=>CUSTOMERS});'
+    + 'Object.defineProperty(global.__T,"OV_FILTER",{get:()=>OV_FILTER});';
   eval(code);
   const T=global.__T;
   // boot() 已在 eval 内启动；等待若干轮 microtask + 计时
@@ -66,6 +67,26 @@ global.fetch=(u,o)=>realFetch('http://127.0.0.1:8000'+u,o);
     cust: optCount('ovFCust'), st: optCount('ovFSt'),
   });
   console.log('WIN:', T.WIN);
+  // 应用筛选：选一个行业 → KPI 应变小、监控表只剩该行业
+  const kpiSpend=html=>{const m=html.match(/总消耗<\/div><div class="v">¥([\d,]+)/);return m?m[1]:'?';};
+  const before=kpiSpend(document.getElementById('overviewView').innerHTML);
+  const pickInd=T.CUSTOMERS[0].ind;
+  const nInd=T.CUSTOMERS.filter(c=>c.ind===pickInd).length;
+  document.getElementById('ovFInd').value=pickInd;
+  T.ovApply();
+  const ov2=document.getElementById('overviewView').innerHTML;
+  const after=kpiSpend(ov2);
+  const monRows=(ov2.match(/<tr><td>/g)||[]).length;
+  console.log('apply filter [行业='+pickInd+']:', {
+    customersInInd: nInd,
+    spendBefore: before, spendAfter: after, changed: before!==after,
+    monRows, monRowsWithin: monRows<=Math.max(8,nInd),
+    filterKept: document.getElementById('ovFInd').value===pickInd,
+  });
+  // 重置
+  document.getElementById('ovFInd').value='';
+  T.ovApply();
+  console.log('reset filter spend back to:', kpiSpend(document.getElementById('overviewView').innerHTML), '(== before:', kpiSpend(document.getElementById('overviewView').innerHTML)===before, ')');
   console.log('status counts:', T.CUSTOMERS.reduce((m,c)=>(m[c.st]=(m[c.st]||0)+1,m),{}));
   // 切换时间窗口：近7天
   document.getElementById('fRange').value='近7天';

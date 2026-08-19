@@ -6,6 +6,7 @@ let META = {maxd: '', window: ''};
 let BASE_DATA = null;
 let WIN = {start:'', end:'', label:'', short:''};
 let curIdx = 0;
+const OV_FILTER = {ind:'', sec:'', cat:'', cust:'', st:''};   // 当日监控筛选器当前条件
 const MONTH_TARGET = 500000;   // 销售业绩月目标（演示值，DB 无目标字段）
 
 const STCLASS = {"需行动":"b-action", "观察":"b-watch", "正常":"b-normal"};
@@ -307,17 +308,17 @@ function ptDelta(delta){
   const arr = delta>0?'▲':'▼';
   return '<span class="delta '+cls+'"><span class="arr">'+arr+'</span> '+Math.abs(delta).toFixed(1)+'pt</span>';
 }
-function aggAllInWindow(s,e){
+function aggAllInWindow(s,e,list){
   const out={spend:0,imp:0,nc:0,bc:0,open:0,lead:0};
-  for(const c of CUSTOMERS){
+  for(const c of (list||CUSTOMERS)){
     const t=winAgg(DAILY[c.name]||[],s,e);
     out.spend+=t.spend; out.imp+=t.imp; out.nc+=t.nc; out.bc+=t.bc; out.open+=t.open; out.lead+=t.lead;
   }
   return out;
 }
-function aggDailyTrend(s,e){
+function aggDailyTrend(s,e,list){
   const map={};
-  for(const c of CUSTOMERS){
+  for(const c of (list||CUSTOMERS)){
     for(const r of (DAILY[c.name]||[])){
       if(r.date>=s&&r.date<=e){
         if(!map[r.date]) map[r.date]={spend:0,lead:0,open:0};
@@ -328,10 +329,27 @@ function aggDailyTrend(s,e){
   const dates=Object.keys(map).sort();
   return dates.map(d=>{const x=map[d];return {date:d,spend:x.spend,cpl:x.lead?x.spend/x.lead:0,copen:x.open?x.spend/x.open:0};});
 }
+/* 当日监控筛选：读取 5 个下拉的值 → 存入 OV_FILTER → 重渲染 */
+function ovApply(){
+  const g=id=>{const el=document.getElementById(id);return el?el.value:'';};
+  OV_FILTER.ind=g('ovFInd'); OV_FILTER.sec=g('ovFSec'); OV_FILTER.cat=g('ovFCat');
+  OV_FILTER.cust=g('ovFCust'); OV_FILTER.st=g('ovFSt');
+  renderOverview();
+}
+function ovCustomers(){
+  return CUSTOMERS.filter(c=>
+    (!OV_FILTER.ind || c.ind===OV_FILTER.ind)
+    && (!OV_FILTER.sec || c.sector===OV_FILTER.sec)
+    && (!OV_FILTER.cat || (c.cats||[]).includes(OV_FILTER.cat))
+    && (!OV_FILTER.cust || c.name===OV_FILTER.cust)
+    && (!OV_FILTER.st || c.st===OV_FILTER.st)
+  );
+}
 function renderOverview(){
-  const cur=aggAllInWindow(WIN.start,WIN.end);
+  const CS=ovCustomers();   // 筛选后的客户集，本页所有聚合均基于它
+  const cur=aggAllInWindow(WIN.start,WIN.end,CS);
   const pw=prevWindow();
-  const prev=aggAllInWindow(pw.start,pw.end);
+  const prev=aggAllInWindow(pw.start,pw.end,CS);
   const CPL=cur.lead?cur.spend/cur.lead:0;
   const CPLprev=prev.lead?prev.spend/prev.lead:0;
   const totalSpendDelta=pctDelta(cur.spend,prev.spend);
@@ -342,7 +360,7 @@ function renderOverview(){
   const remain=Math.max(0,MONTH_TARGET-sales);
 
   // 趋势图 3 线
-  const trend=aggDailyTrend(WIN.start,WIN.end);
+  const trend=aggDailyTrend(WIN.start,WIN.end,CS);
   const trDates=trend.map(x=>x.date);
   const vSpend=trend.map(x=>x.spend), vCpl=trend.map(x=>x.cpl), vCopen=trend.map(x=>x.copen);
   const CHART_W=720, CHART_H=220;
@@ -383,16 +401,16 @@ function renderOverview(){
   const newPlanDelta=pctDelta(B.new_plans,B.prev_new_plans);
 
   // 今日诊断速览：P0=需行动客户，P1=窗口环比下滑最大
-  const sorted=[...CUSTOMERS].sort((a,b)=>a.delta-b.delta);
+  const sorted=[...CS].sort((a,b)=>a.delta-b.delta);
   const drop=sorted.slice(0,3);
-  const p0=CUSTOMERS.filter(c=>c.st==='需行动').slice(0,2);
+  const p0=CS.filter(c=>c.st==='需行动').slice(0,2);
   const alerts=p0.map(c=>({prio:'p0', name:c.name, ind:c.ind, desc:'留资成本 ¥'+Math.round(c.cpl)+'（环比 '+(c.cplRise>=0?'+':'')+c.cplRise+'%），消耗环比 '+(c.delta>=0?'+':'')+c.delta+'%'}));
   drop.forEach(c=>{ if(!alerts.find(a=>a.name===c.name)&&alerts.length<3) alerts.push({prio:'p1', name:c.name, ind:c.ind, desc:'窗口消耗环比 -'+Math.abs(c.delta)+'%，留资 '+c.lead+'/天'}); });
   const p0Count=alerts.filter(a=>a.prio==='p0').length;
 
   // 客户每日监控表（按 WIN.end 当日消耗排序）
   const lastDate=WIN.end;
-  const rows=CUSTOMERS.map(c=>{
+  const rows=CS.map(c=>{
     const ds=(DAILY[c.name]||[]);
     const today=ds.find(r=>r.date===lastDate)||{spend:0,open:0,lead:0};
     const prevD=ds.find(r=>r.date===shiftDate(lastDate,-1))||{spend:0};
@@ -404,8 +422,8 @@ function renderOverview(){
   }).sort((a,b)=>b.spend-a.spend);
 
   // 重点变化归因（数据驱动文案）
-  const topDrop=[...CUSTOMERS].sort((a,b)=>a.delta-b.delta).slice(0,5);
-  const topRise=[...CUSTOMERS].sort((a,b)=>b.delta-a.delta).slice(0,5);
+  const topDrop=[...CS].sort((a,b)=>a.delta-b.delta).slice(0,5);
+  const topRise=[...CS].sort((a,b)=>b.delta-a.delta).slice(0,5);
   function attribHTML(c){
     const reason='日均消耗 ¥'+fmt(c.spend)+'（环比 '+(c.delta>=0?'+':'')+c.delta+'%）· 留资 '+c.lead+'/天 · 留资成本 ¥'+Math.round(c.cpl)+'（环比 '+(c.cplRise>=0?'+':'')+c.cplRise+'%）';
     return '<div class="ov-attrib-item'+(c.delta>=0?' up':'')+'"><div class="t">'+esc(c.name)+' <span style="color:var(--sub);font-weight:700">'+esc(c.ind)+'</span></div><div class="d">'+esc(reason)+'</div></div>';
@@ -443,7 +461,7 @@ function renderOverview(){
       +'<select id="ovFCat">'+ovOpts(ovCats,'全部品类',ovKeep.cat)+'</select>'
       +'<select id="ovFCust">'+ovOpts(ovCusts,'全部客户',ovKeep.cust)+'</select>'
       +'<select id="ovFSt">'+ovOpts(ovSts,'全部状态',ovKeep.st)+'</select>'
-      +'<button onclick="void(0)">应用筛选</button>'
+      +'<button onclick="ovApply()">应用筛选</button>'
     +'</div></div>'
     +'</div>'
 
