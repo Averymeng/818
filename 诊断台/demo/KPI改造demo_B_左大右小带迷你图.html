@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KPI Demo B - 左大右小带迷你图</title>
+<style>
+:root{--bg:#F8F9FC;--card:#FFFFFF;--ink:#1F2937;--sub:#94A3B8;--line:#E9EDF5;--blue:#3B9DFF;--green:#32D583;--red:#F97066;}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;}
+body{background:var(--bg);padding:40px;color:var(--ink);}
+.wrap{max-width:1100px;margin:0 auto;}
+h1{font-size:18px;margin-bottom:8px;}
+.sub{color:var(--sub);font-size:13px;margin-bottom:24px;}
+/* 方案 B：左大右小 */
+.kpi-row-b{display:grid;grid-template-columns:1.6fr .8fr .8fr;gap:14px;}
+.kpi-b{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;}
+.kpi-b .lab{font-size:12px;color:var(--sub);font-weight:700;margin-bottom:6px;}
+.kpi-b .v{font-size:26px;font-weight:800;letter-spacing:-.3px;margin-bottom:4px;}
+.kpi-b .delta{font-size:12px;font-weight:700;}
+.kpi-b .delta.up{color:var(--green);}
+.kpi-b .delta.down{color:var(--red);}
+.kpi-b.big{grid-row:span 2;display:flex;flex-direction:column;}
+.kpi-b.big .spark{flex:1;display:flex;align-items:flex-end;gap:4px;margin-top:12px;height:70px;}
+.kpi-b.big .bar{flex:1;background:var(--blue);border-radius:3px 3px 0 0;opacity:.85;min-height:4px;}
+.kpi-b.big .foot{display:flex;justify-content:space-between;font-size:11px;color:var(--sub);margin-top:8px;}
+.kpi-b.small{display:flex;flex-direction:column;justify-content:center;min-height:86px;}
+.kpi-b.small:nth-child(2){border-left:4px solid var(--green);}
+.kpi-b.small:nth-child(3){border-left:4px solid var(--red);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>方案 B：左大右小 + 迷你图</h1>
+  <div class="sub">总消耗作为核心指标放大，右侧两个成本/数量指标上下叠放；大卡片内嵌 14 日消耗柱状迷你图，空间利用率最高。</div>
+  <div class="kpi-row-b">
+    <div class="kpi-b big">
+      <div class="lab">总消耗</div>
+      <div class="v">¥102,132</div>
+      <div class="delta down">▼ 0.8% 较昨日</div>
+      <div class="spark">
+        <div class="bar" style="height:62%"></div><div class="bar" style="height:78%"></div><div class="bar" style="height:79%"></div>
+        <div class="bar" style="height:61%"></div><div class="bar" style="height:62%"></div><div class="bar" style="height:61%"></div>
+        <div class="bar" style="height:61%"></div><div class="bar" style="height:62%"></div><div class="bar" style="height:74%"></div>
+        <div class="bar" style="height:75%"></div><div class="bar" style="height:63%"></div><div class="bar" style="height:64%"></div>
+        <div class="bar" style="height:66%"></div><div class="bar" style="height:65%"></div>
+      </div>
+      <div class="foot"><span>08-07</span><span>近14日走势</span><span>08-20</span></div>
+    </div>
+    <div class="kpi-b small">
+      <div class="lab">留资数</div>
+      <div class="v">1,658</div>
+      <div class="delta up">▲ 0.1%</div>
+    </div>
+    <div class="kpi-b small">
+      <div class="lab">留资成本</div>
+      <div class="v">¥62</div>
+      <div class="delta up">▲ 0.1%</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

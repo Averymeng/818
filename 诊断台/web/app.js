@@ -404,43 +404,38 @@ function renderOverview(){
     if(v>=100)  return Math.round(v).toLocaleString('en-US');
     return (+v).toFixed(1);
   }
-  function smoothPath(pts){
+  function linePath(pts){
     if(!pts.length) return '';
     if(pts.length===1) return 'M'+pts[0][0].toFixed(1)+','+pts[0][1].toFixed(1)+' L'+(pts[0][0]+0.01).toFixed(1)+','+pts[0][1].toFixed(1);
-    if(pts.length===2) return 'M'+pts[0][0].toFixed(1)+','+pts[0][1].toFixed(1)+' L'+pts[1][0].toFixed(1)+','+pts[1][1].toFixed(1);
-    let d='M'+pts[0][0].toFixed(1)+','+pts[0][1].toFixed(1);
-    for(let i=0;i<pts.length-1;i++){
-      const p0=pts[i-1]||pts[i], p1=pts[i], p2=pts[i+1], p3=pts[i+2]||p2;
-      const c1x=p1[0]+(p2[0]-p0[0])/6, c1y=p1[1]+(p2[1]-p0[1])/6;
-      const c2x=p2[0]-(p3[0]-p1[0])/6, c2y=p2[1]-(p3[1]-p1[1])/6;
-      d+=' C'+c1x.toFixed(1)+','+c1y.toFixed(1)+' '+c2x.toFixed(1)+','+c2y.toFixed(1)+' '+p2[0].toFixed(1)+','+p2[1].toFixed(1);
-    }
-    return d;
+    return 'M'+pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' L');
   }
   function miniTrend(s){
-    const W=240,H=132,PL=34,PR=8,PT=10,PB=18;
+    const W=260,H=150,PL=38,PR=10,PT=10,PB=28;
     const w=W-PL-PR, h=H-PT-PB;
     const mx=Math.max(...s.vals), mn=Math.min(...s.vals), rng=(mx-mn)||1;
     const X=i=>PL+(s.vals.length===1?w/2:i*w/(s.vals.length-1));
     const Y=v=>PT+h-((v-mn)/rng)*h;
     const pts=s.vals.map((v,i)=>[X(i),Y(v)]);
-    const path=smoothPath(pts);
+    const path=linePath(pts);
     const avg=s.vals.reduce((a,b)=>a+b,0)/s.vals.length;
     const avgY=Y(avg);
-    const step=Math.max(1,Math.round(s.vals.length/5));
+    const step=Math.max(1,Math.ceil(s.vals.length/5));
     const ticks=[];
     for(let i=0;i<s.vals.length;i+=step) ticks.push(i);
     if(ticks[ticks.length-1]!==s.vals.length-1) ticks.push(s.vals.length-1);
-    const xT=ticks.map(i=>'<text class="ov-t-axis" x="'+X(i).toFixed(1)+'" y="'+(PT+h+12).toFixed(1)+'" text-anchor="middle">'+esc((trDates[i]||'').slice(5))+'</text>').join('');
+    const xT=ticks.map(i=>{
+      const x=X(i), y=PT+h+12;
+      return '<text class="ov-t-axis" x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" text-anchor="end" transform="rotate(-35,'+x.toFixed(1)+','+y.toFixed(1)+')">'+esc((trDates[i]||'').slice(5))+'</text>';
+    }).join('');
     return '<div class="ov-trend-mini">'
       +'<div class="head"><div class="name">'+esc(s.name)+'</div><div class="cur" style="color:'+s.color+'">¥'+fmtTrendVal(s.vals[s.vals.length-1])+'</div></div>'
       +'<div class="sub">均值 ¥'+fmtTrendVal(avg)+'</div>'
       +'<svg viewBox="0 0 '+W+' '+H+'">'
         +'<line x1="'+PL+'" y1="'+(PT+h)+'" x2="'+(PL+w)+'" y2="'+(PT+h)+'" stroke="#E9EDF5"/>'
         +'<line class="avg" x1="'+PL+'" y1="'+avgY.toFixed(1)+'" x2="'+(PL+w)+'" y2="'+avgY.toFixed(1)+'"/>'
-        +'<path d="'+path+' L'+(PL+w).toFixed(1)+','+(PT+h)+' L'+PL+','+(PT+h)+' Z" fill="'+s.color+'" opacity="0.08"/>'
         +'<path d="'+path+'" fill="none" stroke="'+s.color+'" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
-        +'<circle cx="'+X(s.vals.length-1).toFixed(1)+'" cy="'+Y(s.vals[s.vals.length-1]).toFixed(1)+'" r="3.2" fill="#FFF" stroke="'+s.color+'" stroke-width="2.5"/>'
+        +pts.map((p,i)=>'<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="2.2" fill="'+s.color+'" opacity="'+(i===s.vals.length-1?'1':'0.45')+'"/>').join('')
+        +'<circle cx="'+X(s.vals.length-1).toFixed(1)+'" cy="'+Y(s.vals[s.vals.length-1]).toFixed(1)+'" r="3.6" fill="#FFF" stroke="'+s.color+'" stroke-width="2.5"/>'
         +'<text class="ov-t-axis" x="'+(PL-4)+'" y="'+(PT+7).toFixed(1)+'" text-anchor="end">¥'+fmtTrendVal(mx)+'</text>'
         +'<text class="ov-t-axis" x="'+(PL-4)+'" y="'+(PT+h+3).toFixed(1)+'" text-anchor="end">¥'+fmtTrendVal(mn)+'</text>'
         +xT
