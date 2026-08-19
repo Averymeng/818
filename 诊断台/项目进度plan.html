@@ -88,7 +88,8 @@
     <li><b>当前数据：</b>智能体读 <span class="mono">data/ad_review.db</span>（sqlite），数据是 <span class="mono">eval/seed_cases.py</span> 灌的<b>仿真数据</b>。grep 确认仓库里<b>没有任何 scheduler / 定时代码</b>。</li>
     <li><b>模拟实时（过渡方案）：</b>加一个定时任务（系统 cron 或 Python APScheduler），周期性重灌/拉取数据，让 DB 看起来「在更新」。这块代码还没写。</li>
     <li><b>数据本质：</b>全部是系统自生成的模拟数据（<span class="mono">seed_cases.py</span> 造数），<b>不存在外部真实数据源</b>——我之前 plan 里写「真 API 需要你提供投放后台数据出口」是错的，已删。</li>
-    <li><b>所以「定时模拟」就是终态：</b>既然数据我们自己造，加个定时任务（cron / APScheduler）周期重灌即可，演示「数据在更新」，不需要任何外部账号或接口。</li>
+    <li><b>所以「定时模拟」就是自动端：</b>加个定时任务（cron / APScheduler）<b>每天 8 点周期重灌</b>，演示「数据在更新」，不需要任何外部账号。</li>
+    <li><b>但光看 AI 造的模拟数据，用户没有真实体感。</b>因此 Phase 2 还要做<b>手动录入入口</b>：用户能<b>复制粘贴</b>（CSV/JSON 或填表）自己的真实投放数字进库，甚至<b>新增数据表</b>；报告生成不区分来源，谁灌进去就按谁算。这才是「能自用」的真产品体验。</li>
   </ul>
 
   <h2>二、整体进度总览（组件状态表）</h2>
@@ -99,7 +100,7 @@
     <tr><td>三层评测体系<br><span class="sub">硬断言 + judge + 24 case</span></td><td><span class="pill p-ok">已完成</span></td><td>硬断言 126/126（含 E24 横切 75 条）；judge 13 份无中位分&lt;2</td></tr>
     <tr><td>CI 自动回归<br><span class="sub">ci_check.py + GitHub Actions</span></td><td><span class="pill p-ok">已完成</span></td><td>替代原 A/B 手动门槛；push/PR 跑静态回归，每周一定时全量真跑</td></tr>
     <tr><td>案例库种子 + RAG<br><span class="sub">search_cases 工具</span></td><td><span class="pill p-warn">部分</span></td><td><span class="mono">diag_case</span> 表 + seed 已建；<b>语义检索工具未建</b></td></tr>
-    <tr><td>数据自生成 + 定时刷新<br><span class="sub">全模拟，无需外部源</span></td><td><span class="pill p-bad">未开始</span></td><td>数据由 seed_cases.py 自生成；无 scheduler 代码；加定时器周期刷新即可演示「数据在更新」</td></tr>
+    <tr><td>数据层：定时刷新 + 手动录入<br><span class="sub">全模拟 + 用户粘贴/新增表</span></td><td><span class="pill p-bad">未开始</span></td><td>数据 seed_cases.py 自生成；无 scheduler 代码；需加 ①每天8点定时重灌 ②用户粘贴(CSV/JSON)/新增表 的录入入口（后端入参函数，UI 归 Phase 3）</td></tr>
     <tr><td>前端页面</td><td><span class="pill p-bad">未开始</span></td><td>无 frontend 目录；最后做</td></tr>
     <tr><td>badcase 积累闭环</td><td><span class="pill p-warn">机制待建</span></td><td>评测期 3 缺陷已修；正式案例库待 Phase 1</td></tr>
   </table>
@@ -117,8 +118,8 @@
   </div></div>
 
   <div class="step"><div class="num todo">2</div><div class="body">
-    <b>数据自生成 + 定时刷新</b><span class="tag">未开始 · 全模拟</span>
-    <p>数据由 <span class="mono">seed_cases.py</span> 自己造（不存在外部真数据源）。加定时器（cron / APScheduler）周期重灌，演示「数据在更新」即可，无需任何账号或接口。</p>
+    <b>数据层：定时刷新 + 手动录入</b><span class="tag">未开始 · 全模拟 + 用户自灌</span>
+    <p>两部分：<b>①自动端</b>——数据由 <span class="mono">seed_cases.py</span> 自己造（无外部真数据源），加定时器（cron / APScheduler）<b>每天 8 点周期重灌</b>，演示「数据在更新」，无需任何账号。<br><b>②手动端（真体感来源）</b>——用户能<b>复制粘贴</b>（CSV/JSON 或填表）自己的真实投放数字进库，甚至<b>新增数据表</b>；报告生成不区分数据来源（建议加 <span class="mono">data_source</span> 字段区分 mock/用户）。后端录入函数放本阶段，粘贴/填表的 UI 归 Phase 3 前端。这是把「只能看 demo」升级成「能自用」的关键。</p>
   </div></div>
 
   <div class="step"><div class="num todo">3</div><div class="body">
@@ -135,7 +136,7 @@
   <div class="card">
     <ol class="tight">
       <li><b>Phase 1：案例库 + RAG（search_cases）</b>——成本最低、直接提升报告质量，且把已有评测成果固化下来。</li>
-      <li><b>Phase 2：数据自生成 + 定时刷新</b>——加定时器周期重灌模拟数据，让数据「活」起来做演示（全模拟，无需外部源）。</li>
+      <li><b>Phase 2：数据层——8点定时刷新 + 用户手动录入</b>——自动演示「数据在更新」+ 用户粘贴/新增表自灌真实数据，才有真体感（全模拟，无需外部源）。</li>
       <li><b>Phase 3：前端页面</b>——有了稳定后端再上界面。</li>
       <li><b>Phase 4：上线与 badcase 闭环</b>——进入运营期。</li>
     </ol>
@@ -144,7 +145,8 @@
   <h2>五、风险 / 待你确认</h2>
   <div class="callout warn">
     <ul class="tight2">
-      <li><b>数据本质：</b>全部为系统自生成的模拟数据（<span class="mono">seed_cases.py</span>），<b>不存在外部真实数据源</b>，因此 Phase 2 是「自生成 + 定时刷新」，不是「接入真实 API」。这点已按用户纠正修正。</li>
+      <li><b>数据本质：</b>全部为系统自生成的模拟数据（<span class="mono">seed_cases.py</span>），<b>不存在外部真实数据源</b>，因此 Phase 2 是「自生成 + 定时刷新 + 用户手动录入」，不是「接入真实 API」。这点已按用户纠正修正。</li>
+      <li><b>手动录入范围待定：</b>用户「新增数据表」是指新增客户/账号行（在现有表里加记录），还是真动态建新表（自定义指标字段）？后者涉及动态 schema，复杂度高，需你定。建议 MVP 先做「粘贴进现有表」，动态建表放后续。</li>
       <li><b>RAG 是否必要：</b>当前案例量很小（评测 24 条 + 缺陷 3 条），先用简单 SQL 匹配即可，上向量检索可等案例量起来再做——这条可按你判断取舍。</li>
       <li><b>前端范围：</b>是纯展示周报，还是要交互（改参数重算、对比多周）？范围影响工期，需你定。</li>
     </ul>
