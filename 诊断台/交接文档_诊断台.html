@@ -71,6 +71,7 @@
   <a href="#pitfalls">10. 踩过的坑（避坑）</a>
   <a href="#prefs">11. 用户偏好</a>
   <a href="#cmds">12. 命令速查</a>
+  <a href="#wf">13. 工作流铁律（每次收尾）</a>
 </nav>
 
 <main>
@@ -79,12 +80,12 @@
 <section id="tldr">
   <h2>0. 一句话上手</h2>
   <p>这是一个<strong>小红书信息流投放获客的「周报诊断智能体」</strong>。输入一份客户投放数据（CSV/JSON），它产出一份八章节中文诊断报告（整体结论 + Top3 异常 + 下钻 + 行动建议）。我们刚搭好一套 <strong>v2 自动化评测体系</strong>来验证报告质量，并已完成首轮批量跑。</p>
-  <div class="callout acc">
-    <strong>你现在接手时，项目处于「首轮批量评测已跑完，还差最后一步收尾」的状态：</strong>
+  <div class="callout ok">
+    <strong>你现在接手时，项目处于「v2 首轮批量评测已收尾完成」的状态：</strong>
     <ul class="tight">
-      <li>批量评测结果：<span class="pill p-ok">109 / 126 断言通过</span></li>
-      <li>唯一没过的是 <code>E14</code>，但它是<strong>评测脚本自身的误报（false-positive）</strong>，不是报告真错——下一位 AI 改 1 处脚本即可。</li>
-      <li>改完脚本跑一条零成本命令复核，然后写 <code>eval/eval_report_v2.md</code> 收尾。</li>
+      <li>批量评测结果：<span class="pill p-ok">126 / 126 断言通过</span>（含 E24 横切 75 条）</li>
+      <li>端到端 B（judge 三档）：13 份报告全产出，无中位分 &lt; 2（D1 2.62 / D2 2.77 / D3 2.77）。</li>
+      <li>E14 误报（评测脚本扫了 <code>judge_calibration.json</code> 的 ROI/GMV 文本）已修复，复核 126/126；<code>eval/eval_report_v2.md</code> 已写；已 commit <code>7296e82</code> 并 push 到 <span class="mono">main</span>。</li>
     </ul>
   </div>
   <p class="small">本交接文档力求让一个新 AI 不看聊天记录也能独立推进。所有路径相对于项目根目录 <span class="mono">诊断台/</span>。</p>
@@ -102,25 +103,25 @@
     <tr><td>6 份人工试评</td><td>人工审 6 份报告，发现并修复 6+1 个缺口 + 4 个数字级错误</td><td><span class="mono">eval/artifacts/*.json</span>（6 份）+ <span class="mono">人工试评打分表.docx</span></td></tr>
     <tr><td>Judge 校准</td><td>7 轮校准，3 票中位数投票，收敛并启用 judge</td><td><span class="mono">eval/judge.py / judge_prompt.md / judge_calibration_report.md / judge_baseline.json</span></td></tr>
     <tr><td>3 个 agent 缺陷</td><td>周值/日值混淆、依据数字无出处、观察清单漏项 → 已修复</td><td>改 <span class="mono">agent/system_prompt.md</span> 第 7 节 + <span class="mono">agent/tools.py</span> + <span class="mono">eval/run_eval.py</span>(E24e)</td></tr>
-    <tr><td>首轮批量跑</td><td>24 个 case 真跑 + 硬断言 + judge，结果落盘</td><td><span class="mono">eval/artifacts/eval_results.json</span>（109/126）</td></tr>
+    <tr><td>首轮批量跑</td><td>24 个 case 真跑 + 硬断言 + judge，结果落盘；E14 误报已修、复核 126/126；写 v2 报告</td><td><span class="mono">eval/artifacts/eval_results.json</span>（126/126）+ <span class="mono">eval/eval_report_v2.md</span></td></tr>
   </table>
 
-  <h3>1.2 批量跑结果（已跑完，别重跑浪费积分）</h3>
-  <p>结果文件：<code>eval/artifacts/eval_results.json</code>。顶层 <code>passed=109 / total=126</code>。逐 case 拆解后，<strong>只有 1 个 case 未满分</strong>：</p>
+  <h3>1.2 批量跑结果（已跑完并复核，别重跑浪费积分）</h3>
+  <p>结果文件：<code>eval/artifacts/eval_results.json</code>。顶层 <code>passed=126 / total=126</code>。<strong>最初首跑一度显示 109/126，唯一未过的是 E14</strong>，经定性为评测脚本误报（扫了 <code>judge_calibration.json</code> 的 ROI/GMV 文本），修复扫描守卫后复核为满分。逐 case 拆解：</p>
   <table>
     <tr><th>Case</th><th>结果</th><th>说明</th></tr>
-    <tr><td><code>E14</code>（后链路排除）</td><td><span class="pill p-bad">1 / 2</span></td><td>断言「报告不出现后链路结论」误报。根因：扫描脚本把 <code>judge_calibration.json</code>（内含 judge 推理文本里的 ROI/GMV 字样）当成了报告来扫。<strong>这是评测脚本 bug，不是报告错。</strong></td></tr>
+    <tr><td><code>E14</code>（后链路排除）</td><td><span class="pill p-ok">2 / 2</span>（修前 1/2 误报）</td><td>首跑误报根因：扫描脚本把 <code>judge_calibration.json</code>（内含 judge 推理文本里的 ROI/GMV 字样）当成了报告来扫。<strong>这是评测脚本 bug，不是报告错。</strong>已在 <code>run_eval.py</code> 加「只扫真实报告 JSON」守卫修复。</td></tr>
     <tr><td>其余所有 case（E01-E13/E15-E24）</td><td><span class="pill p-ok">全部满分</span></td><td>含 75 条横切硬断言（E24 组）全过、judge 三档评分全部产出。</td></tr>
   </table>
   <div class="callout">
     <strong>解读口径（来自校准报告）：</strong>judge 的 D2/D3 名义分歧率 33% 已超 30%「红线」，但连续 7 轮证明残余分歧全是 <strong>2/3 边界上的 ±1 摇摆（LLM 温度噪声）</strong>，不是标准偏差；judge 对<strong>真错误的检出率 100%</strong>，从未出现 1↔3 跨档错判。所以 judge 分数看「1 分 / 跨份趋势」，单份 2/3 边界不做硬解读。
   </div>
 
-  <h3>1.3 下一步（详见第 9 节）</h3>
+  <h3>1.3 收尾（已完成，详见第 9 节）</h3>
   <ol class="tight">
-    <li>修 <code>eval/run_eval.py</code> 里 E14 报告的扫描循环，跳过 <code>judge_calibration.json</code> 等非报告 JSON。</li>
-    <li>跑 <code>python3 eval/run_eval.py --static</code>（零成本，复用已有 artifacts 重算断言）。</li>
-    <li>确认 E14 变绿、总分 126/126（或明确剩余项），写 <code>eval/eval_report_v2.md</code> 收尾。</li>
+    <li><span class="pill p-ok">已做</span> 修 <code>eval/run_eval.py</code> 里 E14 报告的扫描循环，跳过 <code>judge_calibration.json</code> 等非报告 JSON。</li>
+    <li><span class="pill p-ok">已做</span> 跑 <code>python3 eval/run_eval.py</code>（默认即 --static，复用已有 artifacts 重算断言）→ 126/126。</li>
+    <li><span class="pill p-ok">已做</span> 写 <code>eval/eval_report_v2.md</code> 收尾；commit <code>7296e82</code> 并 push 到 <span class="mono">main</span>。</li>
   </ol>
 </section>
 
@@ -276,8 +277,8 @@
 <!-- ========== 9 ========== -->
 <section id="task">
   <h2>9. 待办：下一步做什么</h2>
-  <div class="callout bad">
-    <strong>当前唯一阻塞项 = E14 误报。</strong> 批量跑已结束，别重跑整轮（浪费积分）。按下面 3 步收尾即可。
+  <div class="callout ok">
+    <strong>v2 首轮收尾已完成（2026-08-19）。</strong> E14 误报已修复、复核 126/126、v2 报告已写、已 push 到 <span class="mono">main</span>（commit <code>7296e82</code>）。下面 3 步是「已做」记录，供下一位核对；别重跑整轮（浪费积分）。
   </div>
 
   <h3>步骤 1：修评测脚本的 E14 误报</h3>
@@ -377,6 +378,19 @@ grep -h "^export DEEPSEEK_API_KEY=sk-" ~/.zshrc | grep -v "你的key" | tail -1
 <span class="c"># 看批量结果</span>
 cat eval/artifacts/eval_results.json | python3 -m json.tool | less</pre>
   <p class="small">项目根：<span class="mono">诊断台/</span> ；本文档应随项目一起提交到 GitHub，确保下一位接手者能直接看到。</p>
+</section>
+
+<!-- ========== 13 ========== -->
+<section id="wf">
+  <h2>13. 工作流铁律（2026-08-19 用户定，长期）</h2>
+  <div class="callout acc">
+    <strong>每完成一项任务（无论大小），必须：①git 提交（本地，必要时 push 远端）②同步更新本交接文档。</strong> 规则 / 进度 / 待办一旦变化就同步，确保下一位接手者不靠聊天记录考古。
+  </div>
+  <ul class="tight">
+    <li>改了 <span class="mono">agent/</span> 或 <span class="mono">eval/</span> 任何行为（prompt 第 7 节红线、orchestrator/tools、run_eval 断言）→ 第 1 节进度表 + 第 6 节红线 + 第 9 节待办 同步更新。</li>
+    <li>跑了批量评测 / 修复了误报 → 第 1.2 节结果数字 + 第 9 节状态同步。</li>
+    <li>这条铁律本身也是「一项任务」，所以确立后立即 git + 更新本文档（你正看的这一版已含此条）。</li>
+  </ul>
 </section>
 
 </main>
