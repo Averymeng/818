@@ -699,6 +699,7 @@ def main():
     }, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"结果已写入: {RESULT_PATH}")
     conn.close()
+    sys.exit(0 if passed == total else 1)
 
 
 if __name__ == "__main__":

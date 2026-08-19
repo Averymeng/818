@@ -1,0 +1,36 @@
+name: eval-regression
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '17 3 * * 1'   # 每周一 03:17（北京时区近似）跑全量真跑，需仓库 Secret DEEPSEEK_API_KEY
+
+jobs:
+  static:
+    name: 静态回归（db/LLM-free，每次 push/PR）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 跑静态回归
+        run: python3 eval/ci_check.py
+
+  full:
+    name: 全量真跑（仅定时，需密钥）
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 种案例库
+        run: python3 eval/seed_cases.py
+      - name: 全量评测（含 judge，零成本复用已提交 artifacts）
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: python3 eval/run_eval.py --judge
