@@ -101,15 +101,15 @@
     <div class="brand"><span class="dot"></span>诊断台</div>
     <div class="nav-group">
       <div class="nav-title">Main</div>
-      <div class="nav-item" data-view="overview" onclick="showView('overview')"><span class="ico">📊</span>数据总览</div>
-      <div class="nav-item active" data-view="list" onclick="showView('list')"><span class="ico">📅</span>周度复盘</div>
+      <div class="nav-item" data-view="overview" onclick="showView('overview')"><span class="ico">📊</span>当日监控</div>
+      <div class="nav-item active" data-view="list" onclick="showView('list')"><span class="ico">📅</span>客户详情</div>
       <div class="nav-item" data-view="ingest" onclick="showView('ingest')"><span class="ico">➕</span>手动录入</div>
     </div>
   </div>
 
   <div class="main">
     <div class="topbar">
-      <div class="page-title" id="pageTitle">周度复盘</div>
+      <div class="page-title" id="pageTitle">客户详情</div>
       <div style="color:var(--sub);font-size:12px;" id="pageSub">08-03 – 08-17</div>
     </div>
 
@@ -229,7 +229,7 @@ function showView(v){
   ['overview','list','detail','ingest'].forEach(id=>document.getElementById(id+'View').classList.remove('on'));
   document.getElementById(v+'View').classList.add('on');
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===v));
-  const titles={overview:'数据总览',list:'周度复盘',ingest:'手动录入'};
+  const titles={overview:'当日监控',list:'客户详情',ingest:'手动录入'};
   document.getElementById('pageTitle').innerText=titles[v]||'';
   if(v==='overview') renderOverview();
 }
