@@ -406,6 +406,61 @@ LLM 调用 {report.get('llm_calls','-')} 次，成本 ¥{report.get('llm_cost_yu
 </div></body></html>"""
 
 
+def attrib_reason(conn, customer_id, cs, ce, ps, pe):
+    """确定性归因一句话：复用 tools 的环比对比 + 基建双门槛，无 LLM、无任务落库"""
+    comp = tools.get_period_comparison(conn, customer_id, cs, ce, ps, pe)
+    if not comp["cur"]["spend"] and not comp["prev"]["spend"]:
+        return "该窗口无消耗数据"
+    chg, mc, mp = comp["metrics_change"], comp["metrics_cur"], comp["metrics_prev"]
+    sc = comp["spend_change"]
+    parts = []
+    infra = tools.get_infrastructure(conn, customer_id, cs, ce, ps, pe)
+    ng, pg = infra["note_gate"], infra["plan_gate"]
+    if ng["hit"]:
+        parts.append(f"在投笔记 {ng['prev']}→{ng['cur']}" + ("（基建掉量）" if ng["delta"] < 0 else "（基建扩量）"))
+    elif pg["hit"]:
+        parts.append(f"在投计划 {pg['prev']}→{pg['cur']}" + ("（基建掉量）" if pg["delta"] < 0 else "（基建扩量）"))
+    ctr = chg.get("CTR")
+    if ctr is not None and abs(ctr) >= 0.10 and mc.get("CTR") is not None and mp.get("CTR") is not None:
+        tag = "素材吸引力下降" if ctr < 0 else "素材吸引力提升"
+        parts.append(f"CTR {mp['CTR']*100:.2f}%→{mc['CTR']*100:.2f}%，{tag}")
+    lr = chg.get("lead_rate")
+    if lr is not None and lr <= -0.10:
+        parts.append("开口→留资转化下滑")
+    lc = chg.get("lead_cost")
+    if lc is not None and abs(lc) >= 0.15 and mc.get("lead_cost") is not None and mp.get("lead_cost") is not None:
+        parts.append(f"留资成本 ¥{mp['lead_cost']:.0f}→¥{mc['lead_cost']:.0f}")
+    head = f"消耗环比 {sc:+.0%}" if sc is not None else "消耗环比 —"
+    if not parts:
+        return head + "，各环节指标未见显著异常"
+    return head + "：" + "；".join(parts[:3])
+
+
+def api_attrib(db_path, body):
+    """POST /api/attrib：一批客户的确定性归因文案，供首页掉量/增量 TOP 使用
+    body: {ids:[customer_id...], cur_start, cur_end, cmp_start, cmp_end}"""
+    try:
+        payload = json.loads(body)
+    except Exception as e:
+        return {"error": f"JSON 解析失败: {e}"}
+    ids = payload.get("ids") or []
+    cs, ce = payload.get("cur_start"), payload.get("cur_end")
+    ps, pe = payload.get("cmp_start"), payload.get("cmp_end")
+    if not (ids and cs and ce and ps and pe):
+        return {"error": "需要 ids 与 cur_start/cur_end/cmp_start/cmp_end"}
+    conn = get_conn(db_path)
+    out = {}
+    try:
+        for cid in ids:
+            try:
+                out[str(int(cid))] = attrib_reason(conn, int(cid), cs, ce, ps, pe)
+            except Exception as e:
+                out[str(cid)] = f"归因失败: {type(e).__name__}"
+    finally:
+        conn.close()
+    return {"reasons": out}
+
+
 def api_report_generate(db_path, body):
     """POST /api/report：真实 LLM 生成报告 + 落盘独立 HTML，返回 {report, share_url}"""
     try:
@@ -520,6 +575,11 @@ class Handler(BaseHTTPRequestHandler):
         elif path == "/api/report":
             try:
                 self._send_json(api_report_generate(self.db_path, body.decode("utf-8")))
+            except Exception as e:
+                self._send_json({"error": f"{type(e).__name__}: {e}"}, 500)
+        elif path == "/api/attrib":
+            try:
+                self._send_json(api_attrib(self.db_path, body.decode("utf-8")))
             except Exception as e:
                 self._send_json({"error": f"{type(e).__name__}: {e}"}, 500)
         else:

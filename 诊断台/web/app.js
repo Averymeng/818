@@ -8,6 +8,7 @@ let WIN = {start:'', end:'', label:'', short:''};
 let curIdx = 0;
 const OV_FILTER = {ind:'', sec:'', cat:'', cust:'', st:''};   // 当日监控筛选器当前条件
 const MONTH_TARGET = 500000;   // 销售业绩月目标（演示值，DB 无目标字段）
+let ATTR_TOKEN = 0;            // 归因请求代际号：重渲染后旧请求不再回填
 
 const STCLASS = {"需行动":"b-action", "观察":"b-watch", "正常":"b-normal"};
 const STCOLOR = {"需行动":"#F97066", "观察":"#FDB022", "正常":"#32D583"};
@@ -227,6 +228,25 @@ function openDetail(i){
   showView('detail');
 }
 
+/* ---------------- 重点变化归因（后端确定性归因，无 LLM） ---------------- */
+async function loadAttrib(list, token){
+  const ids=[...new Set(list.map(c=>c.id).filter(x=>x))];
+  if(!ids.length) return;
+  try{
+    const pw=prevWindow();
+    const res=await fetch('/api/attrib',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ids:ids, cur_start:WIN.start, cur_end:WIN.end, cmp_start:pw.start, cmp_end:pw.end})
+    }).then(r=>r.json());
+    if(token!==ATTR_TOKEN || !res || res.error || !res.reasons) return;
+    for(const c of list){
+      const el=document.getElementById('attr-'+c.id);
+      const t=res.reasons[String(c.id)];
+      if(el && t) el.textContent=t;
+    }
+  }catch(e){ /* 归因失败保留占位文案 */ }
+}
+
 /* ---------------- 报告生成（真实 LLM） ---------------- */
 let shareUrl='';
 async function generateReport(){
@@ -425,13 +445,14 @@ function renderOverview(){
     return {name:c.name, ind:c.ind, spend:today.spend, dlt, st:c.st, task:tasks};
   }).sort((a,b)=>b.spend-a.spend);
 
-  // 重点变化归因（数据驱动文案）
+  // 重点变化归因（排序取 TOP，文案由后端 /api/attrib 确定性归因填充）
   const topDrop=[...CS].sort((a,b)=>a.delta-b.delta).slice(0,5);
   const topRise=[...CS].sort((a,b)=>b.delta-a.delta).slice(0,5);
   function attribHTML(c){
-    const reason='日均消耗 ¥'+fmt(c.spend)+'（环比 '+(c.delta>=0?'+':'')+c.delta+'%）· 留资 '+c.lead+'/天 · 留资成本 ¥'+Math.round(c.cpl)+'（环比 '+(c.cplRise>=0?'+':'')+c.cplRise+'%）';
-    return '<div class="ov-attrib-item'+(c.delta>=0?' up':'')+'"><div class="t">'+esc(c.name)+' <span style="color:var(--sub);font-weight:700">'+esc(c.ind)+'</span></div><div class="d">'+esc(reason)+'</div></div>';
+    return '<div class="ov-attrib-item'+(c.delta>=0?' up':'')+'"><div class="t">'+esc(c.name)+' <span style="color:var(--sub);font-weight:700">'+esc(c.ind)+'</span></div><div class="d" id="attr-'+c.id+'">归因计算中…</div></div>';
   }
+  ATTR_TOKEN++;
+  loadAttrib([...topDrop,...topRise], ATTR_TOKEN);
 
   const alertsHTML=alerts.length?alerts.map(a=>
     '<div class="ov-alert-item '+a.prio+'"><div class="t"><span class="tag">'+(a.prio==='p0'?'P0':'P1')+'</span>'+esc(a.name)+' · '+esc(a.ind)+'</div><div class="d">'+esc(a.desc)+'</div></div>'

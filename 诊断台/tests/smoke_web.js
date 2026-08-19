@@ -51,6 +51,12 @@ global.fetch=(u,o)=>realFetch('http://127.0.0.1:8000'+u,o);
   const ov=document.getElementById('overviewView').innerHTML;
   console.log('cards rendered:', (grid.match(/cust-card/g)||[]).length);
   console.log('overview renderOverview len:', ov.length);
+  // 重点变化归因：等 /api/attrib 异步回填后，attr-* 元素应被真实归因文案替换
+  // （DOM 桩中 textContent 不写回 innerHTML，故直接检查元素注册表）
+  await new Promise(r=>setTimeout(r,1500));
+  const attrEls=Object.keys(els).filter(k=>/^attr-\d+$/.test(k));
+  const attrPatched=attrEls.filter(k=>els[k].textContent.includes('消耗环比')).length;
+  console.log('attribution:', {items: attrEls.length, patchedWithReason: attrPatched});
   console.log('overview modules:', {
     kpi: ov.includes('总消耗')&&ov.includes('留资数')&&ov.includes('留资成本'),
     trend: ov.includes('polyline'),
