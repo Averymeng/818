@@ -27,7 +27,6 @@
   .page-title{font-size:16px;font-weight:800;}
   .top-right{display:flex;gap:10px;align-items:center;}
   .top-right input[type=date],.top-right select{padding:7px 11px;border:1px solid var(--line);border-radius:8px;font-size:12px;background:#fff;color:var(--ink);}
-  .range-cap{color:var(--sub);font-size:12px;font-weight:700;}
   .wrap{padding:16px 24px 60px;}
   .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;}
   .badge{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:800;}
@@ -121,7 +120,6 @@
           <option selected>近14天</option>
           <option>本月</option>
         </select>
-        <span class="range-cap" id="rangeCap">08-03 – 08-17</span>
       </div>
     </div>
 
@@ -291,16 +289,10 @@ function renderOverview(){
     +'<div class="card"><h3 style="font-size:12px;color:var(--sub);font-weight:800;margin-bottom:10px;">客户监控表</h3><table class="mon-table"><thead><tr><th>客户</th><th>行业</th><th>状态</th><th>日均消耗</th><th>环比</th></tr></thead><tbody>'+monRows+'</tbody></table></div>';
 }
 
-function updateRangeCap(){
-  document.getElementById('rangeCap').innerText=document.getElementById('fRange').value+' · '+META.window;
-}
-
 // init
 (function(){
   const inds=[...new Set(CUSTOMERS.map(c=>c.ind))];
   document.getElementById('fInd').innerHTML='<option value="">全部行业</option>'+inds.map(i=>'<option>'+i+'</option>').join('');
-  document.getElementById('fRange').addEventListener('change',updateRangeCap);
-  updateRangeCap();
   renderGrid(CUSTOMERS);
 })();
 </script>
