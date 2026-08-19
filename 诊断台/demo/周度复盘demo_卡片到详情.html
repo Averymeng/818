@@ -132,6 +132,8 @@
       <div class="view on" id="listView">
         <div class="filter-bar">
           <select id="fInd"><option value="">全部行业</option></select>
+          <select id="fSector"><option value="">全部赛道</option></select>
+          <select id="fCat"><option value="">全部品类</option></select>
           <select id="fSt">
             <option value="">全部状态</option>
             <option value="需行动">需行动</option>
@@ -210,6 +212,8 @@ const STCLASS={"需行动":"b-action","观察":"b-watch","正常":"b-normal"};
 const STCOLOR={"需行动":"#F97066","观察":"#FDB022","正常":"#32D583"};
 let curIdx=0;
 
+const SCMAP={"码上AI学堂": ["AI培训", ["AI编程开发", "AI办公提效"]], "AI副业加油站": ["AI培训", ["AI副业变现", "AI内容创作"]], "智绘AI课堂": ["AI培训", ["AI内容创作"]], "云梯AI研习社": ["AI培训", ["AI办公提效", "AI求职就业"]], "灵犀AI职场课": ["AI培训", ["AI企业培训"]], "银龄声乐课堂": ["中老年兴趣", ["唱歌"]], "夕阳红摄影社": ["中老年兴趣", ["摄影"]], "乐龄模特队": ["中老年兴趣", ["模特礼仪"]], "金秋书画院": ["中老年兴趣", ["书法", "国画"]], "启航留学工作室": ["语言留学", ["留学规划"]], "雅思小站": ["语言留学", ["雅思培训"]], "环球语言村": ["语言留学", ["日语培训", "韩语培训"]], "伯乐留学规划": ["语言留学", ["英澳留学申请"]], "拾光婚纱影像": ["婚纱摄影", ["中式婚纱照", "纪实婚纱照"]], "半夏映画": ["婚纱摄影", ["韩式婚纱照"]], "玫瑰半岛婚纱": ["婚纱摄影", ["本地婚纱照"]], "唯一视觉婚照": ["婚纱摄影", ["旅拍婚纱照"]], "花漾旅拍馆": ["婚纱摄影", ["旅拍婚纱照", "个人写真"]], "素人写真馆": ["个人写真", ["个人写真"]], "镜见写真": ["个人写真", ["证件照", "形象照"]], "慢镜头人像": ["个人写真", ["艺术写真"]], "星野少女写真": ["个人写真", ["少女写真", "情侣写真"]], "环球定制旅行家": ["旅行线路", ["定制旅行"]], "远山出境游": ["旅行线路", ["出境游"]], "老友记旅行社": ["旅行线路", ["跟团游", "银发游"]], "川行者户外": ["旅行线路", ["徒步露营"]], "云端假期定制": ["旅行线路", ["亲子游", "蜜月游"]], "山野民宿": ["酒店住宿", ["设计感民宿"]], "云栖度假酒店": ["酒店住宿", ["度假酒店套餐"]], "枕水人家客栈": ["酒店住宿", ["古镇客栈"]], "松间小院": ["酒店住宿", ["乡野小院整租"]], "缦野营地酒店": ["酒店住宿", ["营地酒店"]], "欢乐水世界": ["景区乐园", ["水乐园门票"]], "奇遇乐园": ["景区乐园", ["室内乐园年卡"]], "星空动物园": ["景区乐园", ["亲子动物园"]], "悠然田园农场": ["景区乐园", ["农场采摘"]], "悦颜美容SPA": ["丽人美业", ["美容护理"]], "静舍美甲": ["丽人美业", ["美甲美睫"]], "芳华皮肤管理": ["丽人美业", ["皮肤管理"]], "轻漾美睫": ["丽人美业", ["美睫"]], "舒曼养生馆": ["丽人美业", ["身体护理"]], "巅峰密室": ["休闲娱乐", ["密室逃脱"]], "聚点桌游吧": ["休闲娱乐", ["桌游", "剧本杀"]], "星光KTV": ["休闲娱乐", ["KTV聚会套餐"]], "卡通尼亲子乐园": ["休闲娱乐", ["亲子游乐"]], "燃动运动馆": ["休闲娱乐", ["运动场馆"]], "洁到家家政": ["生活服务", ["日常保洁"]], "安心到家保洁": ["生活服务", ["开荒保洁"]], "万能小哥维修": ["生活服务", ["家电维修"]], "喵爪宠物之家": ["生活服务", ["宠物洗护"]]};
+
 function fmt(n){return (n||0).toLocaleString('en-US');}
 function spark(series,color){
   const w=120,h=28,max=Math.max(...series),min=Math.min(...series),rng=(max-min)||1;
@@ -231,8 +235,8 @@ function renderGrid(list){
   document.getElementById('grid').innerHTML = list.length? list.map((c,i)=>cardHTML(c,i)).join('') : '<div style="color:var(--sub)">无匹配客户</div>';
 }
 function applyFilter(){
-  const ind=document.getElementById('fInd').value, st=document.getElementById('fSt').value, q=document.getElementById('fQ').value.trim();
-  const list=CUSTOMERS.filter(c=>(!ind||c.ind===ind)&&(!st||c.st===st)&&(!q||c.name.includes(q)));
+  const ind=document.getElementById('fInd').value, sector=document.getElementById('fSector').value, cat=document.getElementById('fCat').value, st=document.getElementById('fSt').value, q=document.getElementById('fQ').value.trim();
+  const list=CUSTOMERS.filter(c=>(!ind||c.ind===ind)&&(!sector||c.sector===sector)&&(!cat||(c.cats||[]).includes(cat))&&(!st||c.st===st)&&(!q||c.name.includes(q)));
   renderGrid(list);
 }
 function showView(v){
@@ -293,6 +297,12 @@ function renderOverview(){
 (function(){
   const inds=[...new Set(CUSTOMERS.map(c=>c.ind))];
   document.getElementById('fInd').innerHTML='<option value="">全部行业</option>'+inds.map(i=>'<option>'+i+'</option>').join('');
+  // 注入真实赛道/品类（来自 DB），使新筛选器可过滤
+  CUSTOMERS.forEach(c=>{const m=SCMAP[c.name];if(m){c.sector=m[0];c.cats=m[1];}});
+  const sectors=[...new Set(CUSTOMERS.map(c=>c.sector).filter(Boolean))];
+  const cats=[...new Set(CUSTOMERS.flatMap(c=>c.cats||[]))];
+  document.getElementById('fSector').innerHTML='<option value="">全部赛道</option>'+sectors.map(s=>'<option>'+s+'</option>').join('');
+  document.getElementById('fCat').innerHTML='<option value="">全部品类</option>'+cats.map(s=>'<option>'+s+'</option>').join('');
   renderGrid(CUSTOMERS);
 })();
 </script>
