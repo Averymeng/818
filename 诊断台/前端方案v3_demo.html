@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>销售工作台 v3 · 前端方案 Demo</title>
+<style>
+  :root{
+    --bg:#F8F9FC; --card:#FFFFFF; --ink:#1F2937; --sub:#94A3B8; --line:#E9EDF5;
+    --blue:#3B9DFF; --blue-soft:#E8F4FF; --blue-dark:#1E6FD9; --ivory:#FDFCF8;
+    --red:#F97066; --yellow:#FDB022; --green:#32D583; --cyan:#22D3EE;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;}
+  body{background:var(--bg);color:var(--ink);font-size:13px;line-height:1.5;}
+  /* layout */
+  .app{display:grid;grid-template-columns:210px 1fr;min-height:100vh;}
+  /* sidebar */
+  .sidebar{background:#fff;border-right:1px solid var(--line);padding:20px 14px;display:flex;flex-direction:column;}
+  .brand{font-weight:800;font-size:16px;color:var(--blue-dark);display:flex;align-items:center;gap:8px;margin-bottom:28px;padding:0 6px;}
+  .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--blue);}
+  .nav-group{margin-bottom:18px;}
+  .nav-title{font-size:10px;color:var(--sub);font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:0 10px;margin-bottom:6px;}
+  .nav-item{padding:9px 10px;border-radius:8px;color:var(--sub);font-weight:700;display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:2px;}
+  .nav-item:hover{background:var(--bg);color:var(--ink);}
+  .nav-item.active{background:var(--blue-soft);color:var(--blue-dark);}
+  .nav-item .ico{font-size:14px;}
+  /* main */
+  .main{display:flex;flex-direction:column;}
+  .topbar{height:58px;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:20;}
+  .page-title{font-size:16px;font-weight:800;}
+  .user{display:flex;align-items:center;gap:10px;cursor:pointer;}
+  .user .avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--cyan));color:#fff;display:grid;place-items:center;font-weight:700;font-size:12px;}
+  .user .name{font-weight:700;font-size:13px;}
+  /* switch */
+  .switch{display:flex;gap:8px;padding:16px 24px 0;}
+  .switch button{border:1px solid var(--line);background:#fff;padding:7px 16px;border-radius:20px;cursor:pointer;font-weight:700;color:var(--sub);}
+  .switch button.on{background:var(--blue);color:#fff;border-color:var(--blue);}
+  .wrap{padding:16px 24px 60px;}
+  .view,.opt{display:none;}
+  .view.on,.opt.on{display:block;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;}
+  .card h3{font-size:12px;color:var(--sub);font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:6px;letter-spacing:.3px;}
+  .section-title{font-size:13px;font-weight:800;color:var(--ink);margin:20px 0 10px;padding-left:10px;border-left:3px solid var(--blue);}
+  .badge{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:800;}
+  .b-action{background:#FEE4E2;color:#B42318;}
+  .b-watch{background:#FEF0C7;color:#B54708;}
+  .b-normal{background:#D1FADF;color:#027A48;}
+  .b-info{background:var(--blue-soft);color:var(--blue-dark);}
+  .up{color:#10B981;} .down{color:var(--red);}
+  /* filters */
+  .filter-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .filter-bar select,.filter-bar input{padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:12px;background:#fff;}
+  .filter-bar button{background:var(--blue);color:#fff;border:none;padding:7px 14px;border-radius:8px;font-weight:700;cursor:pointer;}
+  /* kpi */
+  .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px;}
+  .kpi .lab{color:var(--sub);font-size:11px;font-weight:700;margin-bottom:4px;}
+  .kpi .v{font-size:20px;font-weight:800;color:var(--ink);}
+  .kpi .d{font-size:11px;margin-top:4px;font-weight:700;}
+  /* metric group */
+  .metric-group{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+  .metric-group .inner{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:10px;}
+  .mini-metric{padding:10px;background:#FAFBFC;border-radius:8px;}
+  .mini-metric .lab{font-size:10px;color:var(--sub);font-weight:700;margin-bottom:4px;}
+  .mini-metric .v{font-size:15px;font-weight:800;}
+  .mini-metric .d{font-size:10px;margin-top:2px;}
+  /* chart */
+  .chart-area{height:180px;position:relative;}
+  .chart-area svg{width:100%;height:100%;}
+  .legend{display:flex;gap:14px;font-size:11px;color:var(--sub);margin-top:8px;}
+  .legend span{display:flex;align-items:center;gap:4px;}
+  .legend i{width:10px;height:3px;border-radius:2px;}
+  /* reason */
+  .reason-item{padding:10px 12px;background:#FAFBFC;border-radius:8px;margin-bottom:8px;border-left:3px solid var(--blue);}
+  .reason-item b{display:block;font-size:12px;margin-bottom:2px;}
+  .reason-item span{color:var(--sub);font-size:11px;}
+  .reason-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  /* tables */
+  table{width:100%;border-collapse:collapse;}
+  th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);font-size:12px;}
+  th{color:var(--sub);font-weight:800;font-size:11px;}
+  td .name{font-weight:700;color:var(--ink);}
+  /* weekly */
+  .customer-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px;}
+  .cust-card{padding:16px;cursor:pointer;transition:transform .1s,box-shadow .1s;}
+  .cust-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.06);}
+  .cust-card .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .cust-card .spend{font-size:20px;font-weight:800;}
+  .cust-card .ind{color:var(--sub);font-size:11px;}
+  .weekly-filter{display:flex;gap:10px;margin-bottom:16px;}
+  .detail-cover{background:linear-gradient(135deg,var(--blue-dark),var(--blue));color:#fff;border-radius:12px;padding:22px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;}
+  .detail-cover h1{font-size:20px;}
+  .detail-cover .meta{opacity:.9;font-size:12px;}
+  .report-link{background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;}
+  .report-link button{background:var(--green);color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:700;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="brand"><span class="dot"></span>销售工作台</div>
+    <div class="nav-group">
+      <div class="nav-title">Main</div>
+      <div class="nav-item active" onclick="show('home')"><span class="ico">📊</span>数据总览</div>
+      <div class="nav-item" onclick="show('weekly')"><span class="ico">📅</span>周度复盘</div>
+      <div class="nav-item"><span class="ico">➕</span>手动录入</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-title">Library</div>
+      <div class="nav-item"><span class="ico">📚</span>案例库</div>
+      <div class="nav-item"><span class="ico">⚠️</span>Badcase</div>
+    </div>
+    <div class="nav-group" style="margin-top:auto;">
+      <div class="nav-item"><span class="ico">⚙️</span>设置</div>
+      <div class="nav-item"><span class="ico">❓</span>帮助</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="page-title" id="pageTitle">数据总览</div>
+      <div class="user">
+        <div class="name">销售小王</div>
+        <div class="avatar">王</div>
+      </div>
+    </div>
+
+    <!-- 首页方案切换 -->
+    <div class="switch" id="switchBar">
+      <span style="align-self:center;color:var(--sub);font-weight:800;font-size:12px;">首页布局：</span>
+      <button class="on" onclick="setOpt(1,this)">A · 按你要求</button>
+      <button onclick="setOpt(2,this)">B · 归因并列版</button>
+      <button onclick="setOpt(3,this)">C · 我的变体：简报</button>
+      <button onclick="setOpt(4,this)">D · 我的变体：控制台</button>
+    </div>
+
+    <div class="wrap">
+
+      <!-- ==================== 首页 ==================== -->
+      <div class="view on" id="home">
+
+        <!-- ===== Option A：严格按你要求 ===== -->
+        <div class="opt on" id="opt1">
+          <!-- 第一行：KPI + 筛选器 -->
+          <div class="kpi-row">
+            <div class="card kpi"><div class="lab">总消耗</div><div class="v">¥148,200</div><div class="d up">▲ 12%</div></div>
+            <div class="card kpi"><div class="lab">留资数</div><div class="v">1,284</div><div class="d up">▲ 9%</div></div>
+            <div class="card kpi"><div class="lab">留资成本</div><div class="v">¥115</div><div class="d down">▼ 3%</div></div>
+            <div class="card" style="display:flex;flex-direction:column;justify-content:center;">
+              <h3 style="margin-bottom:8px;">筛选器</h3>
+              <div class="filter-bar">
+                <select><option>全部行业</option><option>美妆</option><option>3C</option><option>食品</option><option>服饰</option></select>
+                <select><option>全部状态</option><option>正常</option><option>观察</option><option>需行动</option></select>
+                <select><option>全部来源</option><option>系统模拟</option><option>用户上传</option></select>
+                <button>应用</button>
+              </div>
+            </div>
+          </div>
+          <!-- 第二行：趋势 + 业绩 -->
+          <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:14px;margin-bottom:14px;">
+            <div class="card"><h3>趋势（消耗 / 留资成本 / 开口成本）</h3>
+              <div class="chart-area">
+                <svg viewBox="0 0 500 180" preserveAspectRatio="none">
+                  <defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3B9DFF" stop-opacity=".15"/><stop offset="100%" stop-color="#3B9DFF" stop-opacity="0"/></linearGradient></defs>
+                  <!-- 消耗 -->
+                  <path d="M0,130 L70,110 L140,120 L210,80 L280,65 L350,90 L420,45 L500,55 L500,180 L0,180 Z" fill="url(#g1)"/>
+                  <polyline points="0,130 70,110 140,120 210,80 280,65 350,90 420,45 500,55" fill="none" stroke="#3B9DFF" stroke-width="2.5"/>
+                  <!-- 留资成本 -->
+                  <polyline points="0,150 70,140 140,145 210,120 280,115 350,125 420,100 500,105" fill="none" stroke="#22D3EE" stroke-width="2" stroke-dasharray="4 2"/>
+                  <!-- 开口成本 -->
+                  <polyline points="0,160 70,155 140,158 210,140 280,135 350,145 420,125 500,130" fill="none" stroke="#FDB022" stroke-width="2"/>
+                </svg>
+              </div>
+              <div class="legend">
+                <span><i style="background:#3B9DFF"></i>消耗</span>
+                <span><i style="background:#22D3EE"></i>留资成本</span>
+                <span><i style="background:#FDB022"></i>开口成本</span>
+              </div>
+            </div>
+            <div class="card">
+              <h3>销售业绩 <span class="badge b-info">消耗维度</span></h3>
+              <div style="font-size:22px;font-weight:800;">¥326,400</div>
+              <div style="font-size:12px;color:var(--sub);margin:4px 0 12px;">月目标 ¥500,000</div>
+              <div style="height:8px;background:var(--line);border-radius:4px;overflow:hidden;"><div style="width:65%;height:100%;background:var(--blue);border-radius:4px;"></div></div>
+              <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--sub);"><span>完成度 65%</span><span>剩余 ¥173,600</span></div>
+            </div>
+          </div>
+          <!-- 第三行：过程数据 / 基建数据 -->
+          <div class="metric-group">
+            <div class="card"><h3>过程数据</h3>
+              <div class="inner">
+                <div class="mini-metric"><div class="lab">CTR</div><div class="v">8.7%</div><div class="d down">-0.3pt</div></div>
+                <div class="mini-metric"><div class="lab">按钮率</div><div class="v">6.5%</div><div class="d down">-0.3pt</div></div>
+                <div class="mini-metric"><div class="lab">表单CVR</div><div class="v">0.00%</div><div class="d">—</div></div>
+                <div class="mini-metric"><div class="lab">留资CVR</div><div class="v">1.86%</div><div class="d down">-0.4pt</div></div>
+                <div class="mini-metric"><div class="lab">CPC</div><div class="v">¥1.60</div><div class="d up">-5.05%</div></div>
+              </div>
+            </div>
+            <div class="card"><h3>基建数据</h3>
+              <div class="inner">
+                <div class="mini-metric"><div class="lab">在投笔记</div><div class="v">355</div><div class="d up">+25.89%</div></div>
+                <div class="mini-metric"><div class="lab">新投笔记</div><div class="v">23</div><div class="d">—</div></div>
+                <div class="mini-metric"><div class="lab">在投计划</div><div class="v">194</div><div class="d up">+10.86%</div></div>
+                <div class="mini-metric"><div class="lab">新投计划</div><div class="v">23</div><div class="d up">+228.57%</div></div>
+              </div>
+            </div>
+          </div>
+          <!-- 第四行：今日诊断速览 + 客户监控 -->
+          <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:14px;margin-bottom:14px;">
+            <div class="card">
+              <h3>今日诊断速览</h3>
+              <div style="font-size:20px;font-weight:800;color:var(--red);margin-bottom:8px;">3 个客户需关注</div>
+              <div style="font-size:12px;color:var(--sub);margin-bottom:12px;">其中 2 项 P0 需当天止损</div>
+              <div class="reason-item" style="border-left-color:var(--red);"><b>P0 · 客户D 服饰</b><span>消耗暴涨 42%，疑似定向异常</span></div>
+              <div class="reason-item" style="border-left-color:var(--red);"><b>P0 · 客户A 美妆</b><span>留资转化跌破阈值</span></div>
+              <div class="reason-item"><b>P1 · 客户F 家居</b><span>周环比下滑 8%</span></div>
+            </div>
+            <div class="card">
+              <h3>客户每日监控</h3>
+              <table>
+                <tr><th>客户</th><th>行业</th><th>今日消耗</th><th>环比</th><th>状态</th><th>今日要务</th></tr>
+                <tr><td class="name">客户A</td><td>美妆</td><td>¥2,340</td><td class="up">+18%</td><td><span class="badge b-action">需行动</span></td><td>留资转化跌破阈值</td></tr>
+                <tr><td class="name">客户B</td><td>3C</td><td>¥1,120</td><td class="down">-5%</td><td><span class="badge b-watch">观察</span></td><td>—</td></tr>
+                <tr><td class="name">客户C</td><td>食品</td><td>¥890</td><td class="up">+2%</td><td><span class="badge b-normal">正常</span></td><td>—</td></tr>
+                <tr><td class="name">客户D</td><td>服饰</td><td>¥3,010</td><td class="up">+42%</td><td><span class="badge b-action">需行动</span></td><td>消耗暴涨，疑似定向异常</td></tr>
+                <tr><td class="name">客户E</td><td>教育</td><td>¥760</td><td class="up">+1%</td><td><span class="badge b-normal">正常</span></td><td>—</td></tr>
+                <tr><td class="name">客户F</td><td>家居</td><td>¥1,540</td><td class="down">-8%</td><td><span class="badge b-watch">观察</span></td><td>周环比下滑</td></tr>
+              </table>
+            </div>
+          </div>
+          <!-- 第五行：重点变化归因 -->
+          <div class="section-title">重点变化归因</div>
+          <div class="reason-grid">
+            <div class="card"><h3>掉量 TOP</h3>
+              <div class="reason-item"><b>客户F 家居</b><span>消耗 -8% · 主因：素材衰退，CTR 下滑 1.2pt</span></div>
+              <div class="reason-item"><b>客户B 3C</b><span>开口成本 +15% · 主因：周末流量竞争加剧</span></div>
+            </div>
+            <div class="card"><h3>增量 TOP</h3>
+              <div class="reason-item"><b>客户D 服饰</b><span>消耗 +42% · 主因：定向包放宽导致放量</span></div>
+              <div class="reason-item"><b>客户A 美妆</b><span>曝光 +28% · 主因：新素材上线首跑</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Option B：归因并列版 ===== -->
+        <div class="opt" id="opt2">
+          <div class="kpi-row">
+            <div class="card kpi"><div class="lab">总消耗</div><div class="v">¥148,200</div><div class="d up">▲ 12%</div></div>
+            <div class="card kpi"><div class="lab">留资数</div><div class="v">1,284</div><div class="d up">▲ 9%</div></div>
+            <div class="card kpi"><div class="lab">留资成本</div><div class="v">¥115</div><div class="d down">▼ 3%</div></div>
+            <div class="card" style="display:flex;flex-direction:column;justify-content:center;">
+              <h3 style="margin-bottom:8px;">筛选器</h3>
+              <div class="filter-bar">
+                <select><option>全部行业</option><option>美妆</option><option>3C</option></select>
+                <select><option>全部状态</option><option>正常</option><option>观察</option><option>需行动</option></select>
+                <button>应用</button>
+              </div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:14px;margin-bottom:14px;">
+            <div class="card"><h3>趋势（消耗 / 留资成本 / 开口成本）</h3>
+              <div class="chart-area">
+                <svg viewBox="0 0 500 180" preserveAspectRatio="none">
+                  <defs><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3B9DFF" stop-opacity=".15"/><stop offset="100%" stop-color="#3B9DFF" stop-opacity="0"/></linearGradient></defs>
+                  <path d="M0,130 L70,110 L140,120 L210,80 L280,65 L350,90 L420,45 L500,55 L500,180 L0,180 Z" fill="url(#g2)"/>
+                  <polyline points="0,130 70,110 140,120 210,80 280,65 350,90 420,45 500,55" fill="none" stroke="#3B9DFF" stroke-width="2.5"/>
+                  <polyline points="0,150 70,140 140,145 210,120 280,115 350,125 420,100 500,105" fill="none" stroke="#22D3EE" stroke-width="2" stroke-dasharray="4 2"/>
+                  <polyline points="0,160 70,155 140,158 210,140 280,135 350,145 420,125 500,130" fill="none" stroke="#FDB022" stroke-width="2"/>
+                </svg>
+              </div>
+              <div class="legend">
+                <span><i style="background:#3B9DFF"></i>消耗</span>
+                <span><i style="background:#22D3EE"></i>留资成本</span>
+                <span><i style="background:#FDB022"></i>开口成本</span>
+              </div>
+            </div>
+            <div class="card">
+              <h3>销售业绩 <span class="badge b-info">消耗维度</span></h3>
+              <div style="font-size:22px;font-weight:800;">¥326,400</div>
+              <div style="font-size:12px;color:var(--sub);margin:4px 0 12px;">月目标 ¥500,000</div>
+              <div style="height:8px;background:var(--line);border-radius:4px;overflow:hidden;"><div style="width:65%;height:100%;background:var(--blue);"></div></div>
+              <div style="margin-top:8px;font-size:11px;color:var(--sub);">完成度 65% · 剩余 ¥173,600</div>
+            </div>
+          </div>
+          <div class="metric-group">
+            <div class="card"><h3>过程数据</h3>
+              <div class="inner">
+                <div class="mini-metric"><div class="lab">CTR</div><div class="v">8.7%</div><div class="d down">-0.3pt</div></div>
+                <div class="mini-metric"><div class="lab">按钮率</div><div class="v">6.5%</div><div class="d down">-0.3pt</div></div>
+                <div class="mini-metric"><div class="lab">留资CVR</div><div class="v">1.86%</div><div class="d down">-0.4pt</div></div>
+                <div class="mini-metric"><div class="lab">CPC</div><div class="v">¥1.60</div><div class="d up">-5.05%</div></div>
+              </div>
+            </div>
+            <div class="card"><h3>基建数据</h3>
+              <div class="inner">
+                <div class="mini-metric"><div class="lab">在投笔记</div><div class="v">355</div><div class="d up">+25.89%</div></div>
+                <div class="mini-metric"><div class="lab">在投计划</div><div class="v">194</div><div class="d up">+10.86%</div></div>
+                <div class="mini-metric"><div class="lab">新投计划</div><div class="v">23</div><div class="d up">+228.57%</div></div>
+              </div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:14px;margin-bottom:14px;">
+            <div class="card">
+              <h3>今日诊断速览</h3>
+              <div style="font-size:22px;font-weight:800;color:var(--red);margin-bottom:6px;">3</div>
+              <div style="font-size:12px;color:var(--sub);margin-bottom:12px;">客户需关注 · 2 项 P0</div>
+              <div class="reason-item" style="border-left-color:var(--red);padding:8px 10px;"><b>客户D</b><span>消耗 +42%</span></div>
+              <div class="reason-item" style="border-left-color:var(--red);padding:8px 10px;"><b>客户A</b><span>转化跌破阈值</span></div>
+              <div class="reason-item" style="padding:8px 10px;"><b>客户F</b><span>环比 -8%</span></div>
+            </div>
+            <div class="card">
+              <h3>客户每日监控</h3>
+              <table>
+                <tr><th>客户</th><th>消耗</th><th>环比</th><th>状态</th></tr>
+                <tr><td class="name">客户A</td><td>¥2,340</td><td class="up">+18%</td><td><span class="badge b-action">需行动</span></td></tr>
+                <tr><td class="name">客户B</td><td>¥1,120</td><td class="down">-5%</td><td><span class="badge b-watch">观察</span></td></tr>
+                <tr><td class="name">客户C</td><td>¥890</td><td class="up">+2%</td><td><span class="badge b-normal">正常</span></td></tr>
+                <tr><td class="name">客户D</td><td>¥3,010</td><td class="up">+42%</td><td><span class="badge b-action">需行动</span></td></tr>
+                <tr><td class="name">客户E</td><td>¥760</td><td class="up">+1%</td><td><span class="badge b-normal">正常</span></td></tr>
+                <tr><td class="name">客户F</td><td>¥1,540</td><td class="down">-8%</td><td><span class="badge b-watch">观察</span></td></tr>
+              </table>
+            </div>
+            <div class="card">
+              <h3>重点变化归因</h3>
+              <div class="reason-item"><b>掉量</b><span>客户F 素材衰退</span></div>
+              <div class="reason-item"><b>掉量</b><span>客户B 周末竞争</span></div>
+              <div class="reason-item"><b>增量</b><span>客户D 定向放宽</span></div>
+              <div class="reason-item"><b>增量</b><span>客户A 新素材上线</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Option C：我的变体 · 简报 ===== -->
+        <div class="opt" id="opt3">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <div class="card" style="flex:1;margin-right:14px;">
+              <h3>今日简报</h3>
+              <div style="font-size:22px;font-weight:800;">整体消耗 ¥148,200 <span class="up">▲12%</span></div>
+              <div style="font-size:12px;color:var(--sub);margin-top:4px;">3 个客户需关注 · 2 项 P0</div>
+            </div>
+            <div class="card" style="width:280px;">
+              <h3>筛选器</h3>
+              <div class="filter-bar">
+                <select><option>全部行业</option><option>美妆</option></select>
+                <select><option>全部状态</option><option>需行动</option></select>
+                <button>应用</button>
+              </div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:14px;margin-bottom:14px;">
+            <div class="card"><h3>趋势（消耗 / 留资成本 / 开口成本）</h3>
+              <div class="chart-area">
+                <svg viewBox="0 0 500 180" preserveAspectRatio="none">
+                  <defs><linearGradient id="g3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3B9DFF" stop-opacity=".15"/><stop offset="100%" stop-color="#3B9DFF" stop-opacity="0"/></linearGradient></defs>
+                  <path d="M0,130 L70,110 L140,120 L210,80 L280,65 L350,90 L420,45 500,55 L500,180 L0,180 Z" fill="url(#g3)"/>
+                  <polyline points="0,130 70,110 140,120 210,80 280,65 350,90 420,45 500,55" fill="none" stroke="#3B9DFF" stroke-width="2.5"/>
+                  <polyline points="0,150 70,140 140,145 210,120 280,115 350,125 420,100 500,105" fill="none" stroke="#22D3EE" stroke-width="2" stroke-dasharray="4 2"/>
+                  <polyline points="0,160 70,155 140,158 210,140 280,135 350,145 420,125 500,130" fill="none" stroke="#FDB022" stroke-width="2"/>
+                </svg>
+              </div>
+              <div class="legend">
+                <span><i style="background:#3B9DFF"></i>消耗</span>
+                <span><i style="background:#22D3EE"></i>留资成本</span>
+                <span><i style="background:#FDB022"></i>开口成本</span>
+              </div>
+            </div>
+            <div class="card">
+              <h3>销售业绩 <span class="badge b-info">消耗维度</span></h3>
+              <div style="font-size:22px;font-weight:800;">¥326,400</div>
+              <div style="font-size:12px;color:var(--sub);margin:4px 0 12px;">月目标 ¥500,000</div>
+              <div style="height:8px;background:var(--line);border-radius:4px;overflow:hidden;"><div style="width:65%;height:100%;background:var(--blue);"></div></div>
+              <div style="margin-top:8px;font-size:11px;color:var(--sub);">完成度 65% · 剩余 ¥173,600</div>
+            </div>
+          </div>
+          <div class="metric-group">
+            <div class="card"><h3>过程数据</h3>
+              <div class="inner">
+                <div class="mini-metric"><div class="lab">CTR</div><div class="v">8.7%</div><div class="d down">-0.3pt</div></div>
+                <div class="mini-metric"><div class="lab">按钮率</div><div class="v">6.5%</div><div class="d down">-0.3pt</div></div>
+                <div class="mini-metric"><div class="lab">留资CVR</div><div class="v">1.86%</div><div class="d down">-0.4pt</div></div>
+                <div class="mini-metric"><div class="lab">CPC</div><div class="v">¥1.60</div><div class="d up">-5.05%</div></div>
+              </div>
+            </div>
+            <div class="card"><h3>基建数据</h3>
+              <div class="inner">
+                <div class="mini-metric"><div class="lab">在投笔记</div><div class="v">355</div><div class="d up">+25.89%</div></div>
+                <div class="mini-metric"><div class="lab">在投计划</div><div class="v">194</div><div class="d up">+10.86%</div></div>
+                <div class="mini-metric"><div class="lab">新投计划</div><div class="v">23</div><div class="d up">+228.57%</div></div>
+              </div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:14px;margin-top:14px;">
+            <div class="card">
+              <h3>今日诊断速览</h3>
+              <div class="reason-item" style="border-left-color:var(--red);"><b>P0 · 客户D 服饰</b><span>消耗 +42%</span></div>
+              <div class="reason-item" style="border-left-color:var(--red);"><b>P0 · 客户A 美妆</b><span>转化跌破阈值</span></div>
+              <div class="reason-item"><b>P1 · 客户F 家居</b><span>环比 -8%</span></div>
+            </div>
+            <div class="card">
+              <h3>客户每日监控</h3>
+              <table>
+                <tr><th>客户</th><th>行业</th><th>消耗</th><th>环比</th><th>状态</th></tr>
+                <tr><td class="name">客户A</td><td>美妆</td><td>¥2,340</td><td class="up">+18%</td><td><span class="badge b-action">需行动</span></td></tr>
+                <tr><td class="name">客户B</td><td>3C</td><td>¥1,120</td><td class="down">-5%</td><td><span class="badge b-watch">观察</span></td></tr>
+                <tr><td class="name">客户C</td><td>食品</td><td>¥890</td><td class="up">+2%</td><td><span class="badge b-normal">正常</span></td></tr>
+                <tr><td class="name">客户D</td><td>服饰</td><td>¥3,010</td><td class="up">+42%</td><td><span class="badge b-action">需行动</span></td></tr>
+                <tr><td class="name">客户F</td><td>家居</td><td>¥1,540</td><td class="down">-8%</td><td><span class="badge b-watch">观察</span></td></tr>
+              </table>
+            </div>
+          </div>
+          <div class="reason-grid" style="margin-top:14px;">
+            <div class="card"><h3>掉量 TOP</h3>
+              <div class="reason-item"><b>客户F 家居</b><span>消耗 -8% · 素材衰退</span></div>
+              <div class="reason-item"><b>客户B 3C</b><span>开口成本 +15% · 周末竞争</span></div>
+            </div>
+            <div class="card"><h3>增量 TOP</h3>
+              <div class="reason-item"><b>客户D 服饰</b><span>消耗 +42% · 定向放宽</span></div>
+              <div class="reason-item"><b>客户A 美妆</b><span>曝光 +28% · 新素材</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Option D：我的变体 · 控制台 ===== -->
+        <div class="opt" id="opt4">
+          <div style="display:grid;grid-template-columns:240px 1fr;gap:16px;">
+            <div>
+              <div class="card" style="margin-bottom:14px;">
+                <h3>筛选器</h3>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                  <select><option>全部行业</option><option>美妆</option><option>3C</option></select>
+                  <select><option>全部状态</option><option>正常</option><option>观察</option><option>需行动</option></select>
+                  <select><option>全部来源</option><option>系统模拟</option><option>用户上传</option></select>
+                  <button style="width:100%;">应用</button>
+                </div>
+              </div>
+              <div class="card">
+                <h3>销售业绩 <span class="badge b-info">消耗维度</span></h3>
+                <div style="font-size:20px;font-weight:800;">¥326,400</div>
+                <div style="font-size:11px;color:var(--sub);margin:4px 0 10px;">月目标 ¥500,000</div>
+                <div style="height:6px;background:var(--line);border-radius:3px;overflow:hidden;"><div style="width:65%;height:100%;background:var(--blue);"></div></div>
+                <div style="margin-top:6px;font-size:11px;color:var(--sub);">完成 65%</div>
+              </div>
+            </div>
+            <div>
+              <div class="kpi-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px;">
+                <div class="card kpi"><div class="lab">总消耗</div><div class="v">¥148,200</div><div class="d up">▲ 12%</div></div>
+                <div class="card kpi"><div class="lab">留资数</div><div class="v">1,284</div><div class="d up">▲ 9%</div></div>
+                <div class="card kpi"><div class="lab">留资成本</div><div class="v">¥115</div><div class="d down">▼ 3%</div></div>
+              </div>
+              <div class="card" style="margin-bottom:14px;"><h3>趋势（消耗 / 留资成本 / 开口成本）</h3>
+                <div class="chart-area">
+                  <svg viewBox="0 0 500 180" preserveAspectRatio="none">
+                    <defs><linearGradient id="g4" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3B9DFF" stop-opacity=".15"/><stop offset="100%" stop-color="#3B9DFF" stop-opacity="0"/></linearGradient></defs>
+                    <path d="M0,130 L70,110 L140,120 L210,80 L280,65 L350,90 L420,45 500,55 L500,180 L0,180 Z" fill="url(#g4)"/>
+                    <polyline points="0,130 70,110 140,120 210,80 280,65 350,90 420,45 500,55" fill="none" stroke="#3B9DFF" stroke-width="2.5"/>
+                    <polyline points="0,150 70,140 140,145 210,120 280,115 350,125 420,100 500,105" fill="none" stroke="#22D3EE" stroke-width="2" stroke-dasharray="4 2"/>
+                    <polyline points="0,160 70,155 140,158 210,140 280,135 350,145 420,125 500,130" fill="none" stroke="#FDB022" stroke-width="2"/>
+                  </svg>
+                </div>
+                <div class="legend">
+                  <span><i style="background:#3B9DFF"></i>消耗</span>
+                  <span><i style="background:#22D3EE"></i>留资成本</span>
+                  <span><i style="background:#FDB022"></i>开口成本</span>
+                </div>
+              </div>
+              <div class="metric-group">
+                <div class="card"><h3>过程数据</h3>
+                  <div class="inner">
+                    <div class="mini-metric"><div class="lab">CTR</div><div class="v">8.7%</div><div class="d down">-0.3pt</div></div>
+                    <div class="mini-metric"><div class="lab">按钮率</div><div class="v">6.5%</div><div class="d down">-0.3pt</div></div>
+                    <div class="mini-metric"><div class="lab">留资CVR</div><div class="v">1.86%</div><div class="d down">-0.4pt</div></div>
+                    <div class="mini-metric"><div class="lab">CPC</div><div class="v">¥1.60</div><div class="d up">-5.05%</div></div>
+                  </div>
+                </div>
+                <div class="card"><h3>基建数据</h3>
+                  <div class="inner">
+                    <div class="mini-metric"><div class="lab">在投笔记</div><div class="v">355</div><div class="d up">+25.89%</div></div>
+                    <div class="mini-metric"><div class="lab">在投计划</div><div class="v">194</div><div class="d up">+10.86%</div></div>
+                    <div class="mini-metric"><div class="lab">新投计划</div><div class="v">23</div><div class="d up">+228.57%</div></div>
+                  </div>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:14px;margin-top:14px;">
+                <div class="card">
+                  <h3>今日诊断速览</h3>
+                  <div class="reason-item" style="border-left-color:var(--red);"><b>P0 · 客户D 服饰</b><span>消耗 +42%</span></div>
+                  <div class="reason-item" style="border-left-color:var(--red);"><b>P0 · 客户A 美妆</b><span>转化跌破阈值</span></div>
+                  <div class="reason-item"><b>P1 · 客户F 家居</b><span>环比 -8%</span></div>
+                </div>
+                <div class="card">
+                  <h3>客户每日监控</h3>
+                  <table>
+                    <tr><th>客户</th><th>行业</th><th>消耗</th><th>环比</th><th>状态</th></tr>
+                    <tr><td class="name">客户A</td><td>美妆</td><td>¥2,340</td><td class="up">+18%</td><td><span class="badge b-action">需行动</span></td></tr>
+                    <tr><td class="name">客户B</td><td>3C</td><td>¥1,120</td><td class="down">-5%</td><td><span class="badge b-watch">观察</span></td></tr>
+                    <tr><td class="name">客户C</td><td>食品</td><td>¥890</td><td class="up">+2%</td><td><span class="badge b-normal">正常</span></td></tr>
+                    <tr><td class="name">客户D</td><td>服饰</td><td>¥3,010</td><td class="up">+42%</td><td><span class="badge b-action">需行动</span></td></tr>
+                    <tr><td class="name">客户F</td><td>家居</td><td>¥1,540</td><td class="down">-8%</td><td><span class="badge b-watch">观察</span></td></tr>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ==================== 周度复盘 ==================== -->
+      <div class="view" id="weekly">
+        <!-- 列表视图 -->
+        <div class="view on" id="weekList">
+          <div class="weekly-filter">
+            <select><option>全部行业</option><option>美妆</option><option>3C</option></select>
+            <select><option>全部状态</option><option>需行动</option><option>观察</option><option>正常</option></select>
+            <input type="text" placeholder="搜索客户名称" style="padding:7px 10px;border:1px solid var(--line);border-radius:8px;">
+            <button>应用</button>
+          </div>
+          <div class="customer-grid">
+            <div class="card cust-card" onclick="openCust('A')">
+              <div class="top"><span class="name">客户A</span><span class="badge b-action">需行动</span></div>
+              <div class="ind">美妆</div>
+              <div class="spend">¥2,340</div>
+              <div style="font-size:11px;color:var(--sub);margin-top:4px;">本周消耗 · 环比 +18%</div>
+            </div>
+            <div class="card cust-card" onclick="openCust('B')">
+              <div class="top"><span class="name">客户B</span><span class="badge b-watch">观察</span></div>
+              <div class="ind">3C</div>
+              <div class="spend">¥1,120</div>
+              <div style="font-size:11px;color:var(--sub);margin-top:4px;">本周消耗 · 环比 -5%</div>
+            </div>
+            <div class="card cust-card" onclick="openCust('C')">
+              <div class="top"><span class="name">客户C</span><span class="badge b-normal">正常</span></div>
+              <div class="ind">食品</div>
+              <div class="spend">¥890</div>
+              <div style="font-size:11px;color:var(--sub);margin-top:4px;">本周消耗 · 环比 +2%</div>
+            </div>
+            <div class="card cust-card" onclick="openCust('D')">
+              <div class="top"><span class="name">客户D</span><span class="badge b-action">需行动</span></div>
+              <div class="ind">服饰</div>
+              <div class="spend">¥3,010</div>
+              <div style="font-size:11px;color:var(--sub);margin-top:4px;">本周消耗 · 环比 +42%</div>
+            </div>
+            <div class="card cust-card" onclick="openCust('E')">
+              <div class="top"><span class="name">客户E</span><span class="badge b-normal">正常</span></div>
+              <div class="ind">教育</div>
+              <div class="spend">¥760</div>
+              <div style="font-size:11px;color:var(--sub);margin-top:4px;">本周消耗 · 环比 +1%</div>
+            </div>
+            <div class="card cust-card" onclick="openCust('F')">
+              <div class="top"><span class="name">客户F</span><span class="badge b-watch">观察</span></div>
+              <div class="ind">家居</div>
+              <div class="spend">¥1,540</div>
+              <div style="font-size:11px;color:var(--sub);margin-top:4px;">本周消耗 · 环比 -8%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 客户详情视图 -->
+        <div class="view" id="weekDetail">
+          <div style="margin-bottom:12px;">
+            <button onclick="backList()" style="background:#fff;border:1px solid var(--line);padding:6px 12px;border-radius:8px;cursor:pointer;font-weight:700;">← 返回客户列表</button>
+          </div>
+          <div class="detail-cover">
+            <div>
+              <h1>客户A · 美妆 · 本周详细数据</h1>
+              <div class="meta">周期 08/11–08/17 · 状态：需行动（P0）</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:24px;font-weight:800;">¥14,639</div>
+              <div style="font-size:12px;opacity:.9;">本周消耗 · 环比 +12%</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px;">
+            <div class="card kpi"><div class="lab">曝光</div><div class="v">860,000</div><div class="d up">+5%</div></div>
+            <div class="card kpi"><div class="lab">点击</div><div class="v">69,000</div><div class="d up">+3%</div></div>
+            <div class="card kpi"><div class="lab">开口</div><div class="v">4,200</div><div class="d down">-12%</div></div>
+            <div class="card kpi"><div class="lab">留资</div><div class="v">142</div><div class="d down">-15%</div></div>
+          </div>
+          <div class="card" style="margin-bottom:14px;"><h3>本周趋势</h3>
+            <div class="chart-area">
+              <svg viewBox="0 0 800 180" preserveAspectRatio="none">
+                <defs><linearGradient id="gw" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3B9DFF" stop-opacity=".2"/><stop offset="100%" stop-color="#3B9DFF" stop-opacity="0"/></linearGradient></defs>
+                <path d="M0,120 L110,90 L220,100 L330,60 L440,50 L550,70 L660,40 L800,30 L800,180 L0,180 Z" fill="url(#gw)"/>
+                <polyline points="0,120 110,90 220,100 330,60 440,50 550,70 660,40 800,30" fill="none" stroke="#3B9DFF" stroke-width="2.5"/>
+              </svg>
+            </div>
+          </div>
+          <div class="card" style="margin-bottom:14px;">
+            <h3>生成复盘报告</h3>
+            <p style="font-size:12px;color:var(--sub);margin-bottom:12px;">点击生成后，系统会创建一个独立网页链接，可复制给客户或在新标签页打开。</p>
+            <button onclick="genReport()" style="background:var(--blue);color:#fff;border:none;padding:8px 18px;border-radius:8px;font-weight:700;cursor:pointer;">生成客户A复盘报告</button>
+            <div id="reportLink" style="display:none;margin-top:12px;">
+              <div class="report-link">
+                <span style="font-size:12px;color:#027A48;font-weight:700;">https://your-app.com/reports/客户A_20260819.html</span>
+                <div style="display:flex;gap:8px;">
+                  <button style="background:#fff;border:1px solid var(--line);padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;">复制</button>
+                  <button style="background:var(--green);color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;" onclick="window.open('about:blank','_blank')">新标签打开</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  function show(v){
+    document.getElementById('home').classList.toggle('on', v==='home');
+    document.getElementById('weekly').classList.toggle('on', v==='weekly');
+    document.querySelectorAll('.nav-item').forEach((el,i)=>el.classList.toggle('active', (v==='home'&&i===0)||(v==='weekly'&&i===1)));
+    document.getElementById('switchBar').style.display = v==='home'?'flex':'none';
+    document.getElementById('pageTitle').innerText = v==='home'?'数据总览':'周度复盘';
+    if(v==='weekly') backList();
+    window.scrollTo(0,0);
+  }
+  function setOpt(n,btn){
+    [1,2,3,4].forEach(i=>document.getElementById('opt'+i).classList.toggle('on', i===n));
+    document.querySelectorAll('#switchBar button').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+  }
+  function openCust(id){
+    document.getElementById('weekList').classList.remove('on');
+    document.getElementById('weekDetail').classList.add('on');
+    document.getElementById('reportLink').style.display='none';
+  }
+  function backList(){
+    document.getElementById('weekDetail').classList.remove('on');
+    document.getElementById('weekList').classList.add('on');
+  }
+  function genReport(){
+    document.getElementById('reportLink').style.display='block';
+  }
+</script>
+</body>
+</html>
