@@ -20,8 +20,8 @@
 
 ## 非阻塞待办 / 下一阶段（2026-08-19 重排）
 - CI 自动回归 **已完成**（ci_check.py + GitHub Actions，替代原 A/B 手动门槛；`git log` 见 df56310）。
-- **Phase 1 案例库种子 + RAG（search_cases 工具）**：diag_case 表 + seed_cases.py 已建，但语义检索工具未建；把评测期发现的 3 个智能体缺陷固化为种子案例。
-- **Phase 2 数据层 = 定时刷新 + 用户手动录入**（2026-08-19 用户澄清）：①自动端：seed_cases.py 自生成数据，**cron/APScheduler 每天 8 点周期重灌**演示"数据在更新"，无外部源无账号；②手动端（真体感来源）：用户能**复制粘贴 CSV/JSON 或填表**自灌真实投放数字，甚至**新增数据表**，报告生成不区分来源（建议加 data_source 字段区分 mock/用户）。"新增数据表"是否=动态建新表（自定义字段）待用户确认，MVP 建议先做"粘贴进现有表"。
+- **Phase 1 = 参考案例库(RAG) + 独立 badcase 库**（2026-08-19 用户要求 badcase 物理独立）：`diag_case` 表（referenceable=1 可引用好案例）+ 建 `search_cases` 语义检索工具；**另建 `diag_badcase` 表**（错误输出/根因/红线修复/关联评测用例/状态）物理独立于 diag_case；评测期 3 缺陷作 diag_badcase 首批，不进 diag_case。注：现有 system_prompt 已用 `diag_case.referenceable=0` 逻辑隔离 badcase，用户要的是物理分表。
+- **Phase 2 数据层 = 定时刷新 + 用户手动录入**（2026-08-19 用户澄清）：①自动端：seed_cases.py 自生成数据，**cron/APScheduler 每天 8 点周期重灌**演示"数据在更新"，无外部源无账号；②手动端（真体感来源）：客户在**前端页面小入口**或**直接编辑与前端绑定的本地表(data/ad_review.db 的 customer/daily_metric/plan/note 等)**添加数据，**字段不变、只增数据行、不动态建表**（用户明确"字段不需要变化"）。后端录入函数本阶段做，入口 UI 归 Phase 3。报告不区分来源（加 data_source 字段区分 mock/用户）。
 - **Phase 3 前端页面**：周报可视化展示 + 交互（最后做，后端稳了再做界面）。
 - **Phase 4 上线 + badcase 闭环**：真实用户踩坑进案例库，反哺评测与 system prompt。
 - 整体项目进度 plan 见 `诊断台/项目进度plan.html`。

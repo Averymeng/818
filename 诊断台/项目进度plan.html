@@ -67,8 +67,8 @@
   <p><b>两头都有，但性质不同，归宿都是「案例库」。</b></p>
   <ul class="tight2">
     <li><b>评测期 badcase（已做且闭环）：</b>我们靠评测 + 你的逐份人工审，已经挖出 <span class="pill p-acc">3 个智能体缺陷</span>——①周值/日值混淆 ②建议依据数字不可核验 ③观察清单漏项（码上 feed 超目标没进清单）。另外 judge 校准期还有若干评分分歧。这些就是<b>第一批 badcase</b>，已经通过 system prompt 第 7 节红线修掉，相当于「已知缺陷已清除」。</li>
-    <li><b>上线后 badcase（待积累）：</b>真实用户使用踩的坑，会持续进「案例库」（<span class="mono">diag_case</span> 表），再反哺评测和 prompt。这是长期滚动的部分。</li>
-    <li><b>结论：</b>badcase 不是「以后才做」——评测发现的缺陷就是现在的 badcase，且已修。正式案例库在 Phase 1 把这批评测缺陷<b>固化为种子案例</b>，上线后继续长。</li>
+    <li><b>上线后 badcase（待积累）：</b>真实用户使用踩的坑，持续进独立的 <span class="mono">diag_badcase</span> 库，再反哺评测和 prompt（参考案例库 <span class="mono">diag_case</span> 只放可引用的好案例，不混 badcase）。这是长期滚动的部分。</li>
+    <li><b>结论：</b>badcase 不是「以后才做」——评测发现的缺陷就是现在的 badcase，且已修。Phase 1 把这批评测缺陷<b>固化为独立 badcase 库（diag_badcase）的首批条目</b>（不与参考案例库 diag_case 混放），上线后继续长。</li>
   </ul>
 
   <h3>2. system prompt 有没有迭代？怎么迭代的？</h3>
@@ -99,8 +99,9 @@
     <tr><td>数据层<br><span class="sub">sqlite ad_review.db + seed_cases</span></td><td><span class="pill p-ok">已完成（仿真）</span></td><td>数据源已抽象成表，换真数据不伤主体</td></tr>
     <tr><td>三层评测体系<br><span class="sub">硬断言 + judge + 24 case</span></td><td><span class="pill p-ok">已完成</span></td><td>硬断言 126/126（含 E24 横切 75 条）；judge 13 份无中位分&lt;2</td></tr>
     <tr><td>CI 自动回归<br><span class="sub">ci_check.py + GitHub Actions</span></td><td><span class="pill p-ok">已完成</span></td><td>替代原 A/B 手动门槛；push/PR 跑静态回归，每周一定时全量真跑</td></tr>
-    <tr><td>案例库种子 + RAG<br><span class="sub">search_cases 工具</span></td><td><span class="pill p-warn">部分</span></td><td><span class="mono">diag_case</span> 表 + seed 已建；<b>语义检索工具未建</b></td></tr>
-    <tr><td>数据层：定时刷新 + 手动录入<br><span class="sub">全模拟 + 用户粘贴/新增表</span></td><td><span class="pill p-bad">未开始</span></td><td>数据 seed_cases.py 自生成；无 scheduler 代码；需加 ①每天8点定时重灌 ②用户粘贴(CSV/JSON)/新增表 的录入入口（后端入参函数，UI 归 Phase 3）</td></tr>
+    <tr><td>参考案例库 + RAG<br><span class="sub">diag_case + search_cases</span></td><td><span class="pill p-warn">部分</span></td><td><span class="mono">diag_case</span> 表(参考案例,referenceable=1) + seed 已建；<b>语义检索工具 search_cases 未建</b></td></tr>
+    <tr><td>badcase 库（独立）<br><span class="sub">diag_badcase 缺陷追踪</span></td><td><span class="pill p-bad">未开始</span></td><td>现状 badcase 仅以 <span class="mono">diag_case.referenceable=0</span> 混在同表；用户要求<b>物理独立</b>→新建 <span class="mono">diag_badcase</span>（错误输出/根因/红线修复/关联评测用例/状态）；评测期 3 缺陷首批入库</td></tr>
+    <tr><td>数据层：定时刷新 + 手动录入<br><span class="sub">全模拟 + 客户录入（字段不变）</span></td><td><span class="pill p-bad">未开始</span></td><td>数据 seed_cases.py 自生成；无 scheduler 代码；需加 ①每天8点定时重灌 ②客户经「前端小入口」或「直改绑定本地表」录入（字段不变、只增行），后端入参函数本阶段做，UI 归 Phase 3</td></tr>
     <tr><td>前端页面</td><td><span class="pill p-bad">未开始</span></td><td>无 frontend 目录；最后做</td></tr>
     <tr><td>badcase 积累闭环</td><td><span class="pill p-warn">机制待建</span></td><td>评测期 3 缺陷已修；正式案例库待 Phase 1</td></tr>
   </table>
@@ -113,13 +114,13 @@
   </div></div>
 
   <div class="step"><div class="num part">1</div><div class="body">
-    <b>案例库种子 + RAG（search_cases）</b><span class="tag">下一步建议先做</span>
-    <p>把评测期发现的 3 个智能体缺陷固化为种子案例；建语义检索工具，让智能体写报告时能引用历史相似案例（你提到的「案例库种子 + RAG」）。价值：报告从「套规则」走向「有经验」。</p>
+    <b>案例库 + RAG + 独立 badcase 库</b><span class="tag">下一步建议先做</span>
+    <p>两块：<b>①参考案例库（RAG 源）</b>= 现有 <span class="mono">diag_case</span> 表（只放 referenceable=1 的可引用好案例），补建语义检索工具 <span class="mono">search_cases</span>，让智能体写报告时引用历史相似案例，报告从「套规则」走向「有经验」。<b>②badcase 库（独立）</b>= 新建 <span class="mono">diag_badcase</span> 表，与参考案例库<b>物理分离</b>：每条 = 错误输出 + 根因 + 对应红线修复 + 关联评测用例 + 状态(开/已修/回归)。评测期挖出的 <span class="pill p-acc">3 个智能体缺陷</span>作为首批入库（不再塞进 diag_case）。价值：badcase 库驱动 prompt 迭代与评测回归，形成「踩坑→修→防复发」飞轮。</p>
   </div></div>
 
   <div class="step"><div class="num todo">2</div><div class="body">
     <b>数据层：定时刷新 + 手动录入</b><span class="tag">未开始 · 全模拟 + 用户自灌</span>
-    <p>两部分：<b>①自动端</b>——数据由 <span class="mono">seed_cases.py</span> 自己造（无外部真数据源），加定时器（cron / APScheduler）<b>每天 8 点周期重灌</b>，演示「数据在更新」，无需任何账号。<br><b>②手动端（真体感来源）</b>——用户能<b>复制粘贴</b>（CSV/JSON 或填表）自己的真实投放数字进库，甚至<b>新增数据表</b>；报告生成不区分数据来源（建议加 <span class="mono">data_source</span> 字段区分 mock/用户）。后端录入函数放本阶段，粘贴/填表的 UI 归 Phase 3 前端。这是把「只能看 demo」升级成「能自用」的关键。</p>
+    <p>两部分：<b>①自动端</b>——数据由 <span class="mono">seed_cases.py</span> 自己造（无外部真数据源），加定时器（cron / APScheduler）<b>每天 8 点周期重灌</b>，演示「数据在更新」，无需任何账号。<br><b>②手动端（真体感来源）</b>——客户在<b>前端页面小入口</b>或<b>直接编辑与前端绑定的本地数据表</b>添加数据；<b>字段不变</b>（沿用现有 customer/daily_metric/plan/note 等表结构，只增数据行，不动态建表）。后端录入函数放本阶段，入口 UI 归 Phase 3 前端。报告生成不区分来源（加 <span class="mono">data_source</span> 字段区分 mock/用户）。这是把「只能看 demo」升级成「能自用」的关键。</p>
   </div></div>
 
   <div class="step"><div class="num todo">3</div><div class="body">
@@ -135,7 +136,7 @@
   <h2>四、建议的下一步顺序</h2>
   <div class="card">
     <ol class="tight">
-      <li><b>Phase 1：案例库 + RAG（search_cases）</b>——成本最低、直接提升报告质量，且把已有评测成果固化下来。</li>
+      <li><b>Phase 1：参考案例库 + RAG + 独立 badcase 库</b>——成本最低、直接提升报告质量，且把评测成果（3 缺陷→badcase 库首批）固化下来。</li>
       <li><b>Phase 2：数据层——8点定时刷新 + 用户手动录入</b>——自动演示「数据在更新」+ 用户粘贴/新增表自灌真实数据，才有真体感（全模拟，无需外部源）。</li>
       <li><b>Phase 3：前端页面</b>——有了稳定后端再上界面。</li>
       <li><b>Phase 4：上线与 badcase 闭环</b>——进入运营期。</li>
@@ -146,7 +147,7 @@
   <div class="callout warn">
     <ul class="tight2">
       <li><b>数据本质：</b>全部为系统自生成的模拟数据（<span class="mono">seed_cases.py</span>），<b>不存在外部真实数据源</b>，因此 Phase 2 是「自生成 + 定时刷新 + 用户手动录入」，不是「接入真实 API」。这点已按用户纠正修正。</li>
-      <li><b>手动录入范围待定：</b>用户「新增数据表」是指新增客户/账号行（在现有表里加记录），还是真动态建新表（自定义指标字段）？后者涉及动态 schema，复杂度高，需你定。建议 MVP 先做「粘贴进现有表」，动态建表放后续。</li>
+      <li><b>手动录入范围（已定）：</b>客户在「前端小入口」或「直改与前端绑定的本地表」添加数据，<b>字段不变</b>、只增数据行，不动态建表。复杂度低，MVP 直接做。</li>
       <li><b>RAG 是否必要：</b>当前案例量很小（评测 24 条 + 缺陷 3 条），先用简单 SQL 匹配即可，上向量检索可等案例量起来再做——这条可按你判断取舍。</li>
       <li><b>前端范围：</b>是纯展示周报，还是要交互（改参数重算、对比多周）？范围影响工期，需你定。</li>
     </ul>
