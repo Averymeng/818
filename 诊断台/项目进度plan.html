@@ -87,8 +87,8 @@
   <ul class="tight2">
     <li><b>当前数据：</b>智能体读 <span class="mono">data/ad_review.db</span>（sqlite），数据是 <span class="mono">eval/seed_cases.py</span> 灌的<b>仿真数据</b>。grep 确认仓库里<b>没有任何 scheduler / 定时代码</b>。</li>
     <li><b>模拟实时（过渡方案）：</b>加一个定时任务（系统 cron 或 Python APScheduler），周期性重灌/拉取数据，让 DB 看起来「在更新」。这块代码还没写。</li>
-    <li><b>真数据源：</b>把 seed 换成真实投放后台的 API/导出即可。接口已经留好——orchestrator 里 <span class="mono">ReviewOrchestrator("data/ad_review.db")</span> 这一层把数据源抽象成了 DB，换源不伤智能体主体。</li>
-    <li><b>所以「定时模拟」是真实接入之前的演示过渡</b>：先让产品跑起来、展示「数据在更新」的效果，再接真 API。</li>
+    <li><b>数据本质：</b>全部是系统自生成的模拟数据（<span class="mono">seed_cases.py</span> 造数），<b>不存在外部真实数据源</b>——我之前 plan 里写「真 API 需要你提供投放后台数据出口」是错的，已删。</li>
+    <li><b>所以「定时模拟」就是终态：</b>既然数据我们自己造，加个定时任务（cron / APScheduler）周期重灌即可，演示「数据在更新」，不需要任何外部账号或接口。</li>
   </ul>
 
   <h2>二、整体进度总览（组件状态表）</h2>
@@ -99,7 +99,7 @@
     <tr><td>三层评测体系<br><span class="sub">硬断言 + judge + 24 case</span></td><td><span class="pill p-ok">已完成</span></td><td>硬断言 126/126（含 E24 横切 75 条）；judge 13 份无中位分&lt;2</td></tr>
     <tr><td>CI 自动回归<br><span class="sub">ci_check.py + GitHub Actions</span></td><td><span class="pill p-ok">已完成</span></td><td>替代原 A/B 手动门槛；push/PR 跑静态回归，每周一定时全量真跑</td></tr>
     <tr><td>案例库种子 + RAG<br><span class="sub">search_cases 工具</span></td><td><span class="pill p-warn">部分</span></td><td><span class="mono">diag_case</span> 表 + seed 已建；<b>语义检索工具未建</b></td></tr>
-    <tr><td>真实数据接入<br><span class="sub">定时模拟 / 真 API</span></td><td><span class="pill p-bad">未开始</span></td><td>无 scheduler 代码；架构已留接口层</td></tr>
+    <tr><td>数据自生成 + 定时刷新<br><span class="sub">全模拟，无需外部源</span></td><td><span class="pill p-bad">未开始</span></td><td>数据由 seed_cases.py 自生成；无 scheduler 代码；加定时器周期刷新即可演示「数据在更新」</td></tr>
     <tr><td>前端页面</td><td><span class="pill p-bad">未开始</span></td><td>无 frontend 目录；最后做</td></tr>
     <tr><td>badcase 积累闭环</td><td><span class="pill p-warn">机制待建</span></td><td>评测期 3 缺陷已修；正式案例库待 Phase 1</td></tr>
   </table>
@@ -117,8 +117,8 @@
   </div></div>
 
   <div class="step"><div class="num todo">2</div><div class="body">
-    <b>真实数据接入</b><span class="tag">未开始</span>
-    <p>先定时模拟（scheduler 周期重灌/拉取，演示「数据在更新」），再接真实投放 API。接口层已留好，主要工作是写 scheduler + 适配真数据字段。</p>
+    <b>数据自生成 + 定时刷新</b><span class="tag">未开始 · 全模拟</span>
+    <p>数据由 <span class="mono">seed_cases.py</span> 自己造（不存在外部真数据源）。加定时器（cron / APScheduler）周期重灌，演示「数据在更新」即可，无需任何账号或接口。</p>
   </div></div>
 
   <div class="step"><div class="num todo">3</div><div class="body">
@@ -135,7 +135,7 @@
   <div class="card">
     <ol class="tight">
       <li><b>Phase 1：案例库 + RAG（search_cases）</b>——成本最低、直接提升报告质量，且把已有评测成果固化下来。</li>
-      <li><b>Phase 2：真实数据定时模拟</b>——先让数据「活」起来做演示，再谈真 API 对接（真 API 涉及账号/权限，需你提供数据源）。</li>
+      <li><b>Phase 2：数据自生成 + 定时刷新</b>——加定时器周期重灌模拟数据，让数据「活」起来做演示（全模拟，无需外部源）。</li>
       <li><b>Phase 3：前端页面</b>——有了稳定后端再上界面。</li>
       <li><b>Phase 4：上线与 badcase 闭环</b>——进入运营期。</li>
     </ol>
@@ -144,7 +144,7 @@
   <h2>五、风险 / 待你确认</h2>
   <div class="callout warn">
     <ul class="tight2">
-      <li><b>真实数据源未定：</b>Phase 2 的真 API 需要你提供投放后台的数据出口（导出/接口），否则只能停留在「仿真 + 定时模拟」。</li>
+      <li><b>数据本质：</b>全部为系统自生成的模拟数据（<span class="mono">seed_cases.py</span>），<b>不存在外部真实数据源</b>，因此 Phase 2 是「自生成 + 定时刷新」，不是「接入真实 API」。这点已按用户纠正修正。</li>
       <li><b>RAG 是否必要：</b>当前案例量很小（评测 24 条 + 缺陷 3 条），先用简单 SQL 匹配即可，上向量检索可等案例量起来再做——这条可按你判断取舍。</li>
       <li><b>前端范围：</b>是纯展示周报，还是要交互（改参数重算、对比多周）？范围影响工期，需你定。</li>
     </ul>

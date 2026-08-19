@@ -21,7 +21,7 @@
 ## 非阻塞待办 / 下一阶段（2026-08-19 重排）
 - CI 自动回归 **已完成**（ci_check.py + GitHub Actions，替代原 A/B 手动门槛；`git log` 见 df56310）。
 - **Phase 1 案例库种子 + RAG（search_cases 工具）**：diag_case 表 + seed_cases.py 已建，但语义检索工具未建；把评测期发现的 3 个智能体缺陷固化为种子案例。
-- **Phase 2 真实数据接入**：先用定时任务（cron/APScheduler）周期重灌/拉取模拟"实时更新"，再接真实投放 API；当前无 scheduler 代码，数据源接口已抽象（ReviewOrchestrator(db_path) 一层）。
+- **Phase 2 数据自生成 + 定时刷新**：数据全部由 `seed_cases.py` 自生成（**无外部真实数据源**，2026-08-19 用户纠正：之前 plan 写"需提供真实投放 API"是错的）。加定时器（cron/APScheduler）周期重灌演示"实时更新"即可，无需任何账号/接口。
 - **Phase 3 前端页面**：周报可视化展示 + 交互（最后做，后端稳了再做界面）。
 - **Phase 4 上线 + badcase 闭环**：真实用户踩坑进案例库，反哺评测与 system prompt。
 - 整体项目进度 plan 见 `诊断台/项目进度plan.html`。
