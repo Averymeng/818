@@ -419,6 +419,18 @@ function renderOverview(){
     '<tr><td>'+esc(r.name)+'</td><td>'+esc(r.ind)+'</td><td>¥'+fmt(r.spend)+'</td><td class="'+(r.dlt>=0?'up':'down')+'">'+(r.dlt>=0?'+':'')+r.dlt+'%</td><td><span class="badge '+STCLASS[r.st]+'">'+r.st+'</span></td><td style="font-size:11px;color:var(--ink);">'+esc(r.task)+'</td></tr>'
   ).join('');
 
+  // 筛选器选项（数据驱动；重渲染时保留已选值）
+  const ovSel=k=>{const el=document.getElementById(k);return el?el.value:'';};
+  const ovKeep={ind:ovSel('ovFInd'), sec:ovSel('ovFSec'), cat:ovSel('ovFCat'), cust:ovSel('ovFCust'), st:ovSel('ovFSt')};
+  function ovOpts(list, allLabel, sel){
+    return '<option value="">'+allLabel+'</option>'+list.map(v=>'<option'+(v===sel?' selected':'')+'>'+esc(v)+'</option>').join('');
+  }
+  const ovInds=[...new Set(CUSTOMERS.map(c=>c.ind))].sort();
+  const ovSecs=[...new Set(CUSTOMERS.map(c=>c.sector).filter(Boolean))].sort();
+  const ovCats=[...new Set(CUSTOMERS.flatMap(c=>c.cats||[]))].sort();
+  const ovCusts=CUSTOMERS.map(c=>c.name).sort();
+  const ovSts=['需行动','观察','正常'];
+
   document.getElementById('overviewView').innerHTML=
     /* 模块 1: 顶部 KPI + 筛选器 */
     '<div class="ov-top-kpis">'
@@ -426,11 +438,11 @@ function renderOverview(){
     +'<div class="card ov-kpi-b"><div class="lab">留资数</div><div class="v">'+fmt(cur.lead)+'</div>'+deltaBadge(totalLeadDelta,false)+'</div>'
     +'<div class="card ov-kpi-b"><div class="lab">留资成本</div><div class="v">¥'+Math.round(CPL)+'</div>'+deltaBadge(CPLdelta,true)+'</div>'
     +'<div class="card ov-filter-card"><div class="filt-title">筛选器</div><div class="filter-bar">'
-      +'<select id="ovFInd"><option>全部行业</option></select>'
-      +'<select id="ovFSec"><option>全部赛道</option></select>'
-      +'<select id="ovFCat"><option>全部品类</option></select>'
-      +'<select id="ovFCust"><option>全部客户</option></select>'
-      +'<select id="ovFSt"><option>全部状态</option></select>'
+      +'<select id="ovFInd">'+ovOpts(ovInds,'全部行业',ovKeep.ind)+'</select>'
+      +'<select id="ovFSec">'+ovOpts(ovSecs,'全部赛道',ovKeep.sec)+'</select>'
+      +'<select id="ovFCat">'+ovOpts(ovCats,'全部品类',ovKeep.cat)+'</select>'
+      +'<select id="ovFCust">'+ovOpts(ovCusts,'全部客户',ovKeep.cust)+'</select>'
+      +'<select id="ovFSt">'+ovOpts(ovSts,'全部状态',ovKeep.st)+'</select>'
       +'<button onclick="void(0)">应用筛选</button>'
     +'</div></div>'
     +'</div>'

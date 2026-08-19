@@ -59,6 +59,12 @@ global.fetch=(u,o)=>realFetch('http://127.0.0.1:8000'+u,o);
     mon: ov.includes('客户每日监控'),
     attrib: ov.includes('重点变化归因')&&ov.includes('掉量 TOP')&&ov.includes('增量 TOP'),
   });
+  // 筛选器选项数（从渲染后的 HTML 里数 <option>）
+  const optCount=id=>{const m=ov.match(new RegExp('<select id="'+id+'">([\\s\\S]*?)</select>'));return m?(m[1].match(/<option/g)||[]).length:0;};
+  console.log('overview filter options:', {
+    ind: optCount('ovFInd'), sec: optCount('ovFSec'), cat: optCount('ovFCat'),
+    cust: optCount('ovFCust'), st: optCount('ovFSt'),
+  });
   console.log('WIN:', T.WIN);
   console.log('status counts:', T.CUSTOMERS.reduce((m,c)=>(m[c.st]=(m[c.st]||0)+1,m),{}));
   // 切换时间窗口：近7天
