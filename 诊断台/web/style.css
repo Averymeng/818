@@ -70,7 +70,6 @@ body{background:var(--bg);color:var(--ink);font-size:13px;line-height:1.5;}
 .ov-kpi-c .delta.down{background:#FEE4E2;color:#B42318;}
 .ov-kpi-c .delta.flat{background:#F1F5F9;color:var(--sub);}
 .ov-kpi-c .delta .arr{font-size:10px;}
-.ov-filter-card .filt-title{font-size:12px;color:var(--sub);font-weight:800;margin-bottom:10px;}
 .ov-filter-card .filter-bar{margin-bottom:0;display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .ov-filter-card .filter-bar select,.ov-filter-card .filter-bar button{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-size:11px;background:#fff;color:var(--ink);font-weight:700;}
 .ov-filter-card .filter-bar button{background:var(--blue);color:#fff;border-color:var(--blue);}
