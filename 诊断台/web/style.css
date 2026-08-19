@@ -175,4 +175,5 @@ body{background:var(--bg);color:var(--ink);font-size:13px;line-height:1.5;}
 .btn-back{background:#fff;border:1px solid var(--line);padding:6px 12px;border-radius:8px;cursor:pointer;font-weight:700;margin-bottom:12px;}
 .ingest-note{color:var(--sub);font-size:13px;line-height:1.8;}
 .ingest-area{width:100%;min-height:280px;font-family:Menlo,Consolas,monospace;font-size:12px;border:1px solid var(--line);border-radius:8px;padding:10px;margin:10px 0;}
+.ingest-area::placeholder{color:#9AA5B5;}
 .ingest-res{font-family:Menlo,Consolas,monospace;font-size:11px;background:var(--bg);border-radius:8px;padding:10px;white-space:pre-wrap;display:none;}
