@@ -380,33 +380,65 @@ function renderOverview(){
   const CPLdelta=pctDelta(CPL,CPLprev);
   const sales=Math.round(cur.spend);
 
-  // 趋势图 3 线
+  // 趋势图：分面小图（各自真实 Y 轴 + 均值线 + 平滑曲线）
   const trend=aggDailyTrend(WIN.start,WIN.end,CS);
   const trDates=trend.map(x=>x.date);
-  const vSpend=trend.map(x=>x.spend), vCpl=trend.map(x=>x.cpl), vCopen=trend.map(x=>x.copen);
-  const CHART_W=720, CHART_H=220;
-  function norm(vals){ const mx=Math.max(...vals), mn=Math.min(...vals), rng=(mx-mn)||1; return v=>(v-mn)/rng; }
-  const nSpend=norm(vSpend), nCpl=norm(vCpl), nCopen=norm(vCopen);
-  const PL=44, PR=14, PT=12, PB=22, pw_=CHART_W-PL-PR, ph_=CHART_H-PT-PB;
-  const X=i=> PL + (trend.length===1 ? pw_/2 : i*pw_/(trend.length-1));
-  const Y=v=> PT + ph_ - v*ph_;
-  const ptsSpend=vSpend.map((v,i)=>X(i).toFixed(1)+','+Y(nSpend(v)).toFixed(1)).join(' ');
-  const ptsCpl=vCpl.map((v,i)=>X(i).toFixed(1)+','+Y(nCpl(v)).toFixed(1)).join(' ');
-  const ptsCopen=vCopen.map((v,i)=>X(i).toFixed(1)+','+Y(nCopen(v)).toFixed(1)).join(' ');
-  const maxSpend=Math.max(...vSpend);
-  const xTicksIdx=(function(){const step=Math.max(1,Math.round(trend.length/8));const a=[];for(let i=0;i<trend.length;i+=step)a.push(i);if(a[a.length-1]!==trend.length-1)a.push(trend.length-1);return a;})();
-  const xaxisHTML='<line x1="'+PL+'" y1="'+(PT+ph_).toFixed(1)+'" x2="'+(PL+pw_).toFixed(1)+'" y2="'+(PT+ph_).toFixed(1)+'" stroke="#E9EDF5" stroke-width="1"/>'
-    +xTicksIdx.map(i=>'<text x="'+X(i).toFixed(1)+'" y="'+(PT+ph_+13).toFixed(1)+'" text-anchor="middle" font-size="9" fill="#94A3B8">'+esc((trDates[i]||'').slice(5))+'</text>').join('');
-  const trendSVG= trend.length
-    ? '<svg viewBox="0 0 '+CHART_W+' '+CHART_H+'" width="100%" height="'+CHART_H+'">'
-      +'<polyline points="'+ptsSpend+'" fill="none" stroke="#3B9DFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
-      +'<polyline points="'+ptsCpl+'" fill="none" stroke="#22D3EE" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="5 4"/>'
-      +'<polyline points="'+ptsCopen+'" fill="none" stroke="#FDB022" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
-      +xaxisHTML
-      +'<text x="'+(PL-5)+'" y="'+(PT+3)+'" text-anchor="end" font-size="9" fill="#94A3B8">¥'+fmtAxis(maxSpend,'元')+'</text>'
-      +'<text x="'+(PL-5)+'" y="'+(PT+ph_).toFixed(1)+'" text-anchor="end" font-size="9" fill="#94A3B8">¥0</text>'
+  const TREND_SERIES=[
+    {name:'消耗',     color:'#3B9DFF', vals:trend.map(x=>x.spend)},
+    {name:'留资成本', color:'#22D3EE', vals:trend.map(x=>x.cpl)},
+    {name:'开口成本', color:'#FDB022', vals:trend.map(x=>x.copen)},
+  ];
+  function fmtTrendVal(v){
+    if(v>=10000) return (v/10000).toFixed(1)+'万';
+    if(v>=100)  return Math.round(v).toLocaleString('en-US');
+    return (+v).toFixed(1);
+  }
+  function smoothPath(pts){
+    if(!pts.length) return '';
+    if(pts.length===1) return 'M'+pts[0][0].toFixed(1)+','+pts[0][1].toFixed(1)+' L'+(pts[0][0]+0.01).toFixed(1)+','+pts[0][1].toFixed(1);
+    if(pts.length===2) return 'M'+pts[0][0].toFixed(1)+','+pts[0][1].toFixed(1)+' L'+pts[1][0].toFixed(1)+','+pts[1][1].toFixed(1);
+    let d='M'+pts[0][0].toFixed(1)+','+pts[0][1].toFixed(1);
+    for(let i=0;i<pts.length-1;i++){
+      const p0=pts[i-1]||pts[i], p1=pts[i], p2=pts[i+1], p3=pts[i+2]||p2;
+      const c1x=p1[0]+(p2[0]-p0[0])/6, c1y=p1[1]+(p2[1]-p0[1])/6;
+      const c2x=p2[0]-(p3[0]-p1[0])/6, c2y=p2[1]-(p3[1]-p1[1])/6;
+      d+=' C'+c1x.toFixed(1)+','+c1y.toFixed(1)+' '+c2x.toFixed(1)+','+c2y.toFixed(1)+' '+p2[0].toFixed(1)+','+p2[1].toFixed(1);
+    }
+    return d;
+  }
+  function miniTrend(s){
+    const W=240,H=132,PL=34,PR=8,PT=10,PB=18;
+    const w=W-PL-PR, h=H-PT-PB;
+    const mx=Math.max(...s.vals), mn=Math.min(...s.vals), rng=(mx-mn)||1;
+    const X=i=>PL+(s.vals.length===1?w/2:i*w/(s.vals.length-1));
+    const Y=v=>PT+h-((v-mn)/rng)*h;
+    const pts=s.vals.map((v,i)=>[X(i),Y(v)]);
+    const path=smoothPath(pts);
+    const avg=s.vals.reduce((a,b)=>a+b,0)/s.vals.length;
+    const avgY=Y(avg);
+    const step=Math.max(1,Math.round(s.vals.length/5));
+    const ticks=[];
+    for(let i=0;i<s.vals.length;i+=step) ticks.push(i);
+    if(ticks[ticks.length-1]!==s.vals.length-1) ticks.push(s.vals.length-1);
+    const xT=ticks.map(i=>'<text class="ov-t-axis" x="'+X(i).toFixed(1)+'" y="'+(PT+h+12).toFixed(1)+'" text-anchor="middle">'+esc((trDates[i]||'').slice(5))+'</text>').join('');
+    return '<div class="ov-trend-mini">'
+      +'<div class="head"><div class="name">'+esc(s.name)+'</div><div class="cur" style="color:'+s.color+'">¥'+fmtTrendVal(s.vals[s.vals.length-1])+'</div></div>'
+      +'<div class="sub">均值 ¥'+fmtTrendVal(avg)+'</div>'
+      +'<svg viewBox="0 0 '+W+' '+H+'">'
+        +'<line x1="'+PL+'" y1="'+(PT+h)+'" x2="'+(PL+w)+'" y2="'+(PT+h)+'" stroke="#E9EDF5"/>'
+        +'<line class="avg" x1="'+PL+'" y1="'+avgY.toFixed(1)+'" x2="'+(PL+w)+'" y2="'+avgY.toFixed(1)+'"/>'
+        +'<path d="'+path+' L'+(PL+w).toFixed(1)+','+(PT+h)+' L'+PL+','+(PT+h)+' Z" fill="'+s.color+'" opacity="0.08"/>'
+        +'<path d="'+path+'" fill="none" stroke="'+s.color+'" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
+        +'<circle cx="'+X(s.vals.length-1).toFixed(1)+'" cy="'+Y(s.vals[s.vals.length-1]).toFixed(1)+'" r="3.2" fill="#FFF" stroke="'+s.color+'" stroke-width="2.5"/>'
+        +'<text class="ov-t-axis" x="'+(PL-4)+'" y="'+(PT+7).toFixed(1)+'" text-anchor="end">¥'+fmtTrendVal(mx)+'</text>'
+        +'<text class="ov-t-axis" x="'+(PL-4)+'" y="'+(PT+h+3).toFixed(1)+'" text-anchor="end">¥'+fmtTrendVal(mn)+'</text>'
+        +xT
       +'</svg>'
-    : '<div style="color:var(--sub);font-size:12px;padding:20px;text-align:center;">该区间无数据</div>';
+      +'</div>';
+  }
+  const trendHTML= trend.length
+    ? '<div class="ov-trend-grid">'+TREND_SERIES.map(miniTrend).join('')+'</div>'
+    : '<div class="ov-trend-empty">该区间无数据</div>';
 
   // 过程数据
   const CTR=cur.imp?cur.nc/cur.imp*100:0, CTRprev=prev.imp?prev.nc/prev.imp*100:0;
@@ -490,13 +522,8 @@ function renderOverview(){
     /* 模块 2: 趋势 */
     +'<div class="ov-row2">'
       +'<div class="card ov-chart-card">'
-        +'<div class="t">趋势（'+WIN.short+' · 消耗 / 留资成本 / 开口成本）</div>'
-        +trendSVG
-        +'<div class="legend">'
-          +'<span style="color:#3B9DFF"><span class="dot" style="background:#3B9DFF"></span>消耗</span>'
-          +'<span style="color:#22D3EE"><span class="dot dash" style="color:#22D3EE"></span>留资成本</span>'
-          +'<span style="color:#FDB022"><span class="dot" style="background:#FDB022"></span>开口成本</span>'
-        +'</div>'
+        +'<div class="t">趋势（'+WIN.short+' · 分指标）</div>'
+        +trendHTML
       +'</div>'
     +'</div>'
 

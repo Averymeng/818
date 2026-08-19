@@ -78,6 +78,18 @@ body{background:var(--bg);color:var(--ink);font-size:13px;line-height:1.5;}
 .ov-chart-card .legend .dot{width:10px;height:3px;display:inline-block;border-radius:2px;}
 .ov-chart-card .legend .dot.dash{height:0;border-top:2px dashed currentColor;}
 
+.ov-trend-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.ov-trend-mini{border:1px solid var(--line);border-radius:10px;padding:12px;background:#FAFBFD;}
+.ov-trend-mini .head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
+.ov-trend-mini .name{font-size:12px;font-weight:800;color:var(--sub);}
+.ov-trend-mini .cur{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;}
+.ov-trend-mini .sub{font-size:10px;color:var(--sub);margin-bottom:6px;}
+.ov-trend-mini svg{display:block;width:100%;height:132px;}
+.ov-t-axis{font-size:8px;fill:#94A3B8;}
+.ov-trend-mini .avg{stroke:#9CA3AF;stroke-width:1;stroke-dasharray:4 3;}
+.ov-trend-empty{color:var(--sub);font-size:12px;padding:20px;text-align:center;}
+@media (max-width:860px){.ov-trend-grid{grid-template-columns:1fr;}}
+
 
 .ov-mini-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
 .ov-mini-card{border:1px solid var(--line);border-radius:10px;padding:10px 10px;background:#fff;}
