@@ -174,6 +174,60 @@ def gen_customer_metrics(cust_id, name, sector, cats, rng, scn, optimize_target,
     return plans, notes, rows
 
 
+def build_sim(con, sim_version, seed=SEED):
+    """仅构建/重建 sim 数据，不触碰 source='upload' 的用户数据。
+    维度表用 INSERT OR IGNORE 保证幂等；customer 用显式 id 1..N；seed 可外部覆盖以改变数值。
+    """
+    cur = con.cursor()
+    # 维度入库（幂等）
+    industries, sectors, cats_all = {}, {}, {}
+    for _, ind, sec, cats, _, _ in CUSTOMERS:
+        industries.setdefault(ind, len(industries) + 1)
+        sectors.setdefault((ind, sec), len(sectors) + 1)
+        for c in cats:
+            cats_all.setdefault(c, len(cats_all) + 1)
+    cur.executemany("INSERT OR IGNORE INTO industry VALUES(?,?)", [(i, n) for n, i in industries.items()])
+    cur.executemany("INSERT OR IGNORE INTO sector VALUES(?,?,?)",
+                    [(sid, industries[ind], sec) for (ind, sec), sid in sectors.items()])
+    cur.executemany("INSERT OR IGNORE INTO category VALUES(?,?)", [(i, n) for n, i in cats_all.items()])
+
+    plan_rows, note_rows, dm_rows = [], [], []
+    pid = nid = 0
+    for cid, (name, ind, sec, cats, target, tcost) in enumerate(CUSTOMERS, 1):
+        rng = random.Random(f"{seed}-{name}")
+        cur.execute("INSERT INTO customer(id,name,sector_id,optimize_target,target_cost,status,source) "
+                    "VALUES(?,?,?,?,?,?,?)",
+                    (cid, name, sectors[(ind, sec)], target, tcost, "active", "sim"))
+        cur.executemany("INSERT OR IGNORE INTO customer_category VALUES(?,?)",
+                        [(cid, cats_all[c]) for c in cats])
+        scn = SCENARIOS.get(name, [])
+        plans, notes, rows = gen_customer_metrics(cid, name, sec, cats, rng, scn, target, tcost)
+        for pi, p in enumerate(plans):
+            pid += 1; p["id"] = pid
+            plan_rows.append((pid, cid, cats_all[p["cat"]],
+                              f"{p['cat']}·{pid:03d}{rng.choice(PLAN_SUFFIX)}",
+                              p["placement"], p["created"].isoformat(),
+                              "停投" if p["stopped"] else "在投",
+                              round(p["budget"], 2),
+                              p["stopped"].isoformat() if p["stopped"] else None))
+        for n in notes:
+            nid += 1; n["id"] = nid
+            note_rows.append((nid, cid, cats_all[n["cat"]], plans[n["plan"]]["id"],
+                              n["title"], n["form"], n["created"].isoformat(),
+                              "停投" if n["stopped"] else "在投",
+                              n["stopped"].isoformat() if n["stopped"] else None))
+        for (day, c, cat, pl, pi, n, spend, imp, cl, bt, op, ld) in rows:
+            dm_rows.append((day, c, cats_all[cat], pl, plans[pi]["id"], n["id"],
+                            round(spend, 2), imp, cl, bt, op, ld, "sim", sim_version))
+
+    cur.executemany("INSERT INTO plan VALUES(?,?,?,?,?,?,?,?,?)", plan_rows)
+    cur.executemany("INSERT INTO note VALUES(?,?,?,?,?,?,?,?,?)", note_rows)
+    cur.executemany("INSERT INTO daily_metric VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)", dm_rows)
+    con.commit()
+    return {"customers": len(CUSTOMERS), "plans": len(plan_rows),
+            "notes": len(note_rows), "daily_rows": len(dm_rows), "sim_version": sim_version}
+
+
 def main():
     db_path = sys.argv[sys.argv.index("--db") + 1] if "--db" in sys.argv else \
         os.path.join(os.path.dirname(os.path.abspath(__file__)), "ad_review.db")
@@ -200,10 +254,10 @@ def main():
     pid = nid = 0
     for cid, (name, ind, sec, cats, target, tcost) in enumerate(CUSTOMERS, 1):
         rng = random.Random(f"{SEED}-{name}")
-        cur.execute("INSERT INTO customer(id,name,sector_id,optimize_target,target_cost,status) "
-                    "VALUES(?,?,?,?,?,?)",
-                    (cid, name, sectors[(ind, sec)], target, tcost, "active"))
-        cur.executemany("INSERT INTO customer_category VALUES(?,?)",
+        cur.execute("INSERT INTO customer(id,name,sector_id,optimize_target,target_cost,status,source) "
+                    "VALUES(?,?,?,?,?,?,?)",
+                    (cid, name, sectors[(ind, sec)], target, tcost, "active", "sim"))
+        cur.executemany("INSERT OR IGNORE INTO customer_category VALUES(?,?)",
                         [(cid, cats_all[c]) for c in cats])
         scn = SCENARIOS.get(name, [])
         plans, notes, rows = gen_customer_metrics(cid, name, sec, cats, rng, scn, target, tcost)

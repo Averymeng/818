@@ -61,8 +61,8 @@ def ingest_customer(conn, payload):
     if exist:
         raise ValueError(f"客户「{c['name']}」已存在(customer_id={exist[0]})，请换名或先清理")
     cid = conn.execute(
-        "INSERT INTO customer(name, sector_id, optimize_target, target_cost, status) VALUES(?,?,?,?,?)",
-        (c["name"], sector_id, c["optimize_target"], c["target_cost"], "active")).lastrowid
+        "INSERT INTO customer(name, sector_id, optimize_target, target_cost, status, source) VALUES(?,?,?,?,?,?)",
+        (c["name"], sector_id, c["optimize_target"], c["target_cost"], "active", "upload")).lastrowid
     for cat in c.get("categories", []):
         cat_id = _get_or_create(conn, "category", "name", cat)
         conn.execute("INSERT INTO customer_category VALUES(?,?)", (cid, cat_id))

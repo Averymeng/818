@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS customer (
     optimize_target TEXT NOT NULL CHECK (optimize_target IN ('open','lead')),  -- 私信开口/留资
     target_cost     REAL NOT NULL,                 -- 目标优化成本（元）
     status          TEXT NOT NULL DEFAULT 'active',
+    source          TEXT NOT NULL DEFAULT 'sim' CHECK (source IN ('sim','upload')),  -- 模拟/用户上传
     created_at      TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
 
