@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>诊断台 · 小红书投放周报智能体</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app" id="app">
+  <aside class="sidebar">
+    <div class="brand"><span class="logo">诊</span><span class="label">诊断台</span></div>
+    <nav class="nav">
+      <div class="nav-item active" data-view="overview"><span class="ico">📊</span><span class="label">数据总览</span></div>
+      <div class="nav-item" data-view="review"><span class="ico">🔁</span><span class="label">周度复盘</span></div>
+      <div class="nav-item" data-view="ingest"><span class="ico">➕</span><span class="label">手动录入</span></div>
+    </nav>
+    <div class="nav-add">＋ 添加模块</div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="crumbs" id="crumbs">数据总览</div>
+      <div class="tools">
+        <button class="icon-btn" id="toggleSidebar" title="折叠/展开侧边栏">☰</button>
+      </div>
+    </div>
+    <div class="content" id="content"><div class="loading">加载中…</div></div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+<script src="app.js"></script>
+</body>
+</html>

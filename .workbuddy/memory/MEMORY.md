@@ -22,6 +22,6 @@
 - CI 自动回归 **已完成**（ci_check.py + GitHub Actions，替代原 A/B 手动门槛；`git log` 见 df56310）。
 - **Phase 1 = 参考案例库(RAG) + 独立 badcase 库 = 已完成（2026-08-19 交付）**：`search_cases` 工具(code/agent/tools.py) 原本已实现（按行业/赛道/品类/signature 召回 diag_case，自动过滤 badcase），本次把 `diag_case` 净化为纯 referenceable=1 参考案例（eval/seed_cases.py 移除 badcase 行）；**新建 `diag_badcase` 表**(db/schema.sql) 物理独立，`data/seed_badcase.py` 把评测期 3 缺陷(周值日值混淆/依据不可核验/观察清单漏项)首批入库。注：原 system_prompt 用 referenceable=0 逻辑隔离，用户要的是物理分表，现已达成。
 - **Phase 2 数据层 = 定时刷新 + 用户手动录入**：②手动录入后端**已完成**(2026-08-19 交付 `data/ingest.py`)：JSON/CSV 录入客户+plan/note/daily_metric，**字段不变只增行**，daily_metric 标 `source='upload'`(schema 已有该列，无需加字段)，报告不区分来源；①自动端**每天8点定时重灌未做**(无 scheduler 代码，待 Phase 2 收尾)；录入入口 UI 归 Phase 3 前端。
-- **Phase 3 前端页面**：周报可视化展示 + 交互（最后做，后端稳了再做界面）。
-- **Phase 4 上线 + badcase 闭环**：真实用户踩坑进案例库，反哺评测与 system prompt。
+- **Phase 3 前端页面 = 已实现（待验收，2026-08-19 交付）**：零依赖后端 `诊断台/api_server.py`（标准库 http.server，托管前端 + JSON API：customers/weeks/report/compare/cases/ingest）接现有 SQLite / tools / orchestrator / ingest；前端 `诊断台/web/`（index.html/app.js/style.css）三模块——①数据总览（组合 KPI + 掉量/增量归因 + 客户监控）②周度复盘（客户卡片网格 → 八章节报告；改参数重算滑块 metric/spend 阈值；对比多周勾选；复制/新开报告链接）③手动录入（JSON 编辑器接 ingest 后端，source='upload' 落库）。前端范围=用户已定**交互式**（非纯展示）；RAG=用户已定**维持 SQL 字段匹配**，不做向量检索。`orchestrator.run()` 新增可选参数(metric_threshold/spend_threshold/cur_start 等)向后兼容，评测 122/122 硬断言仍通过（零成本模式）。
+- **Phase 4 上线 + badcase 闭环**：未开始。
 - 整体项目进度 plan 见 `诊断台/项目进度plan.html`。

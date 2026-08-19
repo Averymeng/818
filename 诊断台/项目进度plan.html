@@ -102,7 +102,7 @@
     <tr><td>参考案例库 + RAG<br><span class="sub">diag_case + search_cases</span></td><td><span class="pill p-ok">已完成</span></td><td><span class="mono">diag_case</span> 表(纯参考案例,referenceable=1) 纯化+seed 完成；语义检索工具 <span class="mono">search_cases</span> 已实现（按行业/赛道/品类/signature 召回，自动过滤 badcase）</td></tr>
     <tr><td>badcase 库（独立）<br><span class="sub">diag_badcase 缺陷追踪</span></td><td><span class="pill p-ok">已完成</span></td><td>用户要求物理独立→新建 <span class="mono">diag_badcase</span> 表（错误输出/根因/红线修复/关联评测用例/状态）；<span class="mono">data/seed_badcase.py</span> 已将评测期 3 缺陷首批入库；<span class="mono">seed_cases.py</span> 同步把 diag_case 净化为纯参考案例</td></tr>
     <tr><td>数据层：定时刷新 + 手动录入<br><span class="sub">全模拟 + 客户录入（字段不变）</span></td><td><span class="pill p-ok">已完成</span></td><td><b>手动录入后端已完成</b>（<span class="mono">data/ingest.py</span>：JSON/CSV 录入，customer/daily_metric 标 source='upload'，字段不变只增行）；<b>每天8点定时重灌已完成</b>（<span class="mono">data/scheduler.py</span> 零依赖常驻循环 + <span class="mono">data/refresh_sim.py</span> 只刷 sim、保留 upload；附 crontab 替代方案）。<b>录入入口 UI 归 Phase 3 前端</b></td></tr>
-    <tr><td>前端页面</td><td><span class="pill p-bad">未开始</span></td><td>无 frontend 目录；最后做</td></tr>
+    <tr><td>前端页面</td><td><span class="pill p-acc">已实现（待验收）</span></td><td>零依赖后端 <span class="mono">api_server.py</span> + 前端 <span class="mono">web/</span>（index.html/app.js/style.css）；三模块：数据总览 / 周度复盘（八章节报告 + 改参数重算 + 对比多周）/ 手动录入；天蓝+象牙白主题、可折叠侧边栏、粘性筛选子头</td></tr>
     <tr><td>badcase 积累闭环</td><td><span class="pill p-ok">已完成（库+首批）</span></td><td>diag_badcase 库已建，评测期 3 缺陷首批入库；上线后持续累积待 Phase 4</td></tr>
   </table>
 
@@ -123,9 +123,9 @@
     <p>两部分：<b>①自动端（已完成）</b>——<span class="mono">data/scheduler.py</span> 零依赖常驻循环，<b>每天 8 点周期重灌</b>模拟数据，演示「数据在更新」，无需任何账号或接口；底层 <span class="mono">data/refresh_sim.py</span> 只重建 source='sim' 的数据、<b>完整保留 source='upload' 的用户上传</b>，并用「日期派生种子」让数值变化。也提供 crontab 替代方案（生产推荐）。<br><b>②手动端（后端已完成）</b>——<span class="mono">data/ingest.py</span> 已实现：客户在<b>前端页面小入口</b>或<b>直接编辑与前端绑定的本地数据表</b>添加数据；<b>字段不变</b>（沿用现有 customer/daily_metric/plan/note 等表结构，只增数据行，不动态建表），customer/daily_metric 写入标 <span class="mono">source='upload'</span>。入口 UI 归 Phase 3 前端。报告生成不区分来源。这是把「只能看 demo」升级成「能自用」的关键。</p>
   </div></div>
 
-  <div class="step"><div class="num todo">3</div><div class="body">
-    <b>前端页面</b><span class="tag">未开始 · 最后做</span>
-    <p>周报可视化展示 + 交互。放最后是因为后端稳了再做界面性价比最高，避免反复改。</p>
+  <div class="step"><div class="num done">3</div><div class="body">
+    <b>前端页面</b><span class="tag">已实现（待验收）</span>
+    <p>已搭真实前端（非静态 demo）：零依赖 Python 后端 <span class="mono">api_server.py</span>（标准库 http.server，托管前端 + JSON API）接现有 SQLite / tools / orchestrator / ingest；前端 <span class="mono">web/</span> 三模块——<b>①数据总览</b>（组合 KPI、掉量/增量归因、客户监控表）、<b>②周度复盘</b>（客户卡片网格 → 八章节诊断报告；含<b>改参数重算</b>滑块 metric/spend 阈值、<b>对比多周</b>勾选、复制/新开报告链接）、<b>③手动录入</b>（JSON 编辑器接 ingest 后端，source='upload' 落库）。天蓝+象牙白主题、可折叠侧边栏、粘性筛选子头（行业/状态/来源/搜索）。</p>
   </div></div>
 
   <div class="step"><div class="num todo">4</div><div class="body">
@@ -138,10 +138,10 @@
     <ol class="tight">
       <li><b>Phase 1：参考案例库 + RAG + 独立 badcase 库</b>——<span class="pill p-ok">已完成</span>。search_cases 已实现并自动过滤 badcase；diag_badcase 独立建表 + 3 缺陷入库；diag_case 净化为纯参考。</li>
       <li><b>Phase 2：数据层（定时刷新 + 手动录入）——已完成</b>。scheduler.py 每天8点重灌 sim、保留 upload；ingest.py 手动录入后端完成（录入 UI 归 Phase 3）。</li>
-      <li><b>Phase 3：前端页面</b>——含手动录入小入口 UI；有了稳定后端再上界面。</li>
+      <li><b>Phase 3：前端页面</b>——<span class="pill p-acc">已实现（待验收）</span>。api_server.py（零依赖后端）+ web/（三模块交互式前端）已搭建，含改参数重算、对比多周、手动录入入口。</li>
       <li><b>Phase 4：上线与 badcase 闭环</b>——进入运营期，真实踩坑持续进 diag_badcase。</li>
     </ol>
-    <p class="small"><b>结论：前端建设之前的所有工作（Phase 0~2）均已完成，待你确认后进入 Phase 3 前端页面设计讨论。</b>Phase 3 仅剩「手动录入小入口」和「周报可视化展示」两项 UI，后端已就绪。</p>
+    <p class="small"><b>结论：Phase 0~2 已完成；Phase 3 前端已搭建真实版本（零依赖后端 api_server.py + web/ 三模块交互式前端），待用户验收。</b>Phase 4（上线 + badcase 闭环）尚未开始。</p>
   </div>
 
   <h2>五、风险 / 待你确认</h2>
@@ -149,8 +149,8 @@
     <ul class="tight2">
       <li><b>数据本质：</b>全部为系统自生成的模拟数据（<span class="mono">data/generate.py</span>），<b>不存在外部真实数据源</b>，因此 Phase 2 是「自生成 + 定时刷新 + 用户手动录入」，不是「接入真实 API」。这点已按用户纠正修正。</li>
       <li><b>手动录入范围（已定）：</b>客户在「前端小入口」或「直改与前端绑定的本地表」添加数据，<b>字段不变</b>、只增数据行，不动态建表。复杂度低，MVP 直接做。</li>
-      <li><b>RAG 是否必要：</b>当前案例量很小（评测 24 条 + 缺陷 3 条），先用简单 SQL 匹配即可，上向量检索可等案例量起来再做——这条可按你判断取舍。</li>
-      <li><b>前端范围：</b>是纯展示周报，还是要交互（改参数重算、对比多周）？范围影响工期，需你定。</li>
+      <li><b>RAG 是否必要：</b>用户已定——<b>维持现有 SQL 字段匹配（search_cases），不做向量语义检索</b>。案例量起来后再评估。</li>
+      <li><b>前端范围：</b>用户已定——<b>交互式</b>（改参数重算、对比多周），非纯展示。已实现。</li>
     </ul>
   </div>
 

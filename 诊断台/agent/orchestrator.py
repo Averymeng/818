@@ -123,7 +123,9 @@ class ReviewOrchestrator:
         return out["text"]
 
     # ---------------- 主链 ----------------
-    def run(self, customer_name=None, customer_id=None, dry_run=False):
+    def run(self, customer_name=None, customer_id=None, dry_run=False,
+             metric_threshold=None, spend_threshold=None,
+             cur_start=None, cur_end=None, cmp_start=None, cmp_end=None):
         # 节点0 初始化
         if customer_id is None:
             row = self.conn.execute("SELECT id FROM customer WHERE name=?", (customer_name,)).fetchone()
@@ -133,7 +135,10 @@ class ReviewOrchestrator:
         prof = self._probe(customer_id)
         if "error" in prof:
             return prof
-        cs, ce, ps, pe = derive_periods(self.conn, customer_id)
+        if cur_start and cur_end and cmp_start and cmp_end:
+            cs, ce, ps, pe = cur_start, cur_end, cmp_start, cmp_end
+        else:
+            cs, ce, ps, pe = derive_periods(self.conn, customer_id)
         sim_version = self.conn.execute(
             "SELECT sim_version FROM daily_metric WHERE customer_id=? LIMIT 1", (customer_id,)).fetchone()[0]
         self.task_id = self._new_task(customer_id, cs, ce, ps, pe, sim_version)
@@ -184,7 +189,9 @@ class ReviewOrchestrator:
         # 节点4 异常识别排序
         s4 = self._step("anomaly_rank", "running")
         anomalies = self._call(s4, "detect_anomalies", customer_id=customer_id,
-                               cur_start=cs, cur_end=ce, cmp_start=ps, cmp_end=pe)
+                               cur_start=cs, cur_end=ce, cmp_start=ps, cmp_end=pe,
+                               metric_threshold=metric_threshold if metric_threshold is not None else 0.10,
+                               spend_threshold=spend_threshold if spend_threshold is not None else 0.15)
         if degraded:
             # 数据不足分支（节点1 降级）：事件计算仅留痕，不落库、不进 Top3、不打硬结论
             anomalies = {"events": [], "n_events": 0,
