@@ -32,7 +32,7 @@ import sqlite3
 import sys
 from datetime import date, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs, unquote
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 AGENT_DIR = os.path.join(HERE, "agent")
@@ -497,8 +497,8 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._send_json({"error": f"{type(e).__name__}: {e}"}, 500)
             return
-        # 静态文件
-        rel = path.lstrip("/")
+        # 静态文件（中文文件名需 URL 解码）
+        rel = unquote(path.lstrip("/"))
         if rel == "" or rel == "/":
             rel = "index.html"
         fpath = os.path.normpath(os.path.join(WEB_DIR, rel))
