@@ -61,6 +61,70 @@
   .mon-table td{padding:8px 10px;border-bottom:1px solid var(--line);}
   .mon-table tr:hover{background:var(--bg);}
 
+  /* 当日监控 新版布局(对标参考图) */
+  .ov-top-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px;}
+  .ov-kpi-b{padding:18px 18px;display:flex;flex-direction:column;gap:6px;min-height:96px;}
+  .ov-kpi-b .lab{font-size:12px;color:var(--sub);font-weight:700;}
+  .ov-kpi-b .v{font-size:26px;font-weight:800;letter-spacing:-.3px;color:var(--ink);}
+  .ov-kpi-b .delta{font-size:12px;font-weight:700;}
+  .ov-kpi-b .delta.up{color:var(--green);}
+  .ov-kpi-b .delta.down{color:var(--red);}
+  .ov-kpi-b .delta .arr{font-size:10px;}
+  .ov-filter-card .filt-title{font-size:12px;color:var(--sub);font-weight:800;margin-bottom:10px;}
+  .ov-filter-card .filter-bar{margin-bottom:0;}
+  .ov-filter-card .filter-bar select{padding:6px 10px;border:1px solid var(--line);border-radius:8px;font-size:11px;background:#fff;color:var(--ink);font-weight:700;}
+
+  .ov-row2{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px;}
+  .ov-row2b{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+  .ov-section-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;margin-bottom:10px;}
+  .ov-section-title::before{content:'';width:3px;height:14px;background:var(--blue);border-radius:2px;}
+
+  .ov-chart-card .t{font-size:12px;color:var(--sub);font-weight:800;margin-bottom:10px;}
+  .ov-chart-card .legend{display:flex;gap:14px;font-size:11px;color:var(--ink);margin-top:8px;}
+  .ov-chart-card .legend span{display:flex;align-items:center;gap:5px;font-weight:700;}
+  .ov-chart-card .legend .dot{width:10px;height:3px;display:inline-block;border-radius:2px;}
+  .ov-chart-card .legend .dot.dash{height:0;border-top:2px dashed currentColor;}
+
+  .ov-progress .tabs{display:flex;gap:18px;margin-bottom:14px;border-bottom:1px solid var(--line);}
+  .ov-progress .tab{padding:6px 0;font-size:12px;color:var(--sub);font-weight:700;cursor:pointer;border-bottom:2px solid transparent;}
+  .ov-progress .tab.on{color:var(--blue);border-bottom-color:var(--blue);}
+  .ov-progress .big{font-size:30px;font-weight:800;letter-spacing:-.3px;margin-bottom:8px;}
+  .ov-progress .meta{font-size:12px;color:var(--sub);margin-bottom:4px;}
+  .ov-progress .meta b{color:var(--ink);}
+  .ov-progress .bar{height:10px;background:var(--line);border-radius:99px;overflow:hidden;margin:8px 0;}
+  .ov-progress .fill{height:100%;background:var(--blue);border-radius:99px;}
+  .ov-progress .foot{display:flex;justify-content:space-between;font-size:12px;color:var(--sub);margin-top:6px;}
+  .ov-progress .foot b{color:var(--ink);}
+
+  .ov-mini-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;}
+  .ov-mini-card{border:1px solid var(--line);border-radius:10px;padding:14px 14px;background:#fff;}
+  .ov-mini-card .lab{font-size:11px;color:var(--sub);font-weight:700;margin-bottom:8px;}
+  .ov-mini-card .v{font-size:22px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;}
+  .ov-mini-card .delta{font-size:11px;font-weight:700;margin-top:6px;}
+  .ov-mini-card .delta.up{color:var(--green);}
+  .ov-mini-card .delta.down{color:var(--red);}
+  .ov-mini-card .delta.flat{color:var(--sub);}
+
+  .ov-alert-head{font-size:13px;color:var(--ink);margin-bottom:6px;font-weight:800;}
+  .ov-alert-head b{color:var(--ink);font-size:18px;font-weight:800;}
+  .ov-alert-sub{font-size:11px;color:var(--sub);margin-bottom:12px;}
+  .ov-alert-item{padding:10px 12px;border-left:3px solid var(--red);background:#FAFAFC;border-radius:0 8px 8px 0;margin-bottom:8px;}
+  .ov-alert-item.p1{border-left-color:var(--blue);}
+  .ov-alert-item .t{font-weight:800;font-size:12px;margin-bottom:3px;color:var(--ink);}
+  .ov-alert-item .t .tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;margin-right:5px;color:#fff;font-weight:800;}
+  .ov-alert-item.p0 .t .tag{background:var(--red);}
+  .ov-alert-item.p1 .t .tag{background:var(--blue);}
+  .ov-alert-item .d{font-size:11px;color:var(--sub);}
+
+  .ov-mon-card table.daily{font-size:12px;}
+  .ov-mon-card table.daily th{padding:10px 8px;font-weight:800;color:var(--sub);font-size:11px;text-align:left;border-bottom:1px solid var(--line);background:#fff;}
+  .ov-mon-card table.daily td{padding:10px 8px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;}
+
+  .ov-attrib-item{padding:10px 12px;border-left:3px solid var(--red);background:#FAFAFC;border-radius:0 8px 8px 0;margin-bottom:8px;}
+  .ov-attrib-item.up{border-left-color:var(--green);}
+  .ov-attrib-item .t{font-weight:800;font-size:12px;color:var(--ink);}
+  .ov-attrib-item .d{font-size:11px;color:var(--sub);margin-top:3px;}
+
   /* detail charts (variant B) */
   .small-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
   .small-cell{border:1px solid var(--line);border-radius:10px;padding:10px;}
@@ -353,7 +417,7 @@ function lineSVG(values, dates, o){
     +'<defs><linearGradient id="g'+color.replace('#','')+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+color+'" stop-opacity=".18"/><stop offset="100%" stop-color="'+color+'" stop-opacity="0"/></linearGradient></defs>'
     +'<path d="'+area+'" fill="url(#g'+color.replace('#','')+')"/>'
     +yaxis+xaxis
-    +'<polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
+    +'<polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"'+(o.dash?' stroke-dasharray="5 4"':'')+'/>'
     +dots+lastLabel+'</svg>';
 }
 function winDays(name){
@@ -416,28 +480,244 @@ function generateReport(){
 }
 function closeModal(){document.getElementById('reportModal').classList.remove('on');}
 
-function renderOverview(){
-  const totalSpend=CUSTOMERS.reduce((a,c)=>a+c.spend,0);
-  const totalOpen=CUSTOMERS.reduce((a,c)=>a+c.open,0);
-  const totalLead=CUSTOMERS.reduce((a,c)=>a+c.lead,0);
-  const sorted=[...CUSTOMERS].sort((a,b)=>a.delta-b.delta);
-  const drop=sorted.slice(0,5), rise=sorted.slice(-5).reverse();
-  const rowHTML=(c)=>'<div class="row"><span>'+c.name+' <span style="color:var(--sub)">'+c.ind+'</span></span><span class="'+(c.delta>=0?'up':'down')+'">'+(c.delta>=0?'+':'')+c.delta+'%</span></div>';
-  const monRows=CUSTOMERS.map(c=>'<tr><td>'+c.name+'</td><td>'+c.ind+'</td><td><span class="badge '+STCLASS[c.st]+'">'+c.st+'</span></td><td>¥'+fmt(c.spend)+'</td><td class="'+(c.delta>=0?'up':'down')+'">'+(c.delta>=0?'+':'')+c.delta+'%</td></tr>').join('');
-  document.getElementById('overviewView').innerHTML=
-    '<div class="ov-kpis">'
-    +'<div class="card ov-kpi"><div class="lab">在投客户数</div><div class="v">'+CUSTOMERS.length+'</div></div>'
-    +'<div class="card ov-kpi"><div class="lab">总日均消耗</div><div class="v">¥'+fmt(totalSpend)+'</div></div>'
-    +'<div class="card ov-kpi"><div class="lab">总日均开口</div><div class="v">'+fmt(totalOpen)+'</div></div>'
-    +'<div class="card ov-kpi"><div class="lab">总日均留资</div><div class="v">'+fmt(totalLead)+'</div></div>'
-    +'</div>'
-    +'<div class="attrib">'
-    +'<div class="card"><h3>重点变化归因 · 掉量 TOP5</h3>'+drop.map(rowHTML).join('')+'</div>'
-    +'<div class="card"><h3>重点变化归因 · 增量 TOP5</h3>'+rise.map(rowHTML).join('')+'</div>'
-    +'</div>'
-    +'<div class="card"><h3 style="font-size:12px;color:var(--sub);font-weight:800;margin-bottom:10px;">客户监控表</h3><table class="mon-table"><thead><tr><th>客户</th><th>行业</th><th>状态</th><th>日均消耗</th><th>环比</th></tr></thead><tbody>'+monRows+'</tbody></table></div>';
+/* ==== 新版 renderOverview (对标参考图) ==== */
+const BASE_DATA = { in_notes:1127, in_plans:322, new_notes:78, new_plans:1, prev_new_notes:132, prev_new_plans:36 };
+const MONTH_TARGET = 500000;  // 演示数据：销售业绩月目标(来自参考图)
+function pctDelta(cur, prev){
+  if(!prev) return 0;
+  return +(((cur-prev)/prev)*100).toFixed(1);
+}
+function prevWindow(){
+  const len = (Math.round((new Date(WIN.end+'T00:00:00Z') - new Date(WIN.start+'T00:00:00Z'))/86400000))+1;
+  return { start: shiftDate(WIN.start, -len), end: shiftDate(WIN.start, -1) };
+}
+function aggAllInWindow(winStart, winEnd){
+  const out = {spend:0,imp:0,nc:0,bc:0,open:0,lead:0};
+  for(const c of CUSTOMERS){
+    for(const r of (DAILY[c.name]||[])){
+      if(r.date>=winStart && r.date<=winEnd){
+        out.spend+=r.spend; out.imp+=r.imp; out.nc+=r.nc; out.bc+=r.bc; out.open+=r.open; out.lead+=r.lead;
+      }
+    }
+  }
+  return out;
+}
+function aggDailyTrend(winStart, winEnd){
+  // aggregate across all customers per date, return {date, spend, cpl, copen}
+  const map = {};
+  for(const c of CUSTOMERS){
+    for(const r of (DAILY[c.name]||[])){
+      if(r.date>=winStart && r.date<=winEnd){
+        if(!map[r.date]) map[r.date] = {spend:0,lead:0,open:0};
+        map[r.date].spend += r.spend;
+        map[r.date].lead  += r.lead;
+        map[r.date].open  += r.open;
+      }
+    }
+  }
+  const dates = Object.keys(map).sort();
+  return dates.map(d => {
+    const x = map[d];
+    return { date:d, spend:x.spend, cpl: x.lead? x.spend/x.lead : 0, copen: x.open? x.spend/x.open : 0 };
+  });
+}
+function deltaBadge(delta, lowerIsBad){
+  // lowerIsBad=true => 下降(▼)标绿；否则正常 ▼红
+  if(delta===0) return '<span class="delta flat">—</span>';
+  const good = lowerIsBad ? (delta<0) : (delta>0);
+  const cls = good?'up':'down';
+  const arr = delta>0?'▲':'▼';
+  return '<span class="delta '+cls+'"><span class="arr">'+arr+'</span> '+Math.abs(delta).toFixed(1)+'%</span>';
+}
+function ptDelta(delta){
+  if(delta===0) return '<span class="delta flat">—</span>';
+  const cls = delta<0?'down':'up';
+  const arr = delta>0?'▲':'▼';
+  return '<span class="delta '+cls+'"><span class="arr">'+arr+'</span> '+Math.abs(delta).toFixed(1)+'pt</span>';
 }
 
+function renderOverview(){
+  const cur = aggAllInWindow(WIN.start, WIN.end);
+  const pw = prevWindow();
+  const prev = aggAllInWindow(pw.start, pw.end);
+  const CPL = cur.lead? cur.spend/cur.lead : 0;
+  const CPLprev = prev.lead? prev.spend/prev.lead : 0;
+  const totalSpendDelta = pctDelta(cur.spend, prev.spend);
+  const totalLeadDelta   = pctDelta(cur.lead, prev.lead);
+  const CPLdelta         = pctDelta(CPL, CPLprev);
+  const sales = Math.round(cur.spend);
+  const pctDone = Math.min(100, +(sales/MONTH_TARGET*100).toFixed(1));
+  const remain = Math.max(0, MONTH_TARGET - sales);
+
+  // 趋势图 3 线
+  const trend = aggDailyTrend(WIN.start, WIN.end);
+  const trDates = trend.map(x=>x.date);
+  const vSpend  = trend.map(x=>x.spend);
+  const vCpl    = trend.map(x=>x.cpl);
+  const vCopen  = trend.map(x=>x.copen);
+  const CHART_W = 720, CHART_H = 220;
+  // scale axis: spend on left primary axis; cpl & copen share right secondary axis (visual approximation via normalization)
+  // we'll render 3 separate polylines on a shared canvas: spend in blue solid, cpl cyan dashed (rescaled to share Y), copen orange solid
+  // For simplicity, render 3 lines each with own auto-scale is bad — we want them visually comparable. Use simple min/max per series (each gets its own y scale, but we'll stack visually using separate scaled coordinates). To keep legible, normalize all to a 0..1 band based on global max of their own values, plot with own min/max.
+  function norm(vals){ const mx=Math.max(...vals), mn=Math.min(...vals), rng=(mx-mn)||1; return v => (v-mn)/rng; }
+  const nSpend = norm(vSpend), nCpl = norm(vCpl), nCopen = norm(vCopen);
+  const PL=44, PR=14, PT=12, PB=22, pw_=CHART_W-PL-PR, ph_=CHART_H-PT-PB;
+  const X=i=> PL + (trend.length===1 ? pw_/2 : i*pw_/(trend.length-1));
+  const Y=v=> PT + ph_ - v*ph_;
+  const ptsSpend = vSpend.map((v,i)=>X(i).toFixed(1)+','+Y(nSpend(v)).toFixed(1)).join(' ');
+  const ptsCpl   = vCpl.map((v,i)=>X(i).toFixed(1)+','+Y(nCpl(v)).toFixed(1)).join(' ');
+  const ptsCopen = vCopen.map((v,i)=>X(i).toFixed(1)+','+Y(nCopen(v)).toFixed(1)).join(' ');
+  const maxSpend = Math.max(...vSpend);
+  const maxCpl   = Math.max(...vCpl);
+  const maxCopen = Math.max(...vCopen);
+  const xTicksIdx = (function(){const step=Math.max(1,Math.round(trend.length/8));const a=[];for(let i=0;i<trend.length;i+=step)a.push(i);if(a[a.length-1]!==trend.length-1)a.push(trend.length-1);return a;})();
+  const xaxisHTML = '<line x1="'+PL+'" y1="'+(PT+ph_).toFixed(1)+'" x2="'+(PL+pw_).toFixed(1)+'" y2="'+(PT+ph_).toFixed(1)+'" stroke="#E9EDF5" stroke-width="1"/>'
+    + xTicksIdx.map(i=>'<text x="'+X(i).toFixed(1)+'" y="'+(PT+ph_+13).toFixed(1)+'" text-anchor="middle" font-size="9" fill="#94A3B8">'+(trDates[i]||'').slice(5)+'</text>').join('');
+  const trendSVG =
+    '<svg viewBox="0 0 '+CHART_W+' '+CHART_H+'" width="100%" height="'+CHART_H+'">'
+    +'<polyline points="'+ptsSpend+'" fill="none" stroke="#3B9DFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
+    +'<polyline points="'+ptsCpl+'"   fill="none" stroke="#22D3EE" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="5 4"/>'
+    +'<polyline points="'+ptsCopen+'" fill="none" stroke="#FDB022" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
+    +xaxisHTML
+    +'<text x="'+(PL-5)+'" y="'+(PT+3)+'" text-anchor="end" font-size="9" fill="#94A3B8">¥'+fmtAxis(maxSpend,'元')+'</text>'
+    +'<text x="'+(PL-5)+'" y="'+(PT+ph_).toFixed(1)+'" text-anchor="end" font-size="9" fill="#94A3B8">¥0</text>'
+    +'</svg>';
+
+  // 过程数据 deltas
+  const CTR = cur.imp? cur.nc/cur.imp*100 : 0;
+  const CTRprev = prev.imp? prev.nc/prev.imp*100 : 0;
+  const BR = cur.nc? cur.bc/cur.nc*100 : 0;
+  const BRprev = prev.nc? prev.bc/prev.nc*100 : 0;
+  const LCVR = cur.open? cur.lead/cur.open*100 : 0;
+  const LCVRprev = prev.open? prev.lead/prev.open*100 : 0;
+  const CPC = cur.nc? cur.spend/cur.nc : 0;
+  const CPCprev = prev.nc? prev.spend/prev.nc : 0;
+  const FCVR = 0; // demo 字段：暂无表单数据
+
+  // 基础数据 deltas
+  const inNoteDelta = pctDelta(BASE_DATA.in_notes, BASE_DATA.in_notes - 220); // 假装 14 天前 907
+  const newNoteDelta = pctDelta(BASE_DATA.new_notes, BASE_DATA.prev_new_notes);
+  const inPlanDelta = pctDelta(BASE_DATA.in_plans, BASE_DATA.in_plans - 30);
+  const newPlanDelta = pctDelta(BASE_DATA.new_plans, BASE_DATA.prev_new_plans);
+
+  // 今日诊断速览：取 需行动(P0) + 周环比下滑(P1) 各取最多 3 个
+  const sorted = [...CUSTOMERS].sort((a,b)=>a.delta-b.delta);
+  const drop = sorted.slice(0,3);
+  const p0 = CUSTOMERS.filter(c=>c.st==='需行动').slice(0,2);
+  const alerts = p0.map(c=>({prio:'p0', name:c.name, ind:c.ind, desc:'消耗暴增 '+Math.abs(c.delta)+'%，疑似定向异常', delta:c.delta}));
+  drop.forEach(c=>{ if(!alerts.find(a=>a.name===c.name) && alerts.length<3) alerts.push({prio:'p1', name:c.name, ind:c.ind, desc:'周环比下滑 '+Math.abs(c.delta)+'%', delta:c.delta}); });
+  const p0Count = alerts.filter(a=>a.prio==='p0').length;
+
+  // 客户每日监控表：取所有 CUSTOMERS，按 WIN.end 那天的值排序（每日 = WIN 最后一天的消耗）
+  const lastDate = WIN.end;
+  const rows = CUSTOMERS.map(c=>{
+    const ds = (DAILY[c.name]||[]);
+    const today = ds.find(r=>r.date===lastDate) || {spend:0,open:0,lead:0};
+    const prevDate = shiftDate(lastDate,-1);
+    const y = ds.find(r=>r.date===prevDate) || {spend:0};
+    const dlt = y.spend? +(((today.spend-y.spend)/y.spend)*100).toFixed(1) : 0;
+    const tasks = c.st==='需行动' ? (dlt>=0?'消耗暴增，疑似定向异常':'留资转化跌破阈值')
+                : c.st==='观察'   ? '周环比下滑'
+                : '—';
+    return {name:c.name, ind:c.ind, spend:today.spend, dlt, st:c.st, task:tasks};
+  }).sort((a,b)=>b.spend-a.spend);
+
+  // 重点变化归因
+  const topDrop = [...CUSTOMERS].sort((a,b)=>a.delta-b.delta).slice(0,5);
+  const topRise = [...CUSTOMERS].sort((a,b)=>b.delta-a.delta).slice(0,5);
+  function attribHTML(c){
+    const reason = c.delta<0 ? ('消耗 '+Math.abs(c.delta)+'% · 主因：素材衰退，CTR 下滑 '+Math.abs((c.delta*0.15)).toFixed(1)+'pt')
+                              : ('消耗 +'+c.delta+'% · 主因：定向包放宽导致放量');
+    return '<div class="ov-attrib-item"><div class="t">'+c.name+' <span style="color:var(--sub);font-weight:700">'+c.ind+'</span></div><div class="d">'+reason+'</div></div>';
+  }
+
+  const alertsHTML = alerts.length ? alerts.map(a=>
+    '<div class="ov-alert-item '+a.prio+'"><div class="t"><span class="tag">'+(a.prio==='p0'?'P0':'P1')+'</span>'+a.name+' · '+a.ind+'</div><div class="d">'+a.desc+'</div></div>'
+  ).join('') : '<div style="color:var(--sub);font-size:12px;">今日无明显异常</div>';
+
+  const monRowsHTML = rows.slice(0,8).map(r=>
+    '<tr><td>'+r.name+'</td><td>'+r.ind+'</td><td>¥'+fmt(r.spend)+'</td><td class="'+(r.dlt>=0?'up':'down')+'">'+(r.dlt>=0?'+':'')+r.dlt+'%</td><td><span class="badge '+STCLASS[r.st]+'">'+r.st+'</span></td><td style="font-size:11px;color:var(--ink);">'+r.task+'</td></tr>'
+  ).join('');
+
+  document.getElementById('overviewView').innerHTML =
+    /* === 模块 1: 顶部 KPI + 筛选器 === */
+    '<div class="ov-top-kpis">'
+    +'<div class="card ov-kpi-b"><div class="lab">总消耗</div><div class="v">¥'+fmt(sales)+'</div>'+deltaBadge(totalSpendDelta,false)+'</div>'
+    +'<div class="card ov-kpi-b"><div class="lab">留资数</div><div class="v">'+fmt(cur.lead)+'</div>'+deltaBadge(totalLeadDelta,false)+'</div>'
+    +'<div class="card ov-kpi-b"><div class="lab">留资成本</div><div class="v">¥'+Math.round(CPL)+'</div>'+deltaBadge(CPLdelta,true)+'</div>'
+    +'<div class="card ov-filter-card"><div class="filt-title">筛选器</div><div class="filter-bar">'
+      +'<select id="ovFInd"><option>全部行业</option></select>'
+      +'<select id="ovFSec"><option>全部赛道</option></select>'
+      +'<select id="ovFCat"><option>全部品类</option></select>'
+      +'<select id="ovFCust"><option>全部客户</option></select>'
+      +'<select id="ovFSt"><option>全部状态</option></select>'
+      +'<button onclick="void(0)">应用</button>'
+    +'</div></div>'
+    +'</div>'
+
+    /* === 模块 2: 趋势 + 销售业绩 === */
+    +'<div class="ov-row2">'
+      +'<div class="card ov-chart-card">'
+        +'<div class="t">趋势（消耗 / 留资成本 / 开口成本）</div>'
+        +trendSVG
+        +'<div class="legend">'
+          +'<span style="color:#3B9DFF"><span class="dot" style="background:#3B9DFF"></span>消耗</span>'
+          +'<span style="color:#22D3EE"><span class="dot dash" style="color:#22D3EE"></span>留资成本</span>'
+          +'<span style="color:#FDB022"><span class="dot" style="background:#FDB022"></span>开口成本</span>'
+        +'</div>'
+      +'</div>'
+      +'<div class="card ov-progress">'
+        +'<div class="tabs"><span class="tab on">销售业绩</span><span class="tab">消耗维度</span></div>'
+        +'<div class="big">¥'+fmt(sales)+'</div>'
+        +'<div class="meta">月目标 <b>¥'+fmt(MONTH_TARGET)+'</b></div>'
+        +'<div class="bar"><div class="fill" style="width:'+pctDone+'%"></div></div>'
+        +'<div class="foot"><span>完成度 <b>'+pctDone+'%</b></span><span>剩余 <b>¥'+fmt(remain)+'</b></span></div>'
+      +'</div>'
+    +'</div>'
+
+    /* === 模块 3: 过程数据 + 基础数据 === */
+    +'<div class="ov-row2b">'
+      +'<div class="card"><div class="t" style="font-size:12px;color:var(--sub);font-weight:800;margin-bottom:12px;">过程数据</div>'
+        +'<div class="ov-mini-grid">'
+          +'<div class="ov-mini-card"><div class="lab">CTR</div><div class="v">'+CTR.toFixed(1)+'%</div>'+ptDelta(+(CTR-CTRprev).toFixed(2))+'</div>'
+          +'<div class="ov-mini-card"><div class="lab">按钮率</div><div class="v">'+BR.toFixed(1)+'%</div>'+ptDelta(+(BR-BRprev).toFixed(2))+'</div>'
+          +'<div class="ov-mini-card"><div class="lab">表单CVR</div><div class="v">'+FCVR.toFixed(2)+'%</div><span class="delta flat">—</span></div>'
+          +'<div class="ov-mini-card"><div class="lab">留资CVR</div><div class="v">'+LCVR.toFixed(2)+'%</div>'+ptDelta(+(LCVR-LCVRprev).toFixed(2))+'</div>'
+          +'<div class="ov-mini-card"><div class="lab">CPC</div><div class="v">¥'+CPC.toFixed(2)+'</div>'+deltaBadge(pctDelta(CPC,CPCprev),true)+'</div>'
+        +'</div>'
+      +'</div>'
+      +'<div class="card"><div class="t" style="font-size:12px;color:var(--sub);font-weight:800;margin-bottom:12px;">基础数据</div>'
+        +'<div class="ov-mini-grid">'
+          +'<div class="ov-mini-card"><div class="lab">在投笔记</div><div class="v">'+BASE_DATA.in_notes+'</div>'+deltaBadge(inNoteDelta,false)+'</div>'
+          +'<div class="ov-mini-card"><div class="lab">新投笔记</div><div class="v">'+BASE_DATA.new_notes+'</div>'+deltaBadge(newNoteDelta,false)+'</div>'
+          +'<div class="ov-mini-card"><div class="lab">在投计划</div><div class="v">'+BASE_DATA.in_plans+'</div>'+deltaBadge(inPlanDelta,false)+'</div>'
+          +'<div class="ov-mini-card"><div class="lab">新投计划</div><div class="v">'+BASE_DATA.new_plans+'</div>'+deltaBadge(newPlanDelta,false)+'</div>'
+        +'</div>'
+      +'</div>'
+    +'</div>'
+
+    /* === 模块 4: 今日诊断速览 + 客户每日监控 === */
+    +'<div class="ov-row2b">'
+      +'<div class="card">'
+        +'<div class="ov-alert-head">今日诊断速览 · <b>'+alerts.length+'</b> 个客户需关注</div>'
+        +'<div class="ov-alert-sub">其中 <b style="color:var(--red)">'+p0Count+'</b> 项 P0 需当天止损</div>'
+        +alertsHTML
+      +'</div>'
+      +'<div class="card ov-mon-card">'
+        +'<div class="t" style="font-size:12px;color:var(--sub);font-weight:800;margin-bottom:12px;">客户每日监控</div>'
+        +'<table class="daily"><thead><tr><th>客户</th><th>行业</th><th>今日消耗</th><th>环比</th><th>状态</th><th>今日要务</th></tr></thead><tbody>'
+        +monRowsHTML
+        +'</tbody></table>'
+      +'</div>'
+    +'</div>'
+
+    /* === 模块 5: 重点变化归因 === */
+    +'<div class="ov-section-title">重点变化归因</div>'
+    +'<div class="ov-row2b">'
+      +'<div class="card"><div class="t" style="font-size:12px;color:var(--sub);font-weight:800;margin-bottom:10px;">掉量 TOP</div>'+topDrop.map(attribHTML).join('')+'</div>'
+      +'<div class="card"><div class="t" style="font-size:12px;color:var(--sub);font-weight:800;margin-bottom:10px;">增量 TOP</div>'+topRise.map(attribHTML).join('')+'</div>'
+    +'</div>';
+}
 // init
 (function(){
   const inds=[...new Set(CUSTOMERS.map(c=>c.ind))];
