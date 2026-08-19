@@ -14,7 +14,7 @@
         {
           "name": "DB 版位仅 feed/search",
           "ok": true,
-          "detail": "daily_metric=['feed', 'search'] plan=['feed', 'search']"
+          "detail": "daily_metric=['feed', 'search'] plan=['search', 'feed']"
         },
         {
           "name": "报告不出现'视频内流'",
@@ -712,7 +712,7 @@
         {
           "name": "cur_end=最新完整周日",
           "ok": true,
-          "detail": "cur_end=2026-08-16 expected=2026-08-16 max_date=2026-08-17"
+          "detail": "cur_end=2026-08-16 expected=2026-08-16 max_date=2026-08-19"
         },
         {
           "name": "cur 为完整周一~周日",

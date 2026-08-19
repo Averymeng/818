@@ -58,33 +58,46 @@ def ingest_customer(conn, payload):
     sector_id = _get_or_create(conn, "sector", "name", c["sector"], ["industry_id"], [industry_id])
 
     exist = conn.execute("SELECT id FROM customer WHERE name=?", (c["name"],)).fetchone()
+    mode = "append"          # 同名客户：复用客户/计划/笔记，只追加日数据
     if exist:
-        raise ValueError(f"客户「{c['name']}」已存在(customer_id={exist[0]})，请换名或先清理")
-    cid = conn.execute(
-        "INSERT INTO customer(name, sector_id, optimize_target, target_cost, status, source) VALUES(?,?,?,?,?,?)",
-        (c["name"], sector_id, c["optimize_target"], c["target_cost"], "active", "upload")).lastrowid
+        cid = exist[0]
+    else:
+        mode = "create"
+        cid = conn.execute(
+            "INSERT INTO customer(name, sector_id, optimize_target, target_cost, status, source) VALUES(?,?,?,?,?,?)",
+            (c["name"], sector_id, c["optimize_target"], c["target_cost"], "active", "upload")).lastrowid
     for cat in c.get("categories", []):
         cat_id = _get_or_create(conn, "category", "name", cat)
-        conn.execute("INSERT INTO customer_category VALUES(?,?)", (cid, cat_id))
+        conn.execute("INSERT OR IGNORE INTO customer_category VALUES(?,?)", (cid, cat_id))
 
     plan_ids, note_ids = {}, {}
     for i, p in enumerate(payload.get("plans", [])):
-        cat_id = _get_or_create(conn, "category", "name", p["category"])
-        pid = conn.execute(
-            "INSERT INTO plan(customer_id, category_id, name, placement, created_date, status, daily_budget, stopped_date) "
-            "VALUES(?,?,?,?,?,?,?,?)",
-            (cid, cat_id, p["name"], p["placement"], p["created_date"], p["status"],
-             p["daily_budget"], p.get("stopped_date"))).lastrowid
+        row = conn.execute("SELECT id FROM plan WHERE customer_id=? AND name=?",
+                           (cid, p["name"])).fetchone()
+        if row:
+            pid = row[0]
+        else:
+            cat_id = _get_or_create(conn, "category", "name", p["category"])
+            pid = conn.execute(
+                "INSERT INTO plan(customer_id, category_id, name, placement, created_date, status, daily_budget, stopped_date) "
+                "VALUES(?,?,?,?,?,?,?,?)",
+                (cid, cat_id, p["name"], p["placement"], p["created_date"], p["status"],
+                 p["daily_budget"], p.get("stopped_date"))).lastrowid
         plan_ids[p.get("key", i)] = pid
 
     for i, n in enumerate(payload.get("notes", [])):
         pid = plan_ids[n["plan_key"]]
-        cat_id = _get_or_create(conn, "category", "name", n["category"])
-        nid = conn.execute(
-            "INSERT INTO note(customer_id, category_id, plan_id, title, material_form, created_date, status, stopped_date) "
-            "VALUES(?,?,?,?,?,?,?,?)",
-            (cid, cat_id, pid, n["title"], n["material_form"], n["created_date"], n["status"],
-             n.get("stopped_date"))).lastrowid
+        row = conn.execute("SELECT id FROM note WHERE customer_id=? AND plan_id=? AND title=?",
+                           (cid, pid, n["title"])).fetchone()
+        if row:
+            nid = row[0]
+        else:
+            cat_id = _get_or_create(conn, "category", "name", n["category"])
+            nid = conn.execute(
+                "INSERT INTO note(customer_id, category_id, plan_id, title, material_form, created_date, status, stopped_date) "
+                "VALUES(?,?,?,?,?,?,?,?)",
+                (cid, cat_id, pid, n["title"], n["material_form"], n["created_date"], n["status"],
+                 n.get("stopped_date"))).lastrowid
         note_ids[n.get("key", i)] = nid
 
     n_rows = 0
@@ -101,7 +114,7 @@ def ingest_customer(conn, payload):
         n_rows += 1
 
     conn.commit()
-    return {"customer_id": cid, "plans": len(plan_ids), "notes": len(note_ids), "daily_rows": n_rows}
+    return {"mode": mode, "customer_id": cid, "plans": len(plan_ids), "notes": len(note_ids), "daily_rows": n_rows}
 
 
 def ingest_daily_csv(conn, csv_path, customer_id):

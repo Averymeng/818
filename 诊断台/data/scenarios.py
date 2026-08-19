@@ -77,4 +77,7 @@ SCENARIOS = {
 }
 
 SIM_VERSION = "sim-v1.0.0"
-START_DATE, END_DATE = "2026-06-24", "2026-08-17"
+# 数据窗口随真实时间滚动：结束日 = max(原固定末日, 今天)，保证「今日」默认窗口有数据
+from datetime import date as _date  # noqa: E402
+END_DATE = max("2026-08-17", _date.today().isoformat())
+START_DATE = "2026-06-24"

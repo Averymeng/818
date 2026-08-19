@@ -17,6 +17,10 @@ function esc(s){
   return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 function fmt(n){ return (n||0).toLocaleString('en-US'); }
+function todayStr(){
+  const t=new Date();
+  return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+}
 function shiftDate(s,d){
   const p=s.split('-').map(Number);
   const t=new Date(Date.UTC(p[0],p[1]-1,p[2]));
@@ -574,8 +578,8 @@ async function boot(){
   ]);
   DAILY=daily.customers||{};
   META.maxd=daily.maxd||'';
-  document.getElementById('fDate').value=META.maxd;
-  const iDate=document.getElementById('iDate'); if(iDate&&!iDate.value) iDate.value=META.maxd;
+  document.getElementById('fDate').value=todayStr();   // 默认与真实今天同步
+  const iDate=document.getElementById('iDate'); if(iDate&&!iDate.value) iDate.value=todayStr();
   CUSTOMERS=(custs||[]).map(c=>({
     id:c.id, name:c.name, ind:c.industry, sector:c.sector, cats:c.categories,
     st:'正常', spend:0, delta:0, imp:0, click:0, open:0, lead:0, cpl:0, cplPrev:0, cplRise:0, series:[]
