@@ -1,34 +1,125 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>诊断台 · 小红书投放周报智能体</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>诊断台 · 投放监控与复盘</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="app" id="app">
-  <aside class="sidebar">
-    <div class="brand"><span class="logo">诊</span><span class="label">诊断台</span></div>
-    <nav class="nav">
-      <div class="nav-item active" data-view="overview"><span class="ico">📊</span><span class="label">数据总览</span></div>
-      <div class="nav-item" data-view="review"><span class="ico">🔁</span><span class="label">周度复盘</span></div>
-      <div class="nav-item" data-view="ingest"><span class="ico">➕</span><span class="label">手动录入</span></div>
-    </nav>
-    <div class="nav-add">＋ 添加模块</div>
-  </aside>
 
-  <main class="main">
+<div class="app">
+  <div class="sidebar">
+    <div class="brand"><span class="dot"></span>诊断台</div>
+    <div class="nav-group">
+      <div class="nav-title">Main</div>
+      <div class="nav-item" data-view="overview" onclick="showView('overview')"><span class="ico">📊</span>当日监控</div>
+      <div class="nav-item active" data-view="list" onclick="showView('list')"><span class="ico">📅</span>客户详情</div>
+      <div class="nav-item" data-view="ingest" onclick="showView('ingest')"><span class="ico">➕</span>手动录入</div>
+    </div>
+  </div>
+
+  <div class="main">
     <div class="topbar">
-      <div class="crumbs" id="crumbs">数据总览</div>
-      <div class="tools">
-        <button class="icon-btn" id="toggleSidebar" title="折叠/展开侧边栏">☰</button>
+      <div class="page-title" id="pageTitle">客户详情</div>
+      <div class="top-right" id="topRight">
+        <input type="date" id="fDate">
+        <select id="fRange">
+          <option>今日</option>
+          <option>近7天</option>
+          <option selected>近14天</option>
+          <option>本月</option>
+        </select>
       </div>
     </div>
-    <div class="content" id="content"><div class="loading">加载中…</div></div>
-  </main>
+
+    <div class="wrap">
+
+      <!-- 当日监控 -->
+      <div class="view" id="overviewView"></div>
+
+      <!-- 客户详情：卡片网格 -->
+      <div class="view on" id="listView">
+        <div class="filter-bar">
+          <select id="fInd"><option value="">全部行业</option></select>
+          <select id="fSector"><option value="">全部赛道</option></select>
+          <select id="fCat"><option value="">全部品类</option></select>
+          <select id="fSt">
+            <option value="">全部状态</option>
+            <option value="需行动">需行动</option>
+            <option value="观察">观察</option>
+            <option value="正常">正常</option>
+          </select>
+          <input id="fQ" type="text" placeholder="搜索客户名称">
+          <button onclick="applyFilter()">应用筛选</button>
+        </div>
+        <div class="customer-grid" id="grid"></div>
+      </div>
+
+      <!-- 客户详情 -->
+      <div class="view" id="detailView">
+        <button class="btn-back" onclick="showView('list')">← 返回客户列表</button>
+        <div class="detail-cover">
+          <div>
+            <h1 id="dName"></h1>
+            <div class="meta" id="dMeta"></div>
+          </div>
+          <div style="text-align:right;">
+            <div class="big" id="dSpend"></div>
+            <div style="font-size:12px;opacity:.9;" id="dDelta"></div>
+          </div>
+        </div>
+        <div class="kpi-row" id="dKpi"></div>
+        <div class="card" style="margin-bottom:14px;">
+          <h3 style="font-size:12px;color:var(--sub);font-weight:800;margin-bottom:12px;" id="chartSecTitle">趋势</h3>
+          <div id="detailCharts"></div>
+        </div>
+        <div class="card" style="margin-bottom:14px;">
+          <h3 style="font-size:12px;color:var(--sub);font-weight:800;margin-bottom:12px;" id="tableSecTitle">每日数据</h3>
+          <div class="table-wrap"><table class="daily" id="detailTable"></table></div>
+        </div>
+        <div class="card">
+          <h3 style="font-size:12px;color:var(--sub);font-weight:800;margin-bottom:12px;">生成复盘报告</h3>
+          <p style="font-size:12px;color:var(--sub);margin-bottom:12px;">点击后由 LLM 基于当前时间窗口真实数据生成八章节诊断报告；站内弹层预览，同时落盘独立 HTML 链接可分享给客户。</p>
+          <div class="report-actions">
+            <button id="genBtn" onclick="generateReport()">生成客户复盘报告</button>
+            <div class="link" id="shareLink">
+              <span id="sharePath"></span>
+              <button onclick="copyShareLink()">复制链接</button>
+              <button style="background:var(--green);color:#fff;border:none;" onclick="openShareLink()">新标签打开</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 手动录入 -->
+      <div class="view" id="ingestView">
+        <div class="card">
+          <h3 style="font-size:14px;font-weight:800;margin-bottom:10px;">手动录入</h3>
+          <p class="ingest-note">按下方 JSON 结构录入客户（客户 + 计划 + 笔记 + 日度指标），提交后写入数据库，source='upload'，不会被每日模拟刷新覆盖。字段说明见 <code>data/sample_customer_upload.json</code>。</p>
+          <textarea class="ingest-area" id="ingJson" spellcheck="false"></textarea>
+          <div style="display:flex;gap:10px;">
+            <button style="background:var(--blue);color:#fff;border:none;padding:8px 18px;border-radius:8px;font-weight:700;cursor:pointer;" onclick="doIngest()">提交录入</button>
+            <button style="background:#fff;border:1px solid var(--line);padding:8px 18px;border-radius:8px;font-weight:700;cursor:pointer;" onclick="fillSample()">填充示例</button>
+          </div>
+          <div class="ingest-res" id="ingRes"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
 </div>
-<div class="toast" id="toast"></div>
+
+<div class="modal" id="reportModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2 id="mTitle"></h2>
+      <button class="close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" id="mBody"></div>
+  </div>
+</div>
+
 <script src="app.js"></script>
 </body>
 </html>
