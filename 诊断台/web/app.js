@@ -6,6 +6,7 @@ let META = {maxd: '', window: ''};
 let BASE_DATA = null;
 let WIN = {start:'', end:'', label:'', short:''};
 let curIdx = 0;
+const OV_FILTER = {ind:'', sec:'', cat:'', cust:'', st:''};   // 当日监控筛选器当前条件
 let ATTR_TOKEN = 0;            // 归因请求代际号：重渲染后旧请求不再回填
 
 const STCLASS = {"需行动":"b-action", "观察":"b-watch", "正常":"b-normal"};
@@ -362,8 +363,24 @@ function aggDailyTrend(s,e,list){
   const dates=Object.keys(map).sort();
   return dates.map(d=>{const x=map[d];return {date:d,spend:x.spend,cpl:x.lead?x.spend/x.lead:0,copen:x.open?x.spend/x.open:0};});
 }
+/* 当日监控筛选：读取 5 个下拉的值 → 存入 OV_FILTER → 重渲染 */
+function ovApply(){
+  const g=id=>{const el=document.getElementById(id);return el?el.value:'';};
+  OV_FILTER.ind=g('ovFInd'); OV_FILTER.sec=g('ovFSec'); OV_FILTER.cat=g('ovFCat');
+  OV_FILTER.cust=g('ovFCust'); OV_FILTER.st=g('ovFSt');
+  renderOverview();
+}
+function ovCustomers(){
+  return CUSTOMERS.filter(c=>
+    (!OV_FILTER.ind || c.ind===OV_FILTER.ind)
+    && (!OV_FILTER.sec || c.sector===OV_FILTER.sec)
+    && (!OV_FILTER.cat || (c.cats||[]).includes(OV_FILTER.cat))
+    && (!OV_FILTER.cust || c.name===OV_FILTER.cust)
+    && (!OV_FILTER.st || c.st===OV_FILTER.st)
+  );
+}
 function renderOverview(){
-  const CS=CUSTOMERS;   // 本页所有聚合均基于全量客户
+  const CS=ovCustomers();   // 筛选后的客户集，本页所有聚合均基于它
   const cur=aggAllInWindow(WIN.start,WIN.end,CS);
   const pw=prevWindow();
   const prev=aggAllInWindow(pw.start,pw.end,CS);
@@ -480,12 +497,32 @@ function renderOverview(){
     '<tr><td>'+esc(r.name)+'</td><td>'+esc(r.ind)+'</td><td>¥'+fmt(r.spend)+'</td><td class="'+(r.dlt>=0?'up':'down')+'">'+(r.dlt>=0?'+':'')+r.dlt+'%</td><td><span class="badge '+STCLASS[r.st]+'">'+r.st+'</span></td><td style="font-size:11px;color:var(--ink);">'+esc(r.task)+'</td></tr>'
   ).join('');
 
+  // 筛选器选项（数据驱动；重渲染时保留已选值）
+  const ovSel=k=>{const el=document.getElementById(k);return el?el.value:'';};
+  const ovKeep={ind:ovSel('ovFInd'), sec:ovSel('ovFSec'), cat:ovSel('ovFCat'), cust:ovSel('ovFCust'), st:ovSel('ovFSt')};
+  function ovOpts(list, allLabel, sel){
+    return '<option value="">'+allLabel+'</option>'+list.map(v=>'<option'+(v===sel?' selected':'')+'>'+esc(v)+'</option>').join('');
+  }
+  const ovInds=[...new Set(CUSTOMERS.map(c=>c.ind))].sort();
+  const ovSecs=[...new Set(CUSTOMERS.map(c=>c.sector).filter(Boolean))].sort();
+  const ovCats=[...new Set(CUSTOMERS.flatMap(c=>c.cats||[]))].sort();
+  const ovCusts=CUSTOMERS.map(c=>c.name).sort();
+  const ovSts=['需行动','观察','正常'];
+
   document.getElementById('overviewView').innerHTML=
-    /* 模块 1: 顶部 KPI */
+    /* 模块 1: 顶部 KPI + 筛选器 */
     '<div class="ov-top-kpis">'
     +'<div class="card ov-kpi-c k-spend"><div class="ico">💰</div><div class="body"><div class="lab">总消耗</div><div class="main"><span class="v">¥'+fmt(sales)+'</span>'+deltaBadge(totalSpendDelta,false)+'</div></div></div>'
     +'<div class="card ov-kpi-c k-lead"><div class="ico">🎯</div><div class="body"><div class="lab">留资数</div><div class="main"><span class="v">'+fmt(cur.lead)+'</span>'+deltaBadge(totalLeadDelta,false)+'</div></div></div>'
     +'<div class="card ov-kpi-c k-cpl"><div class="ico">📉</div><div class="body"><div class="lab">留资成本</div><div class="main"><span class="v">¥'+Math.round(CPL)+'</span>'+deltaBadge(CPLdelta,true)+'</div></div></div>'
+    +'<div class="card ov-filter-card"><div class="filt-title">筛选器</div><div class="filter-bar">'
+      +'<select id="ovFInd">'+ovOpts(ovInds,'全部行业',ovKeep.ind)+'</select>'
+      +'<select id="ovFSec">'+ovOpts(ovSecs,'全部赛道',ovKeep.sec)+'</select>'
+      +'<select id="ovFCat">'+ovOpts(ovCats,'全部品类',ovKeep.cat)+'</select>'
+      +'<select id="ovFCust">'+ovOpts(ovCusts,'全部客户',ovKeep.cust)+'</select>'
+      +'<select id="ovFSt">'+ovOpts(ovSts,'全部状态',ovKeep.st)+'</select>'
+      +'<button onclick="ovApply()">应用筛选</button>'
+    +'</div></div>'
     +'</div>'
 
     /* 模块 2: 趋势 */
