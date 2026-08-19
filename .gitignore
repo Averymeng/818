@@ -9,3 +9,6 @@ __pycache__/
 # local runtime artifacts (keep generated reports out of source control)
 诊断台/reports/
 *.log
+
+# 本地数据库(由 seed/scheduler 重建,不入库)
+诊断台/data/*.db
