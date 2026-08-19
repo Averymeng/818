@@ -1,3 +1,11 @@
+# Python
+__pycache__/
+*.pyc
+.Python
+
+# macOS
 .DS_Store
-*.db
+
+# local runtime artifacts (keep generated reports out of source control)
+诊断台/reports/
 *.log

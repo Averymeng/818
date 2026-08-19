@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>周度复盘 · 卡片到详情 Demo</title>
+<style>
+  :root{
+    --bg:#F8F9FC; --card:#FFFFFF; --ink:#1F2937; --sub:#94A3B8; --line:#E9EDF5;
+    --blue:#3B9DFF; --blue-soft:#E8F4FF; --blue-dark:#1E6FD9; --ivory:#FDFCF8;
+    --red:#F97066; --yellow:#FDB022; --green:#32D583; --cyan:#22D3EE;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;}
+  body{background:var(--bg);color:var(--ink);font-size:13px;line-height:1.5;}
+  .app{display:grid;grid-template-columns:210px 1fr;min-height:100vh;}
+  .sidebar{background:#fff;border-right:1px solid var(--line);padding:20px 14px;display:flex;flex-direction:column;}
+  .brand{font-weight:800;font-size:16px;color:var(--blue-dark);display:flex;align-items:center;gap:8px;margin-bottom:28px;padding:0 6px;}
+  .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--blue);}
+  .nav-group{margin-bottom:18px;}
+  .nav-title{font-size:10px;color:var(--sub);font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:0 10px;margin-bottom:6px;}
+  .nav-item{padding:9px 10px;border-radius:8px;color:var(--sub);font-weight:700;display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:2px;}
+  .nav-item:hover{background:var(--bg);color:var(--ink);}
+  .nav-item.active{background:var(--blue-soft);color:var(--blue-dark);}
+  .nav-item .ico{font-size:14px;}
+  .main{display:flex;flex-direction:column;}
+  .topbar{height:58px;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:20;}
+  .page-title{font-size:16px;font-weight:800;}
+  .wrap{padding:16px 24px 60px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;}
+  .badge{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:800;}
+  .b-action{background:#FEE4E2;color:#B42318;}
+  .b-watch{background:#FEF0C7;color:#B54708;}
+  .b-normal{background:#D1FADF;color:#027A48;}
+
+  /* filters */
+  .filter-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px;}
+  .filter-bar select,.filter-bar input{padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:12px;background:#fff;}
+  .filter-bar button{background:var(--blue);color:#fff;border:none;padding:7px 14px;border-radius:8px;font-weight:700;cursor:pointer;}
+
+  /* customer card grid */
+  .customer-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+  .cust-card{padding:16px;cursor:pointer;transition:transform .1s,box-shadow .1s;border:1px solid var(--line);}
+  .cust-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.06);}
+  .cust-card .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .cust-card .name{font-weight:800;font-size:14px;}
+  .cust-card .ind{color:var(--sub);font-size:11px;margin-bottom:10px;}
+  .cust-card .spend{font-size:24px;font-weight:800;letter-spacing:-.3px;}
+  .cust-card .delta{font-size:12px;margin-top:2px;font-weight:700;}
+  .cust-card .mini-chart{height:28px;margin-top:12px;}
+
+  /* detail */
+  .detail-cover{background:linear-gradient(135deg,var(--blue-dark),var(--blue));color:#fff;border-radius:12px;padding:22px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;}
+  .detail-cover h1{font-size:20px;font-weight:800;}
+  .detail-cover .meta{opacity:.9;font-size:12px;margin-top:4px;}
+  .detail-cover .big{font-size:28px;font-weight:800;}
+  .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px;}
+  .kpi .lab{color:var(--sub);font-size:11px;font-weight:700;margin-bottom:4px;}
+  .kpi .v{font-size:20px;font-weight:800;}
+  .kpi .d{font-size:11px;margin-top:4px;font-weight:700;}
+  .up{color:#10B981;} .down{color:var(--red);}
+  .chart-area{height:180px;position:relative;}
+  .chart-area svg{width:100%;height:100%;}
+
+  /* report actions */
+  .report-actions{display:flex;gap:10px;align-items:center;margin-top:14px;}
+  .report-actions button{background:var(--blue);color:#fff;border:none;padding:8px 18px;border-radius:8px;font-weight:700;cursor:pointer;}
+  .report-actions .link{background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:8px 12px;display:none;align-items:center;gap:10px;}
+  .report-actions .link.on{display:flex;}
+  .report-actions .link span{font-size:12px;color:#027A48;font-weight:700;}
+  .report-actions .link button{background:#fff;border:1px solid var(--line);padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;}
+
+  /* modal */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;justify-content:center;align-items:center;z-index:50;}
+  .modal.on{display:flex;}
+  .modal-box{background:#fff;width:760px;max-width:94vw;max-height:90vh;border-radius:12px;display:flex;flex-direction:column;box-shadow:0 20px 50px rgba(0,0,0,.2);}
+  .modal-head{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;}
+  .modal-head h2{font-size:15px;font-weight:800;}
+  .modal-head .close{background:none;border:none;font-size:18px;color:var(--sub);cursor:pointer;}
+  .modal-body{padding:20px;overflow:auto;}
+  .chapter{margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--line);}
+  .chapter:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+  .chapter h4{font-size:13px;font-weight:800;color:var(--blue-dark);margin-bottom:8px;}
+  .chapter p{font-size:12px;color:#475569;line-height:1.7;}
+  .chapter .tag{display:inline-block;background:var(--blue-soft);color:var(--blue-dark);font-size:10px;padding:2px 8px;border-radius:20px;font-weight:700;margin-right:6px;}
+
+  .view{display:none;}
+  .view.on{display:block;}
+  .btn-back{background:#fff;border:1px solid var(--line);padding:6px 12px;border-radius:8px;cursor:pointer;font-weight:700;margin-bottom:12px;}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="brand"><span class="dot"></span>诊断台</div>
+    <div class="nav-group">
+      <div class="nav-title">Main</div>
+      <div class="nav-item" onclick="window.location.reload()"><span class="ico">📊</span>数据总览</div>
+      <div class="nav-item active"><span class="ico">📅</span>周度复盘</div>
+      <div class="nav-item"><span class="ico">➕</span>手动录入</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="page-title">周度复盘</div>
+      <div style="color:var(--sub);font-size:12px;">08/11 – 08/17</div>
+    </div>
+
+    <div class="wrap">
+
+      <!-- 列表页：客户卡片网格 -->
+      <div class="view on" id="listView">
+        <div class="filter-bar">
+          <select><option>全部行业</option><option>美妆</option><option>3C</option><option>食品</option><option>服饰</option><option>家居</option></select>
+          <select><option>全部状态</option><option>需行动</option><option>观察</option><option>正常</option></select>
+          <input type="text" placeholder="搜索客户名称">
+          <button>应用筛选</button>
+        </div>
+
+        <div class="customer-grid">
+          <!-- 客户A -->
+          <div class="card cust-card" onclick="openDetail('A','美妆','需行动','¥2,340','+18%',[110,95,100,125,115,130,145],['red','red'])">
+            <div class="top">
+              <span class="name">客户A</span>
+              <span class="badge b-action">需行动</span>
+            </div>
+            <div class="ind">美妆</div>
+            <div class="spend">¥2,340</div>
+            <div class="delta up">今日 +18%</div>
+            <svg class="mini-chart" viewBox="0 0 120 28" preserveAspectRatio="none">
+              <polyline points="0,18 20,24 40,20 60,8 80,13 100,5 120,2" fill="none" stroke="#F97066" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+          <!-- 客户B -->
+          <div class="card cust-card" onclick="openDetail('B','3C','观察','¥1,120','-5%',[150,145,142,138,140,135,132],['yellow','red'])">
+            <div class="top">
+              <span class="name">客户B</span>
+              <span class="badge b-watch">观察</span>
+            </div>
+            <div class="ind">3C</div>
+            <div class="spend">¥1,120</div>
+            <div class="delta down">今日 -5%</div>
+            <svg class="mini-chart" viewBox="0 0 120 28" preserveAspectRatio="none">
+              <polyline points="0,5 20,8 40,10 60,14 80,12 100,18 120,22" fill="none" stroke="#FDB022" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+          <!-- 客户C -->
+          <div class="card cust-card" onclick="openDetail('C','食品','正常','¥890','+2%',[100,102,101,104,103,105,106],['green','green'])">
+            <div class="top">
+              <span class="name">客户C</span>
+              <span class="badge b-normal">正常</span>
+            </div>
+            <div class="ind">食品</div>
+            <div class="spend">¥890</div>
+            <div class="delta up">今日 +2%</div>
+            <svg class="mini-chart" viewBox="0 0 120 28" preserveAspectRatio="none">
+              <polyline points="0,20 20,19 40,20 60,17 80,18 100,15 120,14" fill="none" stroke="#32D583" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+          <!-- 客户D -->
+          <div class="card cust-card" onclick="openDetail('D','服饰','需行动','¥3,010','+42%',[80,90,110,150,180,220,260],['red','red'])">
+            <div class="top">
+              <span class="name">客户D</span>
+              <span class="badge b-action">需行动</span>
+            </div>
+            <div class="ind">服饰</div>
+            <div class="spend">¥3,010</div>
+            <div class="delta up">今日 +42%</div>
+            <svg class="mini-chart" viewBox="0 0 120 28" preserveAspectRatio="none">
+              <polyline points="0,24 20,22 40,18 60,12 80,8 100,4 120,2" fill="none" stroke="#F97066" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+          <!-- 客户E -->
+          <div class="card cust-card" onclick="openDetail('E','教育','正常','¥760','+1%',[100,101,100,102,101,103,102],['green','green'])">
+            <div class="top">
+              <span class="name">客户E</span>
+              <span class="badge b-normal">正常</span>
+            </div>
+            <div class="ind">教育</div>
+            <div class="spend">¥760</div>
+            <div class="delta up">今日 +1%</div>
+            <svg class="mini-chart" viewBox="0 0 120 28" preserveAspectRatio="none">
+              <polyline points="0,20 20,19 40,20 60,18 80,19 100,16 120,17" fill="none" stroke="#32D583" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+          <!-- 客户F -->
+          <div class="card cust-card" onclick="openDetail('F','家居','观察','¥1,540','-8%',[160,155,150,152,148,145,140],['yellow','red'])">
+            <div class="top">
+              <span class="name">客户F</span>
+              <span class="badge b-watch">观察</span>
+            </div>
+            <div class="ind">家居</div>
+            <div class="spend">¥1,540</div>
+            <div class="delta down">今日 -8%</div>
+            <svg class="mini-chart" viewBox="0 0 120 28" preserveAspectRatio="none">
+              <polyline points="0,4 20,7 40,10 60,8 80,12 100,16 120,22" fill="none" stroke="#FDB022" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 详情页 -->
+      <div class="view" id="detailView">
+        <button class="btn-back" onclick="backList()">← 返回客户列表</button>
+
+        <div class="detail-cover">
+          <div>
+            <h1 id="dName">客户A · 美妆 · 本周详细数据</h1>
+            <div class="meta" id="dMeta">周期 08/11–08/17 · 状态：需行动（P0）</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="big" id="dSpend">¥2,340</div>
+            <div style="font-size:12px;opacity:.9;" id="dDelta">今日消耗 · 环比 +18%</div>
+          </div>
+        </div>
+
+        <div class="kpi-row">
+          <div class="card kpi"><div class="lab">曝光</div><div class="v">860,000</div><div class="d up">+5%</div></div>
+          <div class="card kpi"><div class="lab">点击</div><div class="v">69,000</div><div class="d up">+3%</div></div>
+          <div class="card kpi"><div class="lab">开口</div><div class="v">4,200</div><div class="d down">-12%</div></div>
+          <div class="card kpi"><div class="lab">留资</div><div class="v">142</div><div class="d down">-15%</div></div>
+        </div>
+
+        <div class="card" style="margin-bottom:14px;">
+          <h3 style="font-size:12px;color:var(--sub);font-weight:800;margin-bottom:12px;">本周趋势（消耗）</h3>
+          <div class="chart-area">
+            <svg viewBox="0 0 700 180" preserveAspectRatio="none">
+              <defs><linearGradient id="gw" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3B9DFF" stop-opacity=".2"/><stop offset="100%" stop-color="#3B9DFF" stop-opacity="0"/></linearGradient></defs>
+              <path d="M0,120 L100,90 L200,100 L300,60 L400,50 L500,70 L600,40 L700,30 L700,180 L0,180 Z" fill="url(#gw)"/>
+              <polyline points="0,120 100,90 200,100 300,60 400,50 500,70 600,40 700,30" fill="none" stroke="#3B9DFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="font-size:12px;color:var(--sub);font-weight:800;margin-bottom:12px;">生成复盘报告</h3>
+          <p style="font-size:12px;color:var(--sub);margin-bottom:12px;">点击后由 LLM 生成八章节诊断报告；可站内预览，也可生成独立 HTML 链接分享给客户。</p>
+          <div class="report-actions">
+            <button onclick="generateReport()">生成客户复盘报告</button>
+            <div class="link" id="shareLink">
+              <span>reports/客户A_20260819.html</span>
+              <button>复制链接</button>
+              <button style="background:var(--green);color:#fff;border:none;">新标签打开</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- 报告站内弹层 -->
+<div class="modal" id="reportModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>客户A · 08/11–08/17 周度复盘报告</h2>
+      <button class="close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="chapter">
+        <h4>① 本周核心结论</h4>
+        <p><span class="tag">整体</span>本周整体消耗 ¥14,639，环比 +12%；但留资数 142，环比 -15%，开口成本上涨 21%，判定为<strong>需行动（P0）</strong>。主要矛盾：后链路转化效率显著下滑，素材 CTR 虽提升但私信开口承接不足。</p>
+      </div>
+      <div class="chapter">
+        <h4>② Top3 关键发现</h4>
+        <p>1. 留资成本从 ¥98 升至 ¥115（+17%），主因开口转化率下降 3.2pt。<br>2. 搜索广告 CPC 暴涨 42%，定向包放宽导致放量但质量下降。<br>3. 新投笔记占比仅 6%，素材老化可能是 CTR 虚高后的隐性风险。</p>
+      </div>
+      <div class="chapter">
+        <h4>③ 数据拆解</h4>
+        <p>按「计划-笔记-日期」下钻：头部计划 P001 消耗占比 38%，留资 CVR 却从 2.1% 跌至 1.4%；笔记 N012（上周新上）曝光占比 21% 但开口率仅 1.8%，低于均值 2.4%。</p>
+      </div>
+      <div class="chapter">
+        <h4>④ 案例对比</h4>
+        <p>历史相似 case：客户 X 在 07/15 周出现开口率骤降，通过收窄定向 + 替换首图，次周留资成本回落 12%。建议参考其素材结构。</p>
+      </div>
+      <div class="chapter">
+        <h4>⑤ 策略建议</h4>
+        <p>P0：暂停 CPC>¥3 的搜索计划，收紧定向包至核心人群；P1：替换 N012 首图并测试 3 版新素材；P1：每日监控开口率，若连续 2 天低于 2.0% 启动素材淘汰。</p>
+      </div>
+      <div class="chapter">
+        <h4>⑥ 行动计划</h4>
+        <p>08/20 前：完成搜索计划定向收紧（预期 CPC 回落 20%）。<br>08/22 前：上线 3 版新素材（预期开口率回升至 2.5%）。</p>
+      </div>
+      <div class="chapter">
+        <h4>⑦ 观察清单</h4>
+        <p>本周需持续观察：搜索广告 CPC 走势、新素材开口率、整体留资成本是否回到 ¥100 以内。</p>
+      </div>
+      <div class="chapter">
+        <h4>⑧ 数据质量说明</h4>
+        <p>本周数据完整，无缺失日期；所有环比基于 08/04–08/10 同期数据。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openDetail(name,ind,status,spend,delta,spark,colors){
+    document.getElementById('listView').classList.remove('on');
+    document.getElementById('detailView').classList.add('on');
+    document.getElementById('dName').innerText = '客户'+name+' · '+ind+' · 本周详细数据';
+    document.getElementById('dMeta').innerText = '周期 08/11–08/17 · 状态：'+status;
+    document.getElementById('dSpend').innerText = spend;
+    document.getElementById('dDelta').innerText = '今日消耗 · 环比 '+delta;
+    document.getElementById('shareLink').classList.remove('on');
+    window.scrollTo(0,0);
+  }
+  function backList(){
+    document.getElementById('detailView').classList.remove('on');
+    document.getElementById('listView').classList.add('on');
+  }
+  function generateReport(){
+    // 真实场景这里会调 /api/report?customer_id=...&dry_run=false，等 LLM 返回后渲染
+    document.getElementById('reportModal').classList.add('on');
+    document.getElementById('shareLink').classList.add('on');
+  }
+  function closeModal(){
+    document.getElementById('reportModal').classList.remove('on');
+  }
+</script>
+
+</body>
+</html>
