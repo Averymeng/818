@@ -7,7 +7,6 @@ let BASE_DATA = null;
 let WIN = {start:'', end:'', label:'', short:''};
 let curIdx = 0;
 const OV_FILTER = {ind:'', sec:'', cat:'', cust:'', st:''};   // 当日监控筛选器当前条件
-const MONTH_TARGET = 500000;   // 销售业绩月目标（演示值，DB 无目标字段）
 let ATTR_TOKEN = 0;            // 归因请求代际号：重渲染后旧请求不再回填
 
 const STCLASS = {"需行动":"b-action", "观察":"b-watch", "正常":"b-normal"};
@@ -380,8 +379,6 @@ function renderOverview(){
   const totalLeadDelta=pctDelta(cur.lead,prev.lead);
   const CPLdelta=pctDelta(CPL,CPLprev);
   const sales=Math.round(cur.spend);
-  const pctDone=Math.min(100,+(sales/MONTH_TARGET*100).toFixed(1));
-  const remain=Math.max(0,MONTH_TARGET-sales);
 
   // 趋势图 3 线
   const trend=aggDailyTrend(WIN.start,WIN.end,CS);
@@ -490,7 +487,7 @@ function renderOverview(){
     +'</div></div>'
     +'</div>'
 
-    /* 模块 2: 趋势 + 销售业绩 */
+    /* 模块 2: 趋势 */
     +'<div class="ov-row2">'
       +'<div class="card ov-chart-card">'
         +'<div class="t">趋势（'+WIN.short+' · 消耗 / 留资成本 / 开口成本）</div>'
@@ -500,13 +497,6 @@ function renderOverview(){
           +'<span style="color:#22D3EE"><span class="dot dash" style="color:#22D3EE"></span>留资成本</span>'
           +'<span style="color:#FDB022"><span class="dot" style="background:#FDB022"></span>开口成本</span>'
         +'</div>'
-      +'</div>'
-      +'<div class="card ov-progress">'
-        +'<div class="tabs"><span class="tab on">销售业绩</span></div>'
-        +'<div class="big">¥'+fmt(sales)+'</div>'
-        +'<div class="meta">月目标 <b>¥'+fmt(MONTH_TARGET)+'</b></div>'
-        +'<div class="bar"><div class="fill" style="width:'+pctDone+'%"></div></div>'
-        +'<div class="foot"><span>完成度 <b>'+pctDone+'%</b></span><span>剩余 <b>¥'+fmt(remain)+'</b></span></div>'
       +'</div>'
     +'</div>'
 
