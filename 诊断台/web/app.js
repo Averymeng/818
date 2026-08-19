@@ -483,7 +483,7 @@ function renderOverview(){
       +'<div class="card ov-progress">'
         +'<div class="tabs"><span class="tab on">销售业绩</span></div>'
         +'<div class="big">¥'+fmt(sales)+'</div>'
-        +'<div class="meta">月目标 <b>¥'+fmt(MONTH_TARGET)+'</b>（演示值）</div>'
+        +'<div class="meta">月目标 <b>¥'+fmt(MONTH_TARGET)+'</b></div>'
         +'<div class="bar"><div class="fill" style="width:'+pctDone+'%"></div></div>'
         +'<div class="foot"><span>完成度 <b>'+pctDone+'%</b></span><span>剩余 <b>¥'+fmt(remain)+'</b></span></div>'
       +'</div>'
