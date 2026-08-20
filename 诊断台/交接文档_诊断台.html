@@ -398,7 +398,13 @@ python3 eval/run_eval.py --static
     <li><span class="pill p-ok">已完成</span> <strong>审核闭环（RAG 飞轮入库口，commit <code>377a678</code>）</strong>：报告弹层新增审核条，「通过入案例库」→ <code>promote_to_case()</code> 自动从 report_json 提取 anomaly_signature/key_evidence/action_taken 写入 <code>diag_case</code>（幂等，带 source_report_id）；「驳回」→ 必填理由写入 <code>diag_badcase</code>（status=open）。审核通过后 <code>search_cases</code> 立即可检索到新案例。这补上了此前「审核通过的报告不会自动沉淀为案例」的 gap。</li>
     <li><span class="pill p-warn">进行中</span> 持续迭代打磨：用户在使用中反馈问题 → 逐项修复。当前最新 commit <code>377a678</code>。</li>
     <li><span class="pill p-bad">延后</span> <strong>分享报告的独立 HTML 后端真正落地</strong>：当前 <code>POST /api/report</code> 已能落盘独立 HTML 到 <code>web/reports/</code>，但尚未做持久化 URL 和访问权限控制。用户明确「以后再说」。</li>
-    <li><span class="pill p-acc">后续方向</span> 真实数据接入（当前全为仿真数据）；多周对比；各指标环比下钻；多维归因 LLM 化——均待接入真实数据源后排期。</li>
+  </ul>
+  <h3>部署与对外访问待办（2026-08-20 补充）</h3>
+  <ul class="tight">
+    <li><span class="pill p-acc">待决策</span> <strong>是否正式对外部署</strong>：当前仅本地后端可用；已上线静态只读快照链接（<code>app.workbuddy.link</code>），可微信分享供他人只读浏览，但不能录入/生成。若需他人实时录入+生成，需把 <code>api_server.py</code> 跑在公网 Python 主机（Cloud Studio 工作空间运行时 / 自有 VPS）。见第 14 节 83a8520 / daf19ae / 386fa3c。</li>
+    <li><span class="pill p-warn">坑</span> <strong>本地后端会被沙箱回收</strong>：<code>127.0.0.1:8000</code> 后台进程空闲后被回收导致掉线；真·常驻必须落到持续运行宿主（静态快照或公网主机），本地仅适合自检。</li>
+    <li><span class="pill p-acc">待办</span> <strong>实时后端部署步骤（供他人录入）</strong>：①上传 <code>诊断台/</code>（含 <code>data/</code>）到公网 Python 主机 ②<code>export DEEPSEEK_API_KEY</code> ③<code>./start.sh</code>（--host 0.0.0.0 + 崩溃自重启）④配进程守护(systemd/supervisor) 保活 ⑤给公网 URL。域名可选。</li>
+    <li><span class="pill p-acc">待办</span> <strong>真实实习复盘报告入库 RAG</strong>：用户拟将实习留存报告作为案例库；字段/口径与系统不同，入库时需做归一化映射（版位/指标/行业/赛道）才能被 LIKE 召回；EN/CN 签名一致性已修(386fa3c)。待用户提供文件后执行。</li>
   </ul>
 </section>
 
@@ -499,7 +505,7 @@ cd 诊断台 && python3 data/seed_customers.py</pre>
 <!-- ========== 14 ========== -->
 <section id="changelog">
   <h2>14. 操作日志（全量 commit 记录）</h2>
-  <p>以下按时间线记录所有 git commit（截至 <code>0c99d42</code>，共 97 次）。<span class="pill p-acc">记忆</span> 标记的为纯记忆日志 commit，<span class="pill p-warn">决策日志</span> 为决策记录 commit，无代码变更但记录了思路上下文。</p>
+  <p>以下按时间线记录所有 git commit（截至 <code>386fa3c</code>，共 101 次）。<span class="pill p-acc">记忆</span> 标记的为纯记忆日志 commit，<span class="pill p-warn">决策日志</span> 为决策记录 commit，无代码变更但记录了思路上下文。</p>
 
   <h3>14.1 Phase 1：Agent 核心搭建（8/18 20:53 — 8/18 22:35）</h3>
   <table>
@@ -614,6 +620,23 @@ cd 诊断台 && python3 data/seed_customers.py</pre>
     <tr><td><code>aa816ab</code></td><td>8/20 10:30</td><td><strong>周报呈现再优化（用户确认执行）</strong>：①第 3 章改为两张折线图（消耗趋势 + 目标成本趋势）②异常与原因去掉序号 # 前缀 ③文本归一化_search→搜索版位、feed→信息流、贡献度裸小数→百分数（如 1.3036→130.36%）、delta→带货币单位（如 delta -245.92→变化 ¥-245.92）；prompt 口径标签红线强化。根因修复：get_trend 只支持派生指标导致消耗趋势全 None（derive_metrics 不返回原始 spend），新增原始量纲支持；端到端生成报告验证双图出现、无 #、无裸小数。零成本评测 122/122 通过</td><td>agent/tools.py, agent/orchestrator.py, api_server.py, web/app.js, agent/system_prompt.md</td></tr>
     <tr><td><code>c6681fb</code></td><td>8/20 10:45</td><td><strong>修复分享链接复制按钮白底白字 + 报告趋势图并排</strong>：.report-actions .link button 单独设 ink 色避免白底白字；报告弹层第 3 章消耗趋势+目标成本趋势两张 SVG 由上下堆叠改并排（.report-trend-pair flex，响应式转纵向）</td><td>web/style.css, api_server.py</td></tr>
     <tr><td><code>4be9f39</code></td><td>8/20 10:47</td><td><span class="pill p-acc">记忆</span> 记录分享链接按钮与趋势图并排修复</td><td>.workbuddy/memory/</td></tr>
+    <tr><td><code>27614b4</code></td><td>8/20 11:03</td><td>docs: 网站产出检查清单（零成本核验 + 人工勾选项）</td><td>outputs/网站产出检查清单_2026-08-20.html</td></tr>
+    <tr><td><code>3cf9137</code></td><td>8/20 11:03</td><td><span class="pill p-acc">记忆</span> 记录节省积分偏好（零成本优先）</td><td>.workbuddy/memory/</td></tr>
+    <tr><td><code>1a1c2ed</code></td><td>8/20 11:38</td><td><strong>修复卡片点击错位</strong>：openDetail 改用 customer_id 定位，修复筛选后点错客户显示错详情</td><td>web/app.js</td></tr>
+    <tr><td><code>958a42e</code></td><td>8/20 11:39</td><td><span class="pill p-acc">记忆</span> 记录卡片修复完成 + Claude 本地进站限制</td><td>.workbuddy/memory/</td></tr>
+    <tr><td><code>14c9110</code></td><td>8/20 12:12</td><td><span class="pill p-acc">记忆</span> 本地开发服务器持久化说明（run_in_background 回收 + 代理 bypass 127.0.0.1）</td><td>.workbuddy/memory/</td></tr>
+    <tr><td><code>3277293</code></td><td>8/20 12:24</td><td><span class="pill p-acc">记忆</span> Gemini 审悦颜报告 + 我的核验结论（仅 2 项真实，其余误报）</td><td>.workbuddy/memory/</td></tr>
+    <tr><td><code>70681e6</code></td><td>8/20 12:45</td><td><strong>修复报告英文残留</strong>：核心结论/各章节英文指标名归一化(open_cost→开口成本等) + 比率指标补%(×100) + 分享页趋势图横向并排</td><td>agent/tools.py, api_server.py</td></tr>
+    <tr><td><code>b288644</code></td><td>8/20 12:46</td><td><span class="pill p-acc">记忆</span> 报告英文残留/比率%/趋势并排修复</td><td>.workbuddy/memory/</td></tr>
+    <tr><td><code>5997cbc</code></td><td>8/20 13:12</td><td><strong>案例库去重防重复</strong>：promote_to_case 改按(客户+归一化签名)去重 + 前端审核条反映已入案例库状态 + 清理重复案例</td><td>agent/review_actions.py, api_server.py, web/app.js</td></tr>
+    <tr><td><code>de76f8f</code></td><td>8/20 13:12</td><td><span class="pill p-acc">记忆</span> 审核重复入库 bug 根因与去重修复</td><td>.workbuddy/memory/</td></tr>
+    <tr><td><code>0c99d42</code></td><td>8/20 13:46</td><td><strong>promote_to_case 兼容 str/list</strong>：防空壳报告(待 LLM 归因)崩溃；配套批量补案例库(5→20 条)</td><td>agent/review_actions.py</td></tr>
+    <tr><td><code>1fc93c3</code></td><td>8/20 13:48</td><td>docs: 操作日志历史缺失 commit 补录</td><td>交接文档_诊断台.html</td></tr>
+    <tr><td><code>83a8520</code></td><td>8/20 15:29</td><td><strong>feat(deploy): 静态只读快照上线</strong>：static_export.py 导出 web/snapshot.json + 前端检测不到后端自动读快照(离线只读) + start.sh + 部署说明.md</td><td>static_export.py, web/app.js, start.sh, 部署说明.md</td></tr>
+    <tr><td><code>daf19ae</code></td><td>8/20 15:45</td><td><strong>fix(deploy): 修复离线快照 DAILY 读取错误</strong>：daily.customers→daily 导致大盘空白</td><td>web/app.js</td></tr>
+    <tr><td><code>386fa3c</code></td><td>8/20 19:06</td><td><strong>fix(rag): 案例召回归一化</strong>：英文指标(open_cost/lead_cost)→中文签名口径一致，修复静默漏匹配；映射抽为 tools.SIG_MAP_EN2CN 唯一来源</td><td>agent/tools.py, agent/review_actions.py</td></tr>
+    <tr><td><code>问答</code></td><td>8/20 19:17</td><td><strong>用户问答：项目进展 + 部署形态 + RAG 召回</strong>：①确认进展——前端/后端已完成，仅剩「是否对外部署」待定 ②讲解 RAG 召回(SQL LIKE 非向量)并修复 EN/CN 签名漏匹配(386fa3c) ③澄清部署：静态只读快照已上线(app.workbuddy.link 可微信分享只读)；实时后端/他人录入需公网 Python 主机；本地 127.0.0.1 会被沙箱回收 ④生成慢/回答慢原因说明</td><td>本轮对话</td></tr>
+
     <tr><td><code>27614b4</code></td><td>8/20 11:03</td><td><strong>网站产出检查清单</strong>：零成本核验（全站卡片+报告输出）+ 人工勾选项</td><td>outputs/网站产出检查清单_2026-08-20.html</td></tr>
     <tr><td><code>3cf9137</code></td><td>8/20 11:03</td><td><span class="pill p-acc">记忆</span> 记录节省积分偏好（零成本优先）</td><td>.workbuddy/memory/</td></tr>
     <tr><td><code>1a1c2ed</code></td><td>8/20 11:38</td><td><strong>修复卡片点击错位</strong>：applyFilter 渲染 list 索引传给 openDetail 取全局 CUSTOMERS 导致错客户；改传 customer_id + 新增 openDetailById 定位</td><td>web/app.js</td></tr>
