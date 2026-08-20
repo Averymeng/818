@@ -104,9 +104,9 @@ function spark(series,color){
   const pts=series.map((v,i)=>{const x=i/(series.length-1)*w;const y=h-((v-min)/rng)*(h-6)-3;return x.toFixed(1)+','+y.toFixed(1);}).join(' ');
   return '<svg class="mini-chart" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none"><polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 }
-function cardHTML(c,i){
+function cardHTML(c){
   const up=c.delta>=0;
-  return '<div class="card cust-card" onclick="openDetail('+i+')">'
+  return '<div class="card cust-card" onclick="openDetailById('+c.id+')">'
     +'<div class="top"><span class="name">'+esc(c.name)+'</span><span class="badge '+STCLASS[c.st]+'">'+c.st+'</span></div>'
     +'<div class="ind">'+esc(c.ind)+'</div>'
     +'<div class="lab">'+WIN.short+' 日均消耗</div>'
@@ -116,7 +116,7 @@ function cardHTML(c,i){
     +'</div>';
 }
 function renderGrid(list){
-  document.getElementById('grid').innerHTML = list.length? list.map((c,i)=>cardHTML(c,i)).join('') : '<div style="color:var(--sub)">无匹配客户</div>';
+  document.getElementById('grid').innerHTML = list.length? list.map(c=>cardHTML(c)).join('') : '<div style="color:var(--sub)">无匹配客户</div>';
 }
 function applyFilter(){
   const ind=document.getElementById('fInd').value, sector=document.getElementById('fSector').value,
@@ -212,6 +212,10 @@ function renderDetailTable(){
   });
   h+='</tbody>';
   document.getElementById('detailTable').innerHTML=h;
+}
+function openDetailById(id){
+  const i=CUSTOMERS.findIndex(c=>c.id==id);
+  if(i>=0) openDetail(i);
 }
 function openDetail(i){
   curIdx=i; const c=CUSTOMERS[i];
