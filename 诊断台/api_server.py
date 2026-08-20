@@ -309,6 +309,65 @@ def _pct(v):
     return str(v)
 
 
+METRIC_CN = {"CPM": "CPM", "CTR": "CTR", "CPC": "CPC", "button_rate": "按钮率",
+             "open_rate": "开口率", "lead_rate": "留资率", "lead_cvr": "留资转化率",
+             "open_cost": "开口成本", "lead_cost": "留资成本"}
+LAYER_CN = {"placement": "版位", "plan": "计划", "note": "笔记", "funnel": "漏斗"}
+
+
+def _esc(s):
+    return str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def _trend_svg(metrics):
+    """第 3 章趋势折线图（与站内当日监控分面小图同款视觉：折线+均值虚线+端点标注+斜放横轴）"""
+    t = metrics.get("trend_14d") or {}
+    daily = [d for d in (t.get("daily") or []) if d.get("value") is not None]
+    if len(daily) < 2:
+        return ""
+    vals = [d["value"] for d in daily]
+    W, H, PL, PR, PT, PB = 420, 170, 44, 14, 12, 30
+    w, h = W - PL - PR, H - PT - PB
+    mx, mn = max(vals), min(vals)
+    rng = (mx - mn) or 1
+
+    def X(i):
+        return PL + i * w / (len(vals) - 1)
+
+    def Y(v):
+        return PT + h - (v - mn) / rng * h
+
+    path = "".join(f"{'M' if i == 0 else 'L'}{X(i):.1f} {Y(v):.1f}" for i, v in enumerate(vals))
+    avg = sum(vals) / len(vals)
+
+    def fv(v):
+        return f"{v:,.0f}" if abs(v) >= 100 else f"{v:.2f}"
+
+    step = max(1, -(-len(vals) // 5))
+    ticks = list(range(0, len(vals), step))
+    if ticks[-1] != len(vals) - 1:
+        ticks.append(len(vals) - 1)
+    xt = "".join(
+        f"<text class='ax' x='{X(i):.1f}' y='{PT+h+12:.1f}' text-anchor='end' "
+        f"transform='rotate(-35,{X(i):.1f},{PT+h+12:.1f})'>{_esc(daily[i]['date'][5:])}</text>"
+        for i in ticks)
+    dots = "".join(
+        f"<circle cx='{X(i):.1f}' cy='{Y(v):.1f}' r='2.2' fill='#1E6FD9' opacity='{1 if i == len(vals)-1 else 0.45}'/>"
+        for i, v in enumerate(vals))
+    mname = METRIC_CN.get(metrics.get("trend_metric")) or metrics.get("trend_metric") or "目标成本"
+    return (f"<div class='trendbox'><div class='trendhead'><span>近14天{_esc(mname)}趋势</span>"
+            f"<span class='muted'>均值 ¥{fv(avg)}</span></div>"
+            f"<svg viewBox='0 0 {W} {H}'>"
+            f"<line x1='{PL}' y1='{PT+h:.1f}' x2='{PL+w:.1f}' y2='{PT+h:.1f}' stroke='#E9EDF5'/>"
+            f"<line x1='{PL}' y1='{Y(avg):.1f}' x2='{PL+w:.1f}' y2='{Y(avg):.1f}' stroke='#94A3B8' stroke-dasharray='4 4' stroke-width='1'/>"
+            f"<path d='{path}' fill='none' stroke='#1E6FD9' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/>"
+            f"{dots}"
+            f"<circle cx='{X(len(vals)-1):.1f}' cy='{Y(vals[-1]):.1f}' r='3.6' fill='#FFF' stroke='#1E6FD9' stroke-width='2.5'/>"
+            f"<text class='ax' x='{PL-4}' y='{PT+7}' text-anchor='end'>¥{fv(mx)}</text>"
+            f"<text class='ax' x='{PL-4}' y='{PT+h+3:.1f}' text-anchor='end'>¥{fv(mn)}</text>"
+            f"{xt}</svg></div>")
+
+
 def render_report_html(report):
     """把八章节报告 JSON 渲染为自包含 HTML（分享链接落盘文件）"""
     ch = report.get("chapters", {})
@@ -332,14 +391,14 @@ def render_report_html(report):
             chg = f"{(cur-prev)/prev*100:+.1f}%"
         else:
             chg = "—"
-        rows += f"<tr><td>{esc(k)}</td><td>{_num(cur)}</td><td>{_num(prev)}</td><td>{chg}</td></tr>"
+        rows += f"<tr><td>{esc(METRIC_CN.get(k, k))}</td><td>{_num(cur)}</td><td>{_num(prev)}</td><td>{chg}</td></tr>"
 
     layer_html = "".join(
-        f"<div class='item'><b>{esc(x.get('layer'))}</b> · <span class='st'>{esc(x.get('status'))}</span>"
+        f"<div class='item'><b>{esc(LAYER_CN.get(x.get('layer'), x.get('layer')))}</b> · <span class='st'>{esc(x.get('status'))}</span>"
         f"<p>{esc(x.get('judgement',''))}</p></div>" for x in layers)
 
     anom_html = "".join(
-        f"<div class='item'><b>#{x.get('rank')} {esc(x.get('location'))}</b> · 置信度 {esc(x.get('confidence'))}"
+        f"<div class='item'><b>#{x.get('rank')} {esc(x.get('location'))}</b>"
         f"<p>{esc(x.get('reason',''))}</p><ul>"
         + "".join(f"<li>{esc(e)}</li>" for e in x.get("evidence", []))
         + "</ul></div>" for x in anomalies.get("top3_detail", []))
@@ -385,6 +444,10 @@ td{{padding:7px 8px;border-bottom:1px solid #E9EDF5;}}
 .tag{{display:inline-block;padding:1px 8px;border-radius:20px;font-size:10px;font-weight:800;color:#fff;margin-right:6px;}}
 .tag.P0{{background:#F97066;}} .tag.P1{{background:#3B9DFF;}}
 .st{{color:#3B9DFF;font-weight:700;}}
+.trendbox{{margin:10px 0 4px;}}
+.trendhead{{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;}}
+.trendbox svg{{width:100%;height:auto;}}
+.ax{{font-size:10px;fill:#94A3B8;}}
 .status{{display:inline-block;padding:2px 10px;border-radius:20px;font-weight:800;font-size:12px;}}
 .status.需行动{{background:#FEE4E2;color:#B42318;}} .status.观察{{background:#FEF0C7;color:#B54708;}} .status.正常{{background:#D1FADF;color:#027A48;}}
 </style></head><body><div class="wrap">
@@ -396,7 +459,8 @@ td{{padding:7px 8px;border-bottom:1px solid #E9EDF5;}}
 <p>{esc(concl.get('summary',''))}</p>
 <ul>{top3_html}</ul></div>
 <div class="card"><h3>② 指标与趋势</h3>
-<table><thead><tr><th>指标</th><th>本期</th><th>上期</th><th>环比</th></tr></thead><tbody>{rows}</tbody></table></div>
+<table><thead><tr><th>指标</th><th>本期</th><th>上期</th><th>环比</th></tr></thead><tbody>{rows}</tbody></table>
+{_trend_svg(metrics)}</div>
 <div class="card"><h3>③ 分层诊断</h3>{layer_html or "<p class='muted'>无</p>"}</div>
 <div class="card"><h3>④ 异常与原因</h3>{anom_html or "<p class='muted'>无明显异常</p>"}</div>
 <div class="card"><h3>⑤ 案例参考</h3>{case_html}</div>

@@ -11,6 +11,9 @@ let ATTR_TOKEN = 0;            // 归因请求代际号：重渲染后旧请求�
 
 const STCLASS = {"需行动":"b-action", "观察":"b-watch", "正常":"b-normal"};
 const STCOLOR = {"需行动":"#F97066", "观察":"#FDB022", "正常":"#32D583"};
+const METRIC_CN = {CPM:'CPM',CTR:'CTR',CPC:'CPC',button_rate:'按钮率',open_rate:'开口率',
+                   lead_rate:'留资率',lead_cvr:'留资转化率',open_cost:'开口成本',lead_cost:'留资成本'};
+const LAYER_CN = {placement:'版位',plan:'计划',note:'笔记',funnel:'漏斗'};
 
 /* ---------------- 工具 ---------------- */
 function esc(s){
@@ -331,6 +334,41 @@ async function submitReview(action){
     okBtn.innerText='✓ 通过，入案例库';
   }
 }
+/* ---------------- 报告弹层：趋势折线图（与当日监控分面小图同款视觉） ---------------- */
+function reportTrendChart(t, mName){
+  const daily=((t&&t.daily)||[]).filter(x=>x.value!=null);
+  if(daily.length<2) return '<p class="muted">趋势数据不足</p>';
+  const W=420,H=170,PL=44,PR=14,PT=12,PB=30;
+  const w=W-PL-PR, h=H-PT-PB;
+  const vals=daily.map(x=>x.value);
+  const mx=Math.max(...vals), mn=Math.min(...vals), rng=(mx-mn)||1;
+  const X=i=>PL+i*w/(vals.length-1);
+  const Y=v=>PT+h-((v-mn)/rng)*h;
+  const path=vals.map((v,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1)).join('');
+  const avg=vals.reduce((a,b)=>a+b,0)/vals.length;
+  const fv=v=>Math.abs(v)>=100?Math.round(v).toLocaleString('en-US'):v.toFixed(2);
+  const step=Math.max(1,Math.ceil(vals.length/5));
+  const ticks=[];
+  for(let i=0;i<vals.length;i+=step) ticks.push(i);
+  if(ticks[ticks.length-1]!==vals.length-1) ticks.push(vals.length-1);
+  const xT=ticks.map(i=>{
+    const x=X(i), y=PT+h+12;
+    return '<text class="ov-t-axis" x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" text-anchor="end" transform="rotate(-35,'+x.toFixed(1)+','+y.toFixed(1)+')">'+esc((daily[i].date||'').slice(5))+'</text>';
+  }).join('');
+  return '<div style="margin:10px 0 4px;">'
+    +'<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span>近14天'+esc(mName)+'趋势</span><span class="muted">均值 ¥'+fv(avg)+'</span></div>'
+    +'<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;">'
+      +'<line x1="'+PL+'" y1="'+(PT+h)+'" x2="'+(PL+w)+'" y2="'+(PT+h)+'" stroke="#E9EDF5"/>'
+      +'<line x1="'+PL+'" y1="'+Y(avg).toFixed(1)+'" x2="'+(PL+w)+'" y2="'+Y(avg).toFixed(1)+'" stroke="#94A3B8" stroke-dasharray="4 4" stroke-width="1"/>'
+      +'<path d="'+path+'" fill="none" stroke="#1E6FD9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
+      +vals.map((v,i)=>'<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(v).toFixed(1)+'" r="2.2" fill="#1E6FD9" opacity="'+(i===vals.length-1?'1':'0.45')+'"/>').join('')
+      +'<circle cx="'+X(vals.length-1).toFixed(1)+'" cy="'+Y(vals[vals.length-1]).toFixed(1)+'" r="3.6" fill="#FFF" stroke="#1E6FD9" stroke-width="2.5"/>'
+      +'<text class="ov-t-axis" x="'+(PL-4)+'" y="'+(PT+7)+'" text-anchor="end">¥'+fv(mx)+'</text>'
+      +'<text class="ov-t-axis" x="'+(PL-4)+'" y="'+(PT+h+3)+'" text-anchor="end">¥'+fv(mn)+'</text>'
+      +xT
+    +'</svg></div>';
+}
+
 function renderReportModal(report, c){
   const ch=(report&&report.chapters)||{};
   const cover=ch['1_封面']||{}, concl=ch['2_核心结论']||{}, metrics=ch['3_指标与趋势']||{},
@@ -347,11 +385,12 @@ function renderReportModal(report, c){
     const cur=mc[k], prev=mp[k];
     const chg=(typeof cur==='number'&&typeof prev==='number'&&prev)?(((cur-prev)/prev*100).toFixed(1)+'%'):'—';
     const f=v=>(typeof v==='number')?(Math.abs(v)>=100?Math.round(v).toLocaleString('en-US'):v.toFixed(2)):'—';
-    mrows+='<tr><td>'+esc(k)+'</td><td>'+f(cur)+'</td><td>'+f(prev)+'</td><td>'+chg+'</td></tr>';
+    mrows+='<tr><td>'+esc(METRIC_CN[k]||k)+'</td><td>'+f(cur)+'</td><td>'+f(prev)+'</td><td>'+chg+'</td></tr>';
   });
-  h+='<div class="chapter"><h4>③ 指标与趋势</h4>'+(mrows?'<table><thead><tr><th>指标</th><th>本期</th><th>上期</th><th>环比</th></tr></thead><tbody>'+mrows+'</tbody></table>':'<p class="muted">无</p>')+'</div>';
-  h+='<div class="chapter"><h4>④ 分层诊断</h4>'+((layers||[]).length?layers.map(x=>'<div class="item"><span class="tag">'+esc(x.layer)+'</span><b>'+esc(x.status)+'</b> · '+esc(x.judgement||'')+'</div>').join(''):'<p class="muted">无</p>')+'</div>';
-  h+='<div class="chapter"><h4>⑤ 异常与原因</h4>'+(((anomalies.top3_detail)||[]).length?anomalies.top3_detail.map(x=>'<div class="item"><b>#'+x.rank+' '+esc(x.location)+'</b> · 置信度 '+esc(x.confidence)+'<p>'+esc(x.reason||'')+'</p>'+((x.evidence||[]).length?'<ul>'+x.evidence.map(e=>'<li>'+esc(e)+'</li>').join('')+'</ul>':'')+'</div>').join(''):'<p class="muted">无明显异常</p>')+'</div>';
+  const tName=METRIC_CN[metrics.trend_metric]||metrics.trend_metric||'目标成本';
+  h+='<div class="chapter"><h4>③ 指标与趋势</h4>'+(mrows?'<table><thead><tr><th>指标</th><th>本期</th><th>上期</th><th>环比</th></tr></thead><tbody>'+mrows+'</tbody></table>':'<p class="muted">无</p>')+reportTrendChart(metrics.trend_14d,tName)+'</div>';
+  h+='<div class="chapter"><h4>④ 分层诊断</h4>'+((layers||[]).length?layers.map(x=>'<div class="item"><span class="tag">'+esc(LAYER_CN[x.layer]||x.layer)+'</span><b>'+esc(x.status)+'</b><p style="margin:4px 0 0;">'+esc(x.judgement||'')+'</p></div>').join(''):'<p class="muted">无</p>')+'</div>';
+  h+='<div class="chapter"><h4>⑤ 异常与原因</h4>'+(((anomalies.top3_detail)||[]).length?anomalies.top3_detail.map(x=>'<div class="item"><b>#'+x.rank+' '+esc(x.location)+'</b><p>'+esc(x.reason||'')+'</p>'+((x.evidence||[]).length?'<ul>'+x.evidence.map(e=>'<li>'+esc(e)+'</li>').join('')+'</ul>':'')+'</div>').join(''):'<p class="muted">无明显异常</p>')+'</div>';
   h+='<div class="chapter"><h4>⑥ 案例参考</h4>'+(((cases.cases)||[]).length?cases.cases.map(x=>'<div class="item">'+esc(typeof x==='string'?x:JSON.stringify(x))+'</div>').join(''):'<p class="muted">'+esc(cases.note||'暂无可引用案例')+'</p>')+'</div>';
   h+='<div class="chapter"><h4>⑦ 优化建议</h4>'+((suggests||[]).length?suggests.map(x=>'<div class="item">'+(x.priority?'<span class="ptag '+esc(x.priority)+'">'+esc(x.priority)+'</span>':'')+'<p>'+esc(x.text||'')+'</p>'+(x.basis?'<p class="muted">依据：'+esc(x.basis)+'</p>':'')+'</div>').join(''):'<p class="muted">正常周无待办建议</p>')+'</div>';
   h+='<div class="chapter"><h4>⑧ 行动计划</h4>'+((actions||[]).length?'<table><thead><tr><th>行动</th><th>日期</th><th>预期指标</th></tr></thead><tbody>'+actions.map(x=>'<tr><td>'+esc(x.action||'')+'</td><td>'+esc(x.date||'')+'</td><td>'+esc(x.expect_metric||'')+'</td></tr>').join('')+'</tbody></table>':'<p class="muted">无行动计划</p>')

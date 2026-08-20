@@ -67,6 +67,8 @@
 - **行动计划字段红线**：action_plan 每条只含 action / date / expect_metric 三个字段，**不含 owner/负责人**；date 用 YYYY-MM-DD 格式且**不得早于输入中的 report_generated_at**（报告生成日）。
 - **措辞与数字一致性红线**：任何输出字段中，前后两值相等或环比为 0 时必须写"持平"；涨跌措辞必须与数字符号一致，禁止"从 X 微降至 X"这类自相矛盾表述；**数值与阈值的比较方向必须正确**（低于目标写"低于"，禁止"24.75 高于 25"这类方向颠倒）。
 - **指标命名一致性红线**：正文任何字段（summary/reason/evidence/text/basis/expect_metric 等）引用指标时，名称必须与第 3 章指标表口径一致：lead_rate=留资率、lead_cvr=留资转化率、open_rate=开口率、button_rate=按钮率。禁止把 lead_cvr 的数值（约 1%-3% 量级）写成"留资率"。
+- **全中文命名红线**：任何输出字段的自然语言文本中禁止出现英文字段名/层级名——指标一律写中文名（button_rate→按钮率、open_rate→开口率、lead_rate→留资率、lead_cvr→留资转化率、open_cost→开口成本、lead_cost→留资成本；CPM/CTR/CPC 为行业通用缩写可保留）；对象层级一律写中文（placement→版位、plan→计划、note→笔记、funnel→漏斗）；版位取值写"信息流/搜索"，不写 feed/search。
+- **证据具体性红线**：top3_events 的 evidence 每条必须落到具体对象与数字（哪个指标、哪个版位/计划/笔记、本期与上期数值或环比幅度），禁止只写"双门槛""基建异动"这类无数字的抽象标签；工具结果中有对应数值的必须引用数值，无对应数值的才可写定性描述。
 - **口径标签红线**："占比"只用于结构性占比（如"feed 消耗占比 82.5%"）；贡献度数字（某对象占整体变化量的比例）必须写成"贡献了 X 变化的 N%"，禁止简写成"消耗占比 N%"。
 - **因果推断标注红线**：非数据恒等关系的因果表述（"带动/导致/源于/受益于"）属推断，confidence 最高标"中"，且该条 reason/text 须含"推断"或"待验证"字样；confidence=高 仅限证据直接支持的陈述。
 - **后链路词汇字段级红线**：suggestions / action_plan 的任何字段（text、basis、risk、watch_metric、expect_metric 等）都不得出现 ROI / GMV / 成交额 / 有效线索 / 回访 等后链路词，risk 用"目标成本持续上涨"表述，watch_metric 用开口成本/留资成本等前置指标。

@@ -177,6 +177,7 @@ class ReviewOrchestrator:
         target_metric = "open_cost" if profile["optimize_target"] == "open" else "lead_cost"
         trend = self._call(s3, "get_trend", customer_id=customer_id, metric=target_metric, days=14, end=ce)
         self.context["trend"] = trend
+        self.context["trend_metric"] = target_metric
         layers = self._layer_diagnosis(degraded)
         for lay in layers:
             self.conn.execute(
@@ -338,24 +339,44 @@ class ReviewOrchestrator:
             if abs(change) >= t:
                 return "轻微"
             return "正常"
+
+        def _chg_txt(v):
+            """环比文本：None→—，0→持平（措辞红线），其余 ±x.x%"""
+            if v is None:
+                return "—"
+            if v == 0:
+                return "持平"
+            return f"{v*100:+.1f}%"
+
         chg = comp["metrics_change"]
+        rate_cn = [("CTR", "CTR"), ("button_rate", "按钮率"), ("open_rate", "开口率"), ("lead_rate", "留资率")]
+        rate_ev = {m: chg.get(m) for m, _ in rate_cn}
+        rate_txt = "、".join(f"{cn} {_chg_txt(rate_ev.get(m))}" for m, cn in rate_cn)
         out.append({"layer": "funnel",
-                    "status": "数据不足" if degraded else max((sev(chg.get(m)) for m in
-                                                              ["CTR", "button_rate", "open_rate", "lead_rate"]),
+                    "status": "数据不足" if degraded else max((sev(v) for v in rate_ev.values()),
                                                               key=lambda s: ["正常", "轻微", "数据不足", "显著"].index(s)),
-                    "judgement": "漏斗各环节率环比", "evidence": {m: chg.get(m) for m in ["CTR", "button_rate", "open_rate", "lead_rate"]}})
+                    "judgement": f"漏斗各环节率环比：{rate_txt}", "evidence": rate_ev})
         plc_sev = "正常"
         for row in plc["rows"]:
             c = row["metrics_change"].get("CPM")
             if c is not None and abs(c) >= 0.2:
                 plc_sev = "显著" if abs(c) >= 0.4 else "轻微"
+        dim_cn = {"feed": "信息流", "search": "搜索"}
+        plc_ev = {r["dim"]: r["metrics_change"].get("CPM") for r in plc["rows"]}
+        plc_txt = "、".join(f"{dim_cn.get(d, d)} CPM {_chg_txt(v)}" for d, v in plc_ev.items()) or "无版位数据"
         out.append({"layer": "placement", "status": "数据不足" if degraded else plc_sev,
-                    "judgement": "版位 CPM/消耗结构环比", "evidence": {r["dim"]: r["metrics_change"].get("CPM") for r in plc["rows"]}})
-        gate_hit = infra["plan_gate"]["hit"] or infra["note_gate"]["hit"]
-        out.append({"layer": "plan", "status": "数据不足" if degraded else ("显著" if gate_hit else "正常"),
-                    "judgement": "在投计划双门槛", "evidence": infra["plan_gate"]})
-        out.append({"layer": "note", "status": "数据不足" if degraded else ("显著" if infra["note_gate"]["hit"] else "正常"),
-                    "judgement": "在投笔记双门槛", "evidence": infra["note_gate"]})
+                    "judgement": f"版位 CPM 环比：{plc_txt}", "evidence": plc_ev})
+
+        def _gate_txt(g, unit):
+            rel = f"{g['rel']*100:+.1f}%" if g.get("rel") is not None else "环比不可算"
+            hit = "，触发基建异动门槛（变化≥2 且 ≥20%）" if g["hit"] else ""
+            return f"{g['prev']}→{g['cur']}（{g['delta']:+d}{unit} / {rel}）{hit}"
+
+        pg, ng = infra["plan_gate"], infra["note_gate"]
+        out.append({"layer": "plan", "status": "数据不足" if degraded else ("显著" if (pg["hit"] or ng["hit"]) else "正常"),
+                    "judgement": f"在投计划数 {_gate_txt(pg, '条')}；本期新建计划 {infra['cur']['new_plans']} 条", "evidence": pg})
+        out.append({"layer": "note", "status": "数据不足" if degraded else ("显著" if ng["hit"] else "正常"),
+                    "judgement": f"在投笔记数 {_gate_txt(ng, '篇')}；本期新建笔记 {infra['cur']['new_notes']} 篇", "evidence": ng})
         return out
 
     def _drill_with_llm(self, step_seq, customer_id, cs, ce, ps, pe):
