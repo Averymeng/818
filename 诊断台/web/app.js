@@ -828,6 +828,7 @@ function showOfflineBanner(){
     b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:999;background:#E8F0FE;color:#1D4ED8;'+
       'font-size:12px;text-align:center;padding:6px 10px;border-bottom:1px solid #BACBFA;';
     document.body.prepend(b);
+    document.body.style.paddingTop='36px';
   }
   b.textContent='📋 当前为静态只读快照（云端托管，无需后端）。生成新报告 / 审核入库请在本地后端操作。';
 }
