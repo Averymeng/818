@@ -267,6 +267,7 @@ async function loadAttrib(list, token){
 /* ---------------- 报告生成（真实 LLM） ---------------- */
 let shareUrl='';
 let curReportId=null;
+let reviewLocked=false;
 async function generateReport(){
   const c=CUSTOMERS[curIdx];
   const btn=document.getElementById('genBtn');
@@ -293,15 +294,27 @@ async function generateReport(){
     document.getElementById('sharePath').innerText=location.origin+shareUrl;
     document.getElementById('shareLink').classList.add('on');
     curReportId=res.report_id||res.report.report_id||null;
+    reviewLocked=false;
     if(curReportId){
       document.getElementById('reviewBar').classList.add('on');
-      document.getElementById('rvResult').innerHTML='<span class="muted">案例库当前 '+esc(res.case_count!=null?res.case_count:'-')+' 条 · 审核通过后 +1</span>';
+      if(res.customer_has_case){
+        setReviewAlready(res.case_count);
+      }else{
+        document.getElementById('rvResult').innerHTML='<span class="muted">案例库当前 '+esc(res.case_count!=null?res.case_count:'-')+' 条 · 审核通过后 +1</span>';
+      }
     }
   }catch(e){
     document.getElementById('mBody').innerHTML='<div class="loading" style="color:var(--red);">生成失败：'+esc(e.message||e)+'</div>';
   }finally{
     btn.disabled=false; btn.innerText='生成客户复盘报告';
   }
+}
+function setReviewAlready(caseCount){
+  reviewLocked=true;
+  const okBtn=document.getElementById('rvOkBtn');
+  okBtn.disabled=true; okBtn.innerText='✓ 已入案例库';
+  document.getElementById('rvResult').innerHTML='<span style="color:var(--green);font-weight:700;">该客户已入案例库，无需重复审核</span>'
+    +(caseCount!=null?' <span class="muted">· 案例库现有 '+esc(caseCount)+' 条</span>':'');
 }
 async function submitReview(action){
   if(!curReportId){ alert('报告尚未生成或无 report_id'); return; }
@@ -321,10 +334,11 @@ async function submitReview(action){
     if(action==='approve'){
       const p=res.promote||{};
       let t='已通过并沉淀进案例库';
-      if(p.duplicated) t='已通过（该报告此前已入过案例库，未重复入库）';
+      if(p.duplicated) t='已通过（该报告/客户此前已入过案例库，未重复入库）';
       else t+='（签名：'+esc(p.signature||'-')+'）';
       if(res.case_count!=null) t+=' · 案例库现有 '+esc(res.case_count)+' 条';
       result.innerHTML='<span style="color:var(--green);font-weight:700;">'+t+'</span>';
+      setReviewAlready(res.case_count);
     }else{
       const b=res.badcase||{};
       let t='已驳回并记入 badcase 库';
@@ -334,8 +348,10 @@ async function submitReview(action){
   }catch(e){
     result.innerHTML='<span style="color:var(--red);">审核请求失败：'+esc(e.message||e)+'</span>';
   }finally{
-    okBtn.disabled=false; noBtn.disabled=false;
-    okBtn.innerText='✓ 通过，入案例库';
+    if(!reviewLocked){
+      okBtn.disabled=false; noBtn.disabled=false;
+      okBtn.innerText='✓ 通过，入案例库';
+    }
   }
 }
 /* ---------------- 报告弹层：趋势折线图（与当日监控分面小图同款视觉） ---------------- */

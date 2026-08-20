@@ -16,6 +16,19 @@
 """
 import json
 
+# 签名归一化（与前端 normReportText / tools.norm_report_text 保持一致）：
+# 报告 JSON 里 location 是原始英文（feed/lead_cost/open_cost/search），
+# 但历史入库案例的 anomaly_signature 已归一化，必须统一口径才能正确去重。
+_SIG_MAP = {"open_cost": "开口成本", "lead_cost": "留资成本",
+            "feed": "信息流", "search": "搜索"}
+
+
+def _norm_sig(s):
+    s = s or ""
+    for en, cn in _SIG_MAP.items():
+        s = s.replace(en, cn)
+    return s
+
 
 def _resolve_report(conn, report_id):
     return conn.execute("SELECT id, status FROM report WHERE id=?", (report_id,)).fetchone()
@@ -76,7 +89,8 @@ def promote_to_case(conn, report_id):
         （报告 JSON 是用户实际审核的内容，最可靠）；为空再查 anomaly 表；都没有则记"正常周"
       - key_evidence_json：Top3 异常的 rank/location/reason/evidence
       - action_taken：第 8 章行动计划 + 第 7 章建议摘要（审核时点尚未执行，result_after 留空待回流）
-    幂等：同一 report_id 重复调用只入库一次。
+    幂等：同一 report_id、或同一客户+相同异常签名，重复调用只入库一次
+    （防止「重新生成报告→新 report_id→再次 promote」造成的案例库重复）。
     """
     ex = conn.execute("SELECT id FROM diag_case WHERE source_report_id=?", (report_id,)).fetchone()
     if ex:
@@ -120,9 +134,19 @@ def promote_to_case(conn, report_id):
                  "evidence": [], "direction": a["direction"]} for a in anoms]
 
     if top3:
-        signature = " + ".join(str(t.get("location", "")) for t in top3 if t.get("location"))
+        signature = " + ".join(_norm_sig(str(t.get("location", ""))) for t in top3 if t.get("location"))
     else:
         signature = "无明显异常（正常周）"
+    # 去重（根因 A 修复）：同一客户 + 相同异常签名不再重复入库。
+    # 仅按 source_report_id 去重不足以防重复——重新生成报告会产生新的 report_id，
+    # 导致同一客户被多次 promote。这里用 customer_id+anomaly_signature 兜底。
+    ex2 = conn.execute(
+        "SELECT id FROM diag_case WHERE customer_id=? AND anomaly_signature=?",
+        (customer_id, signature)).fetchone()
+    if ex2:
+        return {"ok": True, "case_id": ex2["id"], "duplicated": True,
+                "signature": signature,
+                "note": "该客户已有相同异常签名的案例，未重复入库"}
     evidence = [{"rank": t.get("rank"), "location": t.get("location"),
                  "reason": t.get("reason", ""), "evidence": t.get("evidence", [])} for t in top3]
     action_taken = "；".join(a for a in actions if a) or None

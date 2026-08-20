@@ -583,10 +583,13 @@ def api_report_generate(db_path, body):
     rid = conn.execute("SELECT id FROM report WHERE task_id=? ORDER BY id DESC LIMIT 1",
                        (report.get("task_id"),)).fetchone()
     ncase = conn.execute("SELECT COUNT(*) n FROM diag_case").fetchone()["n"]
+    cust_case = conn.execute("SELECT COUNT(*) n FROM diag_case WHERE customer_id=?",
+                             (cid,)).fetchone()["n"]
     conn.close()
     report["report_id"] = rid["id"] if rid else None
     return {"report": report, "share_url": "/reports/" + fname,
-            "report_id": report["report_id"], "case_count": ncase}
+            "report_id": report["report_id"], "case_count": ncase,
+            "customer_has_case": cust_case > 0, "customer_case_count": cust_case}
 
 
 def api_review(db_path, body):
