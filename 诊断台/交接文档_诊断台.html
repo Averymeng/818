@@ -610,6 +610,7 @@ cd 诊断台 && python3 data/seed_customers.py</pre>
     <tr><td><code>8cb1190</code></td><td>8/20 08:31</td><td>操作日志：追加本次交接文档大更新 commit 记录（自引用条目）</td><td>交接文档_诊断台.html</td></tr>
     <tr><td><code>965e66c</code></td><td>8/20 08:33</td><td><span class="pill p-acc">记忆</span> 记录交接文档大更新</td><td>.workbuddy/memory/</td></tr>
     <tr><td><code>377a678</code></td><td>8/20 09:00</td><td><strong>审核闭环打通（RAG 飞轮入库口）</strong>：报告审核通过自动沉淀进 diag_case 案例库。review_actions.py 新增 promote_to_case()（从 report_json 第 5 章 top3_detail 提取 anomaly_signature+key_evidence，第 7/8 章提取 action_taken，幂等）与 record_badcase()（驳回理由入 diag_badcase，status=open）；api_server.py 新增 POST /api/review；POST /api/report 返回 report_id+case_count；前端报告弹层新增审核条（通过入案例库 / 驳回必填理由，显示案例库条数）；smoke 测试新增审核断言，零成本评测 122/122 仍通过</td><td>agent/review_actions.py, api_server.py, web/index.html, web/app.js, web/style.css, tests/smoke_web.js</td></tr>
+    <tr><td><code>9be87c9</code></td><td>8/20 09:55</td><td><strong>周报呈现四项修改</strong>（用户大白话需求）：①指标表后六项中文名（button_rate→按钮率等，METRIC_CN 渲染层映射）②分层诊断层级中文（plan→计划等）+ judgement 细化为带数字表达（"在投笔记数 12→8（-4篇/-33.3%），触发基建异动门槛"）③异常与原因去掉"置信度 高"显示（confidence 字段保留供权重计算，仅不展示）④第 3 章新增近 14 天目标成本折线图（站内弹层 reportTrendChart + 分享 HTML _trend_svg，与当日监控分面小图同款视觉）。system_prompt.md 新增全中文命名红线+证据具体性红线。重要认知：八章节由代码组装，英文残留非 LLM 输出而是渲染层直接显示数据字段名——光改 prompt 改不动，需渲染层同步改</td><td>agent/system_prompt.md, agent/orchestrator.py, agent/tools.py, api_server.py, web/app.js</td></tr>
   </table>
 
   <div class="callout">
