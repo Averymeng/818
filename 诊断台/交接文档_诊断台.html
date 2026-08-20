@@ -395,7 +395,8 @@ python3 eval/run_eval.py --static
     <li><span class="pill p-ok">已完成</span> 手动录入改填表式：两行表单，前端确定性拼 JSON，提交后自动刷新+定位新客户+自动跑 LLM 诊断。</li>
     <li><span class="pill p-ok">已完成</span> 销售业绩模块删除（用户确认无实际意义）；趋势模块从单图改分面 3 小图，折线+平均线+端点标注。</li>
     <li><span class="pill p-ok">已完成</span> 同名客户追加模式 + 默认时间同步真实今天；sim 数据 END_DATE 随真实日期滚动。</li>
-    <li><span class="pill p-warn">进行中</span> 持续迭代打磨：用户在使用中反馈问题 → 逐项修复。当前最新 commit <code>761d6e9</code>。</li>
+    <li><span class="pill p-ok">已完成</span> <strong>审核闭环（RAG 飞轮入库口，commit <code>377a678</code>）</strong>：报告弹层新增审核条，「通过入案例库」→ <code>promote_to_case()</code> 自动从 report_json 提取 anomaly_signature/key_evidence/action_taken 写入 <code>diag_case</code>（幂等，带 source_report_id）；「驳回」→ 必填理由写入 <code>diag_badcase</code>（status=open）。审核通过后 <code>search_cases</code> 立即可检索到新案例。这补上了此前「审核通过的报告不会自动沉淀为案例」的 gap。</li>
+    <li><span class="pill p-warn">进行中</span> 持续迭代打磨：用户在使用中反馈问题 → 逐项修复。当前最新 commit <code>377a678</code>。</li>
     <li><span class="pill p-bad">延后</span> <strong>分享报告的独立 HTML 后端真正落地</strong>：当前 <code>POST /api/report</code> 已能落盘独立 HTML 到 <code>web/reports/</code>，但尚未做持久化 URL 和访问权限控制。用户明确「以后再说」。</li>
     <li><span class="pill p-acc">后续方向</span> 真实数据接入（当前全为仿真数据）；多周对比；各指标环比下钻；多维归因 LLM 化——均待接入真实数据源后排期。</li>
   </ul>
@@ -498,7 +499,7 @@ cd 诊断台 && python3 data/seed_customers.py</pre>
 <!-- ========== 14 ========== -->
 <section id="changelog">
   <h2>14. 操作日志（全量 commit 记录）</h2>
-  <p>以下按时间线记录所有 git commit（截至 <code>761d6e9</code>，共 64 次）。<span class="pill p-acc">记忆</span> 标记的为纯记忆日志 commit，<span class="pill p-warn">决策日志</span> 为决策记录 commit，无代码变更但记录了思路上下文。</p>
+  <p>以下按时间线记录所有 git commit（截至 <code>377a678</code>，共 67 次）。<span class="pill p-acc">记忆</span> 标记的为纯记忆日志 commit，<span class="pill p-warn">决策日志</span> 为决策记录 commit，无代码变更但记录了思路上下文。</p>
 
   <h3>14.1 Phase 1：Agent 核心搭建（8/18 20:53 — 8/18 22:35）</h3>
   <table>
@@ -606,6 +607,9 @@ cd 诊断台 && python3 data/seed_customers.py</pre>
     <tr><td><code>2148b0a</code></td><td>8/20 01:03</td><td>恢复筛选器并去掉卡片内「筛选器」标题字样，筛选卡更紧凑</td><td>web/app.js, web/style.css</td></tr>
     <tr><td><code>761d6e9</code></td><td>8/20 01:03</td><td><span class="pill p-acc">记忆</span> 记录筛选器标题去除与误解澄清</td><td>—</td></tr>
     <tr><td><code>23e4cad</code></td><td>8/20 08:29</td><td><strong>交接文档大更新</strong>：新增第 14 节操作日志(全量 64 条 commit 记录)；更新进度/代码地图/待办/避坑/命令速查；.gitignore 屏蔽 web/reports/；移除误入版本控制的运行时报告 HTML</td><td>交接文档_诊断台.html, .gitignore</td></tr>
+    <tr><td><code>8cb1190</code></td><td>8/20 08:31</td><td>操作日志：追加本次交接文档大更新 commit 记录（自引用条目）</td><td>交接文档_诊断台.html</td></tr>
+    <tr><td><code>965e66c</code></td><td>8/20 08:33</td><td><span class="pill p-acc">记忆</span> 记录交接文档大更新</td><td>.workbuddy/memory/</td></tr>
+    <tr><td><code>377a678</code></td><td>8/20 09:00</td><td><strong>审核闭环打通（RAG 飞轮入库口）</strong>：报告审核通过自动沉淀进 diag_case 案例库。review_actions.py 新增 promote_to_case()（从 report_json 第 5 章 top3_detail 提取 anomaly_signature+key_evidence，第 7/8 章提取 action_taken，幂等）与 record_badcase()（驳回理由入 diag_badcase，status=open）；api_server.py 新增 POST /api/review；POST /api/report 返回 report_id+case_count；前端报告弹层新增审核条（通过入案例库 / 驳回必填理由，显示案例库条数）；smoke 测试新增审核断言，零成本评测 122/122 仍通过</td><td>agent/review_actions.py, api_server.py, web/index.html, web/app.js, web/style.css, tests/smoke_web.js</td></tr>
   </table>
 
   <div class="callout">
