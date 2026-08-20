@@ -799,7 +799,7 @@ async function loadSnapshot(){
   SNAP=snap;
   const customers=snap.customers||[];
   const daily=snap.daily||{};
-  DAILY=daily.customers||{};
+  DAILY=daily;   // 快照已存内层 {客户名: 日度序列}，无需再取 .customers
   META.maxd=(snap.meta&&snap.meta.maxd)||'';
   CUSTOMERS=customers.map(c=>({
     id:c.id, name:c.name, ind:c.industry, sector:c.sector, cats:c.categories,
