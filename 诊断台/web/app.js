@@ -338,7 +338,7 @@ async function submitReview(action){
 function reportTrendChart(t, mName){
   const daily=((t&&t.daily)||[]).filter(x=>x.value!=null);
   if(daily.length<2) return '<p class="muted">趋势数据不足</p>';
-  const W=420,H=170,PL=44,PR=14,PT=12,PB=30;
+  const W=340,H=150,PL=42,PR=10,PT=12,PB=26;
   const w=W-PL-PR, h=H-PT-PB;
   const vals=daily.map(x=>x.value);
   const mx=Math.max(...vals), mn=Math.min(...vals), rng=(mx-mn)||1;
@@ -390,7 +390,7 @@ function renderReportModal(report, c){
   const tName=METRIC_CN[metrics.trend_metric]||metrics.trend_metric||'目标成本';
   const chartSpend=reportTrendChart(metrics.trend_spend,'消耗');
   const chartCost=reportTrendChart(metrics.trend_14d,tName);
-  h+='<div class="chapter"><h4>③ 指标与趋势</h4>'+(mrows?'<table><thead><tr><th>指标</th><th>本期</th><th>上期</th><th>环比</th></tr></thead><tbody>'+mrows+'</tbody></table>':'<p class="muted">无</p>')+chartSpend+chartCost+'</div>';
+  h+='<div class="chapter"><h4>③ 指标与趋势</h4>'+(mrows?'<table><thead><tr><th>指标</th><th>本期</th><th>上期</th><th>环比</th></tr></thead><tbody>'+mrows+'</tbody></table>':'<p class="muted">无</p>')+'<div class="report-trend-pair">'+chartSpend+chartCost+'</div></div>';
   h+='<div class="chapter"><h4>④ 分层诊断</h4>'+((layers||[]).length?layers.map(x=>'<div class="item"><span class="tag">'+esc(LAYER_CN[x.layer]||x.layer)+'</span><b>'+esc(x.status)+'</b><p style="margin:4px 0 0;">'+esc(x.judgement||'')+'</p></div>').join(''):'<p class="muted">无</p>')+'</div>';
   h+='<div class="chapter"><h4>⑤ 异常与原因</h4>'+(((anomalies.top3_detail)||[]).length?anomalies.top3_detail.map(x=>'<div class="item"><b>'+x.rank+' '+esc(x.location)+'</b><p>'+esc(x.reason||'')+'</p>'+((x.evidence||[]).length?'<ul>'+x.evidence.map(e=>'<li>'+esc(e)+'</li>').join('')+'</ul>':'')+'</div>').join(''):'<p class="muted">无明显异常</p>')+'</div>';
   h+='<div class="chapter"><h4>⑥ 案例参考</h4>'+(((cases.cases)||[]).length?cases.cases.map(x=>'<div class="item">'+esc(typeof x==='string'?x:JSON.stringify(x))+'</div>').join(''):'<p class="muted">'+esc(cases.note||'暂无可引用案例')+'</p>')+'</div>';

@@ -154,7 +154,7 @@ body{background:var(--bg);color:var(--ink);font-size:13px;line-height:1.5;}
 .report-actions .link{background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:8px 12px;display:none;align-items:center;gap:10px;}
 .report-actions .link.on{display:flex;}
 .report-actions .link span{font-size:12px;color:#027A48;font-weight:700;}
-.report-actions .link button{background:#fff;border:1px solid var(--line);padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;}
+.report-actions .link button{background:#fff;border:1px solid var(--line);padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;color:var(--ink);font-weight:700;}
 
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;justify-content:center;align-items:center;z-index:50;}
 .modal.on{display:flex;}
@@ -178,6 +178,10 @@ body{background:var(--bg);color:var(--ink);font-size:13px;line-height:1.5;}
 .chapter .ptag.P1{background:var(--blue);}
 .chapter .item{margin-bottom:10px;}
 .loading{color:var(--sub);font-size:13px;text-align:center;padding:40px 0;}
+
+.report-trend-pair{display:flex;gap:14px;align-items:flex-start;margin-top:6px;}
+.report-trend-pair > div{flex:1;min-width:0;}
+@media (max-width:640px){.report-trend-pair{flex-direction:column;}}
 
 /* 报告审核条（通过入案例库 / 驳回记 badcase） */
 .review-bar{display:none;border-top:1px solid var(--line);padding:12px 20px;background:#FAFBFE;}
