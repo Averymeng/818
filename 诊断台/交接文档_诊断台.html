@@ -52,7 +52,7 @@
 <body>
 <header>
   <h1>诊断台 · 项目交接文档</h1>
-  <div class="sub">小红书获客周报智能体（GitHub: <span class="mono">Averymeng/818</span>） · 接手本项目的下一位 AI 必读 · 生成于 2026-08-19</div>
+  <div class="sub">小红书获客周报智能体（GitHub: <span class="mono">Averymeng/818</span>） · 接手本项目的下一位 AI 必读 · 最后更新于 2026-08-20（含 Phase 3 前端搭建完整操作日志）</div>
 </header>
 
 <div class="wrap">
@@ -72,6 +72,7 @@
   <a href="#prefs">11. 用户偏好</a>
   <a href="#cmds">12. 命令速查</a>
   <a href="#wf">13. 工作流铁律（每次收尾）</a>
+  <a href="#changelog">14. 操作日志（全量 commit 记录）</a>
 </nav>
 
 <main>
@@ -81,11 +82,15 @@
   <h2>0. 一句话上手</h2>
   <p>这是一个<strong>小红书信息流投放获客的「周报诊断智能体」</strong>。输入一份客户投放数据（CSV/JSON），它产出一份八章节中文诊断报告（整体结论 + Top3 异常 + 下钻 + 行动建议）。我们刚搭好一套 <strong>v2 自动化评测体系</strong>来验证报告质量，并已完成首轮批量跑。</p>
   <div class="callout ok">
-    <strong>你现在接手时，项目处于「v2 首轮批量评测已收尾完成」的状态：</strong>
+    <strong>你现在接手时，项目处于「Phase 3 前端 Web App 已搭建并持续迭代中」的状态：</strong>
     <ul class="tight">
-      <li>批量评测结果：<span class="pill p-ok">126 / 126 断言通过</span>（含 E24 横切 75 条）</li>
+      <li>批量评测结果：<span class="pill p-ok">126 / 126 断言通过</span>（含 E24 横切 75 条），静态复跑 <span class="pill p-ok">122 / 122</span>（前端搭建后复核，无退化）</li>
       <li>端到端 B（judge 三档）：13 份报告全产出，无中位分 &lt; 2（D1 2.62 / D2 2.77 / D3 2.77）。</li>
-      <li>E14 误报（评测脚本扫了 <code>judge_calibration.json</code> 的 ROI/GMV 文本）已修复，复核 126/126；<code>eval/eval_report_v2.md</code> 已写；已 commit <code>7296e82</code> 并 push 到 <span class="mono">main</span>。</li>
+      <li>E14 误报已修复，复核 126/126；<code>eval/eval_report_v2.md</code> 已写；已 commit <code>7296e82</code> 并 push 到 <span class="mono">main</span>。</li>
+      <li><strong>Phase 3 前端 Web App 已搭建完成</strong>：后端 <code>api_server.py</code>（FastAPI/uvicorn，零依赖纯 Python）+ 前端 <code>web/</code>（纯 HTML/CSS/JS，无框架无构建）。当日监控页 5 模块 + 客户详情页 4 图 + 手动录入 + LLM 报告弹层 + 独立 HTML 分享链接 全部上线。</li>
+      <li><strong>运行时冒烟测试</strong> <code>tests/smoke_web.js</code> 已跑通；LLM 报告全链路验证通过（码上 10.4s / 2 调用 / ¥0.06 / 8 章节 + 分享 HTML 200）。</li>
+      <li>迭代打磨已进行多轮：归因接入后端确定性规则、销售业绩模块删除、趋势模块分面小图改造、KPI 卡片紧凑化、筛选器布局优化等。详见第 14 节操作日志。</li>
+      <li>服务器启动：<code>cd 诊断台 && python3 api_server.py</code> → <a href="http://127.0.0.1:8000">http://127.0.0.1:8000</a></li>
     </ul>
   </div>
   <p class="small">本交接文档力求让一个新 AI 不看聊天记录也能独立推进。所有路径相对于项目根目录 <span class="mono">诊断台/</span>。</p>
@@ -104,6 +109,12 @@
     <tr><td>Judge 校准</td><td>7 轮校准，3 票中位数投票，收敛并启用 judge</td><td><span class="mono">eval/judge.py / judge_prompt.md / judge_calibration_report.md / judge_baseline.json</span></td></tr>
     <tr><td>3 个 agent 缺陷</td><td>周值/日值混淆、依据数字无出处、观察清单漏项 → 已修复</td><td>改 <span class="mono">agent/system_prompt.md</span> 第 7 节 + <span class="mono">agent/tools.py</span> + <span class="mono">eval/run_eval.py</span>(E24e)</td></tr>
     <tr><td>首轮批量跑</td><td>24 个 case 真跑 + 硬断言 + judge，结果落盘；E14 误报已修、复核 126/126；写 v2 报告</td><td><span class="mono">eval/artifacts/eval_results.json</span>（126/126）+ <span class="mono">eval/eval_report_v2.md</span></td></tr>
+    <tr><td>Phase 1+2 数据层</td><td>badcase 库独立、手动录入后端、8 点定时刷新 sim 数据（保留用户上传数据）</td><td><span class="mono">data/refresh_sim.py</span> + <span class="mono">data/ingest.py</span></td></tr>
+    <tr><td>Phase 3 前端 demo</td><td>从设计稿(v1→v2→v3→v4) 到原型验证：侧边栏更名、时间筛选器方案 A/B/C 对比、客户详情折线图+数据表、当日监控整页改版对标参考图</td><td><span class="mono">demo/</span> 目录（8+ 个 HTML demo）</td></tr>
+    <tr><td>Phase 3 后端搭建</td><td><code>api_server.py</code>（FastAPI/uvicorn）：/api/customers(轻量)、/api/daily、/api/base(窗口感知基建)、POST /api/report(LLM 报告+独立 HTML 落盘)、POST /api/attrib(确定性归因)</td><td><span class="mono">api_server.py</span>（单文件，~400 行）</td></tr>
+    <tr><td>Phase 3 前端搭建</td><td><code>web/</code> 按 demo 移植：当日监控 5 模块(KPI+筛选器+趋势+过程/基建+诊断/监控/归因) + 客户详情(4 分面折线图+12 字段日表) + 手动录入 + LLM 报告弹层 + 分享链接</td><td><span class="mono">web/app.js</span> + <span class="mono">web/style.css</span> + <span class="mono">web/index.html</span></td></tr>
+    <tr><td>Phase 3 搭建收尾</td><td>修复中文文件名 URL 解码 404；冒烟测试 <code>tests/smoke_web.js</code> 全过；LLM 全链路验证；静态评测 122/122 无退化</td><td><span class="mono">tests/smoke_web.js</span></td></tr>
+    <tr><td>Phase 3 迭代打磨</td><td>归因接入后端确定性规则(无 LLM)；删除销售业绩模块；趋势分面小图+折线；KPI 紧凑图标式；筛选器 3×2 布局+去标题；手动录入改填表式；同名客户追加模式；时间同步真实今天</td><td>详见第 14 节操作日志</td></tr>
   </table>
 
   <h3>1.2 批量跑结果（已跑完并复核，别重跑浪费积分）</h3>
@@ -164,9 +175,54 @@
         <li><b>artifacts/</b> — 跑出来的报告 JSON + eval_results.json</li>
       </ul>
     </div>
+    <div>
+      <h3>api_server.py （后端服务·Phase 3 新增）</h3>
+      <ul class="tight mono small">
+        <li><b>api_server.py</b> — 单文件后端（~400 行），FastAPI/uvicorn，纯标准库+DeepSeek 无其他依赖</li>
+        <li>路由：<code>/api/customers</code>（轻量列表，light=true）、<code>/api/daily</code>（日表）、<code>/api/base</code>（窗口感知基建）、<code>POST /api/report</code>（LLM 报告+独立 HTML 落盘到 <code>web/reports/</code>）、<code>POST /api/attrib</code>（确定性归因，无 LLM 无落库）</li>
+        <li>复用 <code>agent/tools.py</code> 的 <code>get_period_comparison</code> + <code>get_infrastructure</code> 做环比对比和基建查询</li>
+        <li><code>attrib_reason()</code> 函数：确定性归因规则（基建掉量/扩量 ±2 笔记 & ±20%、CTR ±10%、留资率 ≤-10%、留资成本 ±15%）</li>
+        <li>启动：<code>python3 api_server.py</code> → http://127.0.0.1:8000</li>
+      </ul>
+    </div>
+    <div>
+      <h3>web/ （前端·Phase 3 新增）</h3>
+      <ul class="tight mono small">
+        <li><b>index.html</b> — 入口（侧边栏 + iframe 路由，当日监控/客户详情/手动录入 3 页）</li>
+        <li><b>app.js</b> — 核心逻辑（~800 行）：5 模块渲染、筛选联动、趋势 mini-chart(SVG)、归因异步回填、KPI 卡片、手动录入、LLM 报告弹层+分享</li>
+        <li><b>style.css</b> — 全局样式（暗色主题，响应式，无框架无构建）</li>
+        <li><b>reports/</b> — 运行时生成的独立分享 HTML（gitignored，不入库）</li>
+      </ul>
+    </div>
+    <div>
+      <h3>tests/ （运行时测试·Phase 3 新增）</h3>
+      <ul class="tight mono small">
+        <li><b>smoke_web.js</b> — 前端运行时冒烟测试（Node.js fetch）：验证页面 HTML 结构、KPI 文本、筛选器、趋势图、诊断表、归因占位、手动录入表单等 ~30 条断言</li>
+        <li>运行：<code>node tests/smoke_web.js</code>（需本地服务器在 8000 端口运行）</li>
+      </ul>
+    </div>
+    <div>
+      <h3>demo/ （设计稿存档）</h3>
+      <ul class="tight mono small">
+        <li><b>趋势模块改造demo_分面小图.html</b> — 3 独立 SVG 趋势图方案</li>
+        <li><b>KPI改造demo_A/B/C</b> — 3 种 KPI 卡片设计方案（用户选 A，已落地）</li>
+        <li><b>前端方案v3_demo.html</b> 等 — 早期设计稿存档</li>
+        <li>所有 demo 均为独立 HTML，可直接浏览器打开预览</li>
+      </ul>
+    </div>
+    <div>
+      <h3>data/ （数据层）</h3>
+      <ul class="tight mono small">
+        <li><b>seed_customers.py</b> — 50 客户模拟数据生成（seed=42 可复现）</li>
+        <li><b>refresh_sim.py</b> — sim 数据定时刷新（每日 8 点追加新日数据，保留用户上传数据）</li>
+        <li><b>ingest.py</b> — 手动录入数据入口（同名客户追加模式）</li>
+        <li><b>scenarios.py</b> — 场景模板（END_DATE 随真实日期滚动）</li>
+        <li><b>ad_review.db</b> — SQLite 数据库（gitignored，由 seed 重建）</li>
+      </ul>
+    </div>
   </div>
   <div class="callout acc">
-    <strong>读代码顺序建议：</strong>先读 <span class="mono">eval/评测集设计稿_v2.md</span>（搞懂评什么）→ 再读 <span class="mono">agent/system_prompt.md</span> 第 7 节（搞懂约束）→ 最后看 <span class="mono">eval/run_eval.py</span>（搞懂怎么判）。
+    <strong>读代码顺序建议：</strong>先读 <span class="mono">eval/评测集设计稿_v2.md</span>（搞懂评什么）→ 再读 <span class="mono">agent/system_prompt.md</span> 第 7 节（搞懂约束）→ 看 <span class="mono">eval/run_eval.py</span>（搞懂怎么判）→ 最后读 <span class="mono">api_server.py</span> + <span class="mono">web/app.js</span>（搞懂前后端怎么跑）。
   </div>
 </section>
 
@@ -325,19 +381,24 @@ python3 eval/run_eval.py --static
     <li>真实数据接入（用户曾问「能否实时更新」）——当前是仿真数据，接入真实数据源是后续大项，需单独评估。</li>
   </ul>
 
-  <h3>前端 Phase 3 待办（2026-08-19 由用户明确）</h3>
+  <h3>前端 Phase 3 待办（2026-08-20 更新）</h3>
   <div class="callout acc">
-    <strong>当前正在进行前端 Phase 3 设计与 demo 确认，以下待办按用户最新要求记录：</strong>
+    <strong>Phase 3 前端已搭建完成并持续迭代打磨中。以下待办按当前实际状态更新：</strong>
   </div>
   <ul class="tight">
-    <li><span class="pill p-warn">进行中</span> 前端设计确认：「当日监控」替代原「数据总览」；「客户详情」替代原「周度复盘」；侧边栏、顶部标题同步更名。</li>
-    <li><span class="pill p-warn">进行中</span> 客户详情页结构：卡片网格进入详情 → 详情区增加「近14天折线图」+「近14天每日数据列表」+ 截图要求的比率字段（CTR、按钮率、表单CVR、留资CVR、CPC）。</li>
-    <li><span class="pill p-warn">进行中</span> 筛选器统一为 5 个 tab：行业 / 赛道 / 品类 / 客户 / 状态；右上角日期改为时间筛选器（demo 多方案待用户选择）。</li>
-    <li><span class="pill p-acc">待搭建</span> 生成复盘报告按钮移至详情区右上角；同时支持站内弹层预览 + 独立 HTML 分享链接。</li>
-    <li><span class="pill p-bad">延后</span> <strong>分享报告的独立 HTML 后端真正落地</strong>：需要后端动态生成可分享的 HTML 文件并持久化到 <code>reports/</code>，属于较大工作项，用户明确「现在不做，以后再说」。记入待办，等后续排期。</li>
-    <li><span class="pill p-ok">已取消</span> 改参数重算（阈值滑块）、对比多周、各指标环比、多维归因、卡片状态口径——均不再做或延后到接入 LLM 后。</li>
+    <li><span class="pill p-ok">已完成</span> 「当日监控」替代原「数据总览」；「客户详情」替代原「周度复盘」；侧边栏、顶部标题同步更名。</li>
+    <li><span class="pill p-ok">已完成</span> 客户详情页结构：卡片网格进入详情 → 详情区「近14天 4 分面折线图」+「12 字段日表」+ 比率字段（CTR、按钮率、表单 CVR、留资 CVR、CPC）。</li>
+    <li><span class="pill p-ok">已完成</span> 筛选器统一为 5 个下拉：行业 / 赛道 / 品类 / 客户 / 状态（3×2 紧凑布局，去标题字样）；右上角时间筛选器（方案 A：单日期+快捷区间）。</li>
+    <li><span class="pill p-ok">已完成</span> 生成复盘报告按钮移至详情区右上角；站内弹层预览 + 独立 HTML 分享链接（后端落盘到 <code>web/reports/</code>）。</li>
+    <li><span class="pill p-ok">已完成</span> 归因接入后端确定性规则（<code>POST /api/attrib</code>）：掉量/增量 TOP 异步回填真实归因文案，无 LLM 无落库。归因规则：基建掉量/扩量、CTR 变化、留资率下降、留资成本变化。</li>
+    <li><span class="pill p-ok">已完成</span> 当日监控 5 模块搭建：顶部 KPI 卡（紧凑图标式）+ 筛选器 + 趋势分面小图（消耗/留资成本/开口成本 3 图）+ 过程数据/基建情况 + 诊断/监控表 + 变化归因（掉量/增量 TOP）。</li>
+    <li><span class="pill p-ok">已完成</span> 手动录入改填表式：两行表单，前端确定性拼 JSON，提交后自动刷新+定位新客户+自动跑 LLM 诊断。</li>
+    <li><span class="pill p-ok">已完成</span> 销售业绩模块删除（用户确认无实际意义）；趋势模块从单图改分面 3 小图，折线+平均线+端点标注。</li>
+    <li><span class="pill p-ok">已完成</span> 同名客户追加模式 + 默认时间同步真实今天；sim 数据 END_DATE 随真实日期滚动。</li>
+    <li><span class="pill p-warn">进行中</span> 持续迭代打磨：用户在使用中反馈问题 → 逐项修复。当前最新 commit <code>761d6e9</code>。</li>
+    <li><span class="pill p-bad">延后</span> <strong>分享报告的独立 HTML 后端真正落地</strong>：当前 <code>POST /api/report</code> 已能落盘独立 HTML 到 <code>web/reports/</code>，但尚未做持久化 URL 和访问权限控制。用户明确「以后再说」。</li>
+    <li><span class="pill p-acc">后续方向</span> 真实数据接入（当前全为仿真数据）；多周对比；各指标环比下钻；多维归因 LLM 化——均待接入真实数据源后排期。</li>
   </ul>
-  <p class="small">以上条目随 demo 确认 / 代码落地同步更新；其中「分享报告后端 HTML 生成」因难度较大明确延后，不在本轮实现。</p>
 </section>
 
 <!-- ========== 10 ========== -->
@@ -352,6 +413,13 @@ python3 eval/run_eval.py --static
     <li><span class="pill p-bad">坑</span> <b>judge 温度噪声</b>：temperature=0 也会在 2/3 边界摇摆，单份分数别硬解读，用 3 票中位数 + 看跨份趋势。</li>
     <li><span class="pill p-bad">坑</span> <b>prompt 红线 vs 代码修复</b>：LLM 行为只能靠 prompt 红线；代码组装类（观察清单、扫描）要在 .py 里修，别硬塞进 prompt。</li>
     <li><span class="pill p-warn">坑</span> <b>真跑整轮很贵也慢</b>：先确认能否复用 artifacts；E18 探针报错零成本；改断言逻辑后用 <code>--static</code> 复核。</li>
+    <li><span class="pill p-bad">坑</span> <b>zsh cwd 每次重置</b>：Bash 工具每次调用时工作目录回到仓库根目录，不在 <code>诊断台/</code> 内。必须每次 <code>cd 诊断台 && ...</code> 前缀，否则找不到文件。</li>
+    <li><span class="pill p-bad">坑</span> <b>后台进程被 shell 退出杀死</b>：<code>nohup ... &</code> 方式启动的 server 在 shell 退出时被杀死。用 Bash 工具的 <code>run_in_background</code> 参数启动长运行服务。</li>
+    <li><span class="pill p-bad">坑</span> <b>归因异步回填卡住</b>：<code>/api/attrib</code> 的 fetch 请求如果服务端报错，前端 catch 块静默吞掉错误，占位文字「归因计算中…」永不消失。修复：先渲染指标摘要兜底，API 成功后替换，失败时 <code>console.error</code> 并保留兜底。</li>
+    <li><span class="pill p-bad">坑</span> <b>sim 数据日期滞后导致今日全 0</b>：真实日期是 8/20 但 DB 只有到 8/19 的数据 → 今日窗口 ¥0/-100%。修复：<code>python3 data/refresh_sim.py --run-once</code> 追加当日数据。sim 数据的 <code>END_DATE</code> 应随真实日期滚动。</li>
+    <li><span class="pill p-warn">坑</span> <b>「把 X 去掉」的歧义</b>：用户说「把筛选器去掉」本意是去掉「筛选器」这三个字的标题，不是删掉整个筛选功能。遇到「去掉 X」类指令，先确认范围再动手。已用 <code>git revert</code> 回退误删，再只去标题字样。</li>
+    <li><span class="pill p-warn">坑</span> <b>中文文件名 URL 解码 404</b>：<code>web/reports/码上AI学堂_2026-08-17.html</code> 这种含中文的分享链接在浏览器请求时被 URL 编码，后端需 <code>urllib.parse.unquote</code> 解码才能找到文件。</li>
+    <li><span class="pill p-warn">坑</span> <b>ATTR_TOKEN 防竞态</b>：异步归因请求返回时用户可能已切换筛选条件，旧响应会覆盖当前视图。用递增 <code>ATTR_TOKEN</code> 做版本守卫，token 不匹配时丢弃旧响应。</li>
   </ul>
 </section>
 
@@ -365,6 +433,7 @@ python3 eval/run_eval.py --static
     <li><strong>用户想看代码实时跑</strong>：长任务提示他用 <code>tail -f</code> 看日志。</li>
     <li><strong>先讨论再动手</strong>：涉及定义/取值/方向类决策（如 P0/P1 定义、删 owner 字段），先对齐再改，别直接动代码。</li>
     <li><strong>站在客观视角 + 用户思维</strong>：自检/打分要有「人」的判断力，别纯机械过断言。</li>
+    <li><strong>铁律三原则（2026-08-19 用户定，长期）：</strong>① 每一次修改都必须 git 提交；② 不确定时先出独立 demo 让用户选，不要直接改；③ 只改用户明确指出的东西，不要自作主张扩大范围。遇到「去掉 X」类模糊指令，先确认范围再动手。</li>
   </ul>
 </section>
 
@@ -390,7 +459,25 @@ tail -f eval/run.log
 grep -h "^export DEEPSEEK_API_KEY=sk-" ~/.zshrc | grep -v "你的key" | tail -1
 
 <span class="c"># 看批量结果</span>
-cat eval/artifacts/eval_results.json | python3 -m json.tool | less</pre>
+cat eval/artifacts/eval_results.json | python3 -m json.tool | less
+
+<span class="c"># ===== Phase 3 前端 =====</span>
+
+<span class="c"># 启动后端服务（前台，Ctrl+C 退出）</span>
+cd 诊断台 && python3 api_server.py
+<span class="c"># → http://127.0.0.1:8000</span>
+
+<span class="c"># 启动后端服务（后台，长运行）</span>
+<span class="c"># 用 Bash 工具的 run_in_background 参数，不要用 nohup &（会被杀死）</span>
+
+<span class="c"># 冒烟测试（需先启动后端服务）</span>
+cd 诊断台 && node tests/smoke_web.js
+
+<span class="c"># sim 数据追加当日数据（今日全 0 时修复用）</span>
+cd 诊断台 && python3 data/refresh_sim.py --run-once
+
+<span class="c"># 重新生成 50 客户模拟数据（会清库，慎用）</span>
+cd 诊断台 && python3 data/seed_customers.py</pre>
   <p class="small">项目根：<span class="mono">诊断台/</span> ；本文档应随项目一起提交到 GitHub，确保下一位接手者能直接看到。</p>
 </section>
 
@@ -403,8 +490,126 @@ cat eval/artifacts/eval_results.json | python3 -m json.tool | less</pre>
   <ul class="tight">
     <li>改了 <span class="mono">agent/</span> 或 <span class="mono">eval/</span> 任何行为（prompt 第 7 节红线、orchestrator/tools、run_eval 断言）→ 第 1 节进度表 + 第 6 节红线 + 第 9 节待办 同步更新。</li>
     <li>跑了批量评测 / 修复了误报 → 第 1.2 节结果数字 + 第 9 节状态同步。</li>
+    <li>改了 <span class="mono">web/</span>、<span class="mono">api_server.py</span>、<span class="mono">data/</span> 等前端/后端/数据层代码 → 第 14 节操作日志追加一行（commit hash + 时间 + 变更说明 + 影响文件）。</li>
     <li>这条铁律本身也是「一项任务」，所以确立后立即 git + 更新本文档（你正看的这一版已含此条）。</li>
   </ul>
+</section>
+
+<!-- ========== 14 ========== -->
+<section id="changelog">
+  <h2>14. 操作日志（全量 commit 记录）</h2>
+  <p>以下按时间线记录所有 git commit（截至 <code>761d6e9</code>，共 64 次）。<span class="pill p-acc">记忆</span> 标记的为纯记忆日志 commit，<span class="pill p-warn">决策日志</span> 为决策记录 commit，无代码变更但记录了思路上下文。</p>
+
+  <h3>14.1 Phase 1：Agent 核心搭建（8/18 20:53 — 8/18 22:35）</h3>
+  <table>
+    <tr><th>Commit</th><th>时间</th><th>变更说明</th><th>影响文件</th></tr>
+    <tr><td><code>4da8c70</code></td><td>8/18 20:53</td><td>项目初始化：设计文档 + 50 客户模拟数据（seed=42 可复现）</td><td>data/agent/design.md, data/seed_customers.py</td></tr>
+    <tr><td><code>95611c1</code></td><td>8/18 20:54</td><td><span class="pill p-warn">决策日志</span> 补充 git 版本管理记录</td><td>—</td></tr>
+    <tr><td><code>a2133e7</code></td><td>8/18 21:28</td><td>Agent 核心：14 工具 + 10 节点编排器 + System Prompt v1（dry-run 验证通过）</td><td>agent/*（全部）</td></tr>
+    <tr><td><code>c85f40a</code></td><td>8/18 21:29</td><td><span class="pill p-warn">决策日志</span> Agent 核心落地记录</td><td>—</td></tr>
+    <tr><td><code>1c03a6e</code></td><td>8/18 21:40</td><td>节点 3 接入 get_trend 填充第三章趋势线，LLM 下钻带趋势证据</td><td>agent/orchestrator.py, agent/tools.py</td></tr>
+    <tr><td><code>4f6d766</code></td><td>8/18 21:41</td><td><span class="pill p-warn">决策日志</span> get_trend 接入记录</td><td>—</td></tr>
+    <tr><td><code>8175e43</code></td><td>8/18 21:52</td><td>修复 LLM 输出接线（摘要/归因明细/行动计划/证据校验），冒烟验证正负向通过</td><td>agent/orchestrator.py</td></tr>
+    <tr><td><code>56fb5d8</code></td><td>8/18 21:53</td><td><span class="pill p-warn">决策日志</span> LLM 冒烟验证与接线修复记录</td><td>—</td></tr>
+    <tr><td><code>82f93a0</code></td><td>8/18 22:10</td><td>System Prompt v1.1：§3.5 内联 8 条映射规则 + §7 钉死扁平输出结构，下钻改扁平契约</td><td>agent/system_prompt.md, agent/orchestrator.py</td></tr>
+    <tr><td><code>7712207</code></td><td>8/18 22:10</td><td><span class="pill p-warn">决策日志</span> System Prompt v1.1 修订记录</td><td>—</td></tr>
+    <tr><td><code>43c8a98</code></td><td>8/18 23:08</td><td>符号规范 + 日志双写</td><td>agent/*</td></tr>
+  </table>
+
+  <h3>14.2 Phase 2：评测体系搭建（8/18 22:18 — 8/19 01:56）</h3>
+  <table>
+    <tr><th>Commit</th><th>时间</th><th>变更说明</th><th>影响文件</th></tr>
+    <tr><td><code>d14cdf4</code></td><td>8/18 22:18</td><td>评测集设计稿 v1：E01-E17 用例定义（硬/软断言+事实基线+MVP 门槛）</td><td>eval/评测集设计稿.md</td></tr>
+    <tr><td><code>c86c159</code></td><td>8/18 22:19</td><td><span class="pill p-warn">决策日志</span> 评测集设计稿 v1 记录</td><td>—</td></tr>
+    <tr><td><code>b8bd276</code></td><td>8/18 22:35</td><td>评测执行: E01-E17 真跑完成, 硬断言 42/42 全过</td><td>eval/artifacts/*</td></tr>
+    <tr><td><code>1abe3d5</code></td><td>8/18 23:22</td><td>评测体系 v2 设计稿：三层架构 + case 元数据 + 三档评分 + 人工试评流程</td><td>eval/评测集设计稿_v2.md</td></tr>
+    <tr><td><code>14c7c0d</code></td><td>8/18 23:57</td><td>旧账修复 3 项: 案例章节透出 + 止损线数字 + 素材归因标注</td><td>agent/system_prompt.md, agent/tools.py</td></tr>
+    <tr><td><code>7296e82</code></td><td>8/19 01:56</td><td><strong>v2 评测首轮达标</strong>：三层断言 126/126 + judge 启用 + E14 误报修复 + 交接文档</td><td>eval/*, 交接文档_诊断台.html</td></tr>
+  </table>
+
+  <h3>14.3 收尾 + 数据层（8/19 08:47 — 8/19 10:51）</h3>
+  <table>
+    <tr><th>Commit</th><th>时间</th><th>变更说明</th><th>影响文件</th></tr>
+    <tr><td><code>39d90e5</code></td><td>8/19 08:47</td><td>同步交接文档至 v2 收尾状态 + 落实「任务闭环」铁律</td><td>交接文档_诊断台.html</td></tr>
+    <tr><td><code>df56310</code></td><td>8/19 09:14</td><td>评测接入 CI 自动回归（替代 A/B 手动门槛）</td><td>.github/workflows/*</td></tr>
+    <tr><td><code>b6958c9</code></td><td>8/19 09:27</td><td>新增整体项目进度 plan + 铁律覆盖交接文档自动更新</td><td>项目进度plan.html</td></tr>
+    <tr><td><code>b8d9ef7</code></td><td>8/19 09:43</td><td>修正 plan：数据全为自生成模拟，无外部真实源</td><td>项目进度plan.html</td></tr>
+    <tr><td><code>9d2881c</code></td><td>8/19 09:50</td><td>Phase 2 升级为「数据层：8 点定时刷新 + 用户手动录入」</td><td>data/refresh_sim.py, data/ingest.py</td></tr>
+    <tr><td><code>c97062a</code></td><td>8/19 09:58</td><td>Phase 1 拆出独立 badcase 库 + Phase 2 录入字段不变</td><td>data/*</td></tr>
+    <tr><td><code>02dd720</code></td><td>8/19 10:19</td><td>Phase 1 + Phase 2 手动录入后端交付</td><td>data/ingest.py</td></tr>
+    <tr><td><code>0f4c032</code></td><td>8/19 10:20</td><td>停止跟踪 eval/run.log（运行日志，已在 .gitignore）</td><td>.gitignore</td></tr>
+    <tr><td><code>b678bd6</code></td><td>8/19 10:51</td><td>Phase 2 定时刷新后端 + 修复 build_sim 重建 bug（每日 8 点刷新保留用户上传数据）</td><td>data/refresh_sim.py</td></tr>
+    <tr><td><code>6c1c398</code></td><td>8/19 10:51</td><td>更新项目日志：Phase2 定时刷新阻塞解除并交付</td><td>项目进度plan.html</td></tr>
+  </table>
+
+  <h3>14.4 Phase 3-A：前端设计 demo（8/19 12:40 — 8/19 16:37）</h3>
+  <table>
+    <tr><th>Commit</th><th>时间</th><th>变更说明</th><th>影响文件</th></tr>
+    <tr><td><code>efc428f</code></td><td>8/19 12:40</td><td>添加前端设计 demos（仅设计稿，未动工）</td><td>前端设计demo.html</td></tr>
+    <tr><td><code>44398d1</code></td><td>8/19 13:41</td><td>添加前端方案 v3 demo</td><td>前端方案v3_demo.html</td></tr>
+    <tr><td><code>d179668</code></td><td>8/19 16:37</td><td><strong>Phase 3 启动</strong>：搭建零依赖后端 api_server + 交互式前端 web（改参数重算/对比多周/手动录入）</td><td>api_server.py, web/*</td></tr>
+  </table>
+
+  <h3>14.5 Phase 3-B：前端 demo 迭代（8/19 17:51 — 8/19 20:57）</h3>
+  <table>
+    <tr><th>Commit</th><th>时间</th><th>变更说明</th><th>影响文件</th></tr>
+    <tr><td><code>0229984</code></td><td>8/19 17:51</td><td>收纳前端 demo 至 demo/ 目录 + 添加 .gitignore 屏蔽 __pycache__/reports</td><td>.gitignore, demo/</td></tr>
+    <tr><td><code>fbff231</code></td><td>8/19 17:51</td><td>将本地数据库 ad_review.db 移出版本控制（运行时产物，可由 seed 重建）</td><td>.gitignore</td></tr>
+    <tr><td><code>85525cf</code></td><td>8/19 18:22</td><td>demo: 周度复盘 demo v2（真实模拟数据 + 导航修复 + 近 14 天日均 + 详情页去折线图）</td><td>demo/*</td></tr>
+    <tr><td><code>302eb40</code></td><td>8/19 18:54</td><td>同步交接文档待办 + 生成 v4 设计 demo（当日监控/客户详情/时间筛选器方案）</td><td>demo/*, 交接文档_诊断台.html</td></tr>
+    <tr><td><code>fe7e9f0</code></td><td>8/19 19:16</td><td>侧边栏/顶部栏 数据总览→当日监控、周度复盘→客户详情</td><td>demo/*</td></tr>
+    <tr><td><code>42d0e19</code></td><td>8/19 19:21</td><td>时间筛选器 顶部右侧落位 A/B/C 三种方案对比</td><td>demo/*</td></tr>
+    <tr><td><code>8126845</code></td><td>8/19 19:25</td><td>当日监控/客户详情 右上角改为方案 A 时间筛选器(单日期+快捷区间)，手动录入隐藏</td><td>demo/*</td></tr>
+    <tr><td><code>8185df6</code></td><td>8/19 19:28</td><td>删除右上角灰字说明，仅保留方案 A 时间筛选器</td><td>demo/*</td></tr>
+    <tr><td><code>9401a9f</code></td><td>8/19 19:34</td><td>客户详情筛选栏新增 赛道/品类 两个筛选(真实 DB 映射, 可过滤)</td><td>demo/*</td></tr>
+    <tr><td><code>736f81a</code></td><td>8/19 19:44</td><td>客户详情 近 14 天折线图(A/B 对比) + 每日数据表(11 字段, 真实 DB)</td><td>demo/*</td></tr>
+    <tr><td><code>9dabe70</code></td><td>8/19 19:52</td><td>客户详情折线图定为方案 B，右下角 CPC→留资成本，四图补齐横纵坐标</td><td>demo/*</td></tr>
+    <tr><td><code>5539780</code></td><td>8/19 19:59</td><td>时间筛选器接入真实日度数据(50 客户×55 天)，切窗口实时重算聚合+环比，修复时区偏移</td><td>demo/*</td></tr>
+    <tr><td><code>51727e6</code></td><td>8/19 20:29</td><td>客户详情 落地方案 B(4 分面折线+12 字段日表), 随时间筛选器联动</td><td>demo/*</td></tr>
+    <tr><td><code>8e8a76b</code></td><td>8/19 20:42</td><td><strong>当日监控整页改版</strong>(对标参考图) - 顶部 KPI+筛选器/趋势+销售业绩/过程+基础数据/诊断+监控/变化归因</td><td>demo/*</td></tr>
+    <tr><td><code>264c31b</code></td><td>8/19 20:54</td><td>应用→应用筛选, 移除消耗维度 tab, 移除表单 CVR 卡片, 基础数据→基建情况</td><td>demo/*</td></tr>
+    <tr><td><code>b168308</code></td><td>8/19 20:57</td><td>过程数据/基建情况 mini-card 改为 4 列一行(缩小 padding/字号)</td><td>demo/*</td></tr>
+  </table>
+
+  <h3>14.6 Phase 3-C：前端正式搭建（8/19 22:46 — 8/19 23:30）</h3>
+  <table>
+    <tr><th>Commit</th><th>时间</th><th>变更说明</th><th>影响文件</th></tr>
+    <tr><td><code>8dcbbc4</code></td><td>8/19 22:46</td><td><strong>后端搭建</strong>：新增 /api/daily /api/base(窗口感知基建) POST /api/report(LLM 报告+独立 HTML 落盘) + customers light 模式</td><td>api_server.py</td></tr>
+    <tr><td><code>9415072</code></td><td>8/19 22:49</td><td><strong>前端正式搭建</strong>：web/ 按 demo 移植(当日监控 5 模块/客户详情 4 图+12 字段日表/时间筛选联动/真实 API 数据/LLM 报告弹层+分享链接/手动录入), 忽略 sqlite wal/shm</td><td>web/app.js, web/style.css, web/index.html</td></tr>
+    <tr><td><code>4a47e1c</code></td><td>8/19 22:53</td><td><strong>正式搭建收尾</strong>：修复静态文件中文文件名 URL 解码 404; 新增运行时冒烟测试(tests/smoke_web.js); 验证 LLM 报告全链路(码上 10.4s/2 调用/¥0.06/8 章节+分享 HTML 200); 静态评测 122/122 无退化</td><td>tests/smoke_web.js, api_server.py</td></tr>
+    <tr><td><code>633b130</code></td><td>8/19 22:58</td><td>当日监控：筛选器 5 个下拉补齐真实选项(行业/赛道/品类/客户/状态, 数据驱动+重渲染保留已选值)</td><td>web/app.js</td></tr>
+    <tr><td><code>92431ab</code></td><td>8/19 23:02</td><td>当日监控：应用筛选真正生效(行业/赛道/品类/客户/状态 过滤 KPI/趋势/诊断/监控表/归因)</td><td>web/app.js</td></tr>
+    <tr><td><code>d3838ae</code></td><td>8/19 23:09</td><td>手动录入：输入框增加灰色 placeholder 范式(JSON 结构模板含字段说明)</td><td>web/app.js</td></tr>
+    <tr><td><code>8b02ae6</code></td><td>8/19 23:17</td><td>手动录入改填表式：两行表单(上行指标名/下行填值+灰色示例), 前端确定性拼 JSON, 提交后自动 boot 刷新+定位新客户+自动跑 LLM 诊断</td><td>web/app.js, web/style.css</td></tr>
+    <tr><td><code>0942c35</code></td><td>8/19 23:30</td><td>同名客户追加模式 + 默认时间同步真实今天：ingest 同名复用客户/计划/笔记只追加日数据; scenarios END_DATE 随真实日期滚动并刷新 sim 数据; 前端 fDate/iDate 默认真实今天; 验证 14 天分次录入合并生成完整 LLM 周报</td><td>data/ingest.py, data/scenarios.py, web/app.js</td></tr>
+  </table>
+
+  <h3>14.7 Phase 3-D：迭代打磨（8/19 23:52 — 8/20 01:03）</h3>
+  <table>
+    <tr><th>Commit</th><th>时间</th><th>变更说明</th><th>影响文件</th></tr>
+    <tr><td><code>bc89a37</code></td><td>8/19 23:52</td><td>前端：销售业绩月目标去掉（演示值）标注</td><td>web/app.js</td></tr>
+    <tr><td><code>7852398</code></td><td>8/20 00:01</td><td><strong>归因接入后端</strong>：新增 POST /api/attrib（复用环比对比+基建双门槛，无 LLM 无落库），前端掉量/增量 TOP 异步回填真实归因文案</td><td>api_server.py, web/app.js, tests/smoke_web.js</td></tr>
+    <tr><td><code>c924a79</code></td><td>8/20 00:05</td><td><span class="pill p-acc">记忆</span> 记录 8-20 数据日期滞后导致今日消耗全 0 及刷新 sim 数据</td><td>—</td></tr>
+    <tr><td><code>0b5d713</code></td><td>8/20 00:17</td><td>删除销售业绩模块；趋势卡独占整行；新增趋势模块改造 demo（分面小图）</td><td>web/app.js, web/style.css, demo/*</td></tr>
+    <tr><td><code>2b062db</code></td><td>8/20 00:18</td><td><span class="pill p-acc">记忆</span> 记录销售业绩删除与趋势 demo 改造</td><td>—</td></tr>
+    <tr><td><code>0de8e79</code></td><td>8/20 00:28</td><td>趋势模块改为分面小图并使用平滑曲线（Catmull-Rom→Bézier）</td><td>web/app.js, web/style.css</td></tr>
+    <tr><td><code>e2d4bfe</code></td><td>8/20 00:28</td><td><span class="pill p-acc">记忆</span> 记录趋势模块平滑曲线改造</td><td>—</td></tr>
+    <tr><td><code>ac2f6ec</code></td><td>8/20 00:37</td><td><strong>修复归因占位卡住</strong>：先渲染指标摘要兜底，API 成功后替换为真实归因；失败时保留兜底并 console.error</td><td>web/app.js</td></tr>
+    <tr><td><code>6753529</code></td><td>8/20 00:45</td><td>趋势模块改回折线并优化 X 轴标签排布；新增 3 个 KPI 卡片改造 demo</td><td>web/app.js, web/style.css, demo/*</td></tr>
+    <tr><td><code>c3205dd</code></td><td>8/20 00:48</td><td>KPI 卡片改为方案 A 紧凑图标式（图标+横向排布，降低高度）</td><td>web/app.js, web/style.css, tests/smoke_web.js</td></tr>
+    <tr><td><code>b76e08a</code></td><td>8/20 00:48</td><td><span class="pill p-acc">记忆</span> 记录 KPI 方案 A 落地</td><td>—</td></tr>
+    <tr><td><code>5833928</code></td><td>8/20 00:54</td><td>当日监控筛选器改为 3 行×2 列紧凑布局，缩小右侧筛选卡宽度</td><td>web/app.js, web/style.css</td></tr>
+    <tr><td><code>aff9a9e</code></td><td>8/20 00:54</td><td><span class="pill p-acc">记忆</span> 记录筛选器紧凑布局改造</td><td>—</td></tr>
+    <tr><td><code>841545c</code></td><td>8/20 00:59</td><td><span style="color:var(--bad)">误删</span> 当日监控移除筛选器卡片（理解错误，已被 Revert）</td><td>web/app.js, web/style.css</td></tr>
+    <tr><td><code>e7438a4</code></td><td>8/20 01:00</td><td><span class="pill p-acc">记忆</span> 记录当日监控筛选器移除</td><td>—</td></tr>
+    <tr><td><code>c70a81e</code></td><td>8/20 01:02</td><td><span style="color:var(--ok)">Revert</span> 恢复筛选器功能（撤销 841545c 的误删）</td><td>web/app.js, web/style.css, tests/smoke_web.js</td></tr>
+    <tr><td><code>2148b0a</code></td><td>8/20 01:03</td><td>恢复筛选器并去掉卡片内「筛选器」标题字样，筛选卡更紧凑</td><td>web/app.js, web/style.css</td></tr>
+    <tr><td><code>761d6e9</code></td><td>8/20 01:03</td><td><span class="pill p-acc">记忆</span> 记录筛选器标题去除与误解澄清</td><td>—</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>操作日志维护规则：</strong>每次 git commit 后，在对应阶段表格末尾追加一行（commit hash + 时间 + 变更说明 + 影响文件）。纯记忆/决策日志 commit 也记入，便于追溯思路上下文。如发生 revert，标注 <span style="color:var(--ok)">Revert</span> 并保留原始误操作行（不删），便于复盘。
+  </div>
 </section>
 
 </main>
