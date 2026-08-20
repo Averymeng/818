@@ -8,6 +8,8 @@ let WIN = {start:'', end:'', label:'', short:''};
 let curIdx = 0;
 const OV_FILTER = {ind:'', sec:'', cat:'', cust:'', st:''};   // 当日监控筛选器当前条件
 let ATTR_TOKEN = 0;            // 归因请求代际号：重渲染后旧请求不再回填
+let OFFLINE = false;           // 无后端 API 时为 true，前端改用 snapshot.json
+let SNAP = null;               // 静态快照数据（web/snapshot.json）
 
 const STCLASS = {"需行动":"b-action", "观察":"b-watch", "正常":"b-normal"};
 const STCOLOR = {"需行动":"#F97066", "观察":"#FDB022", "正常":"#32D583"};
@@ -85,6 +87,7 @@ function renderActive(){
   else applyFilter();
 }
 async function fetchBase(){
+  if(OFFLINE) return;   // 静态快照已在 loadSnapshot 中写入 BASE_DATA
   const pw=prevWindow();
   const qs='?start='+WIN.start+'&end='+WIN.end+'&prev_start='+pw.start+'&prev_end='+pw.end;
   try{
@@ -241,6 +244,16 @@ function attribFallback(c){
 async function loadAttrib(list, token){
   const ids=[...new Set(list.map(c=>c.id).filter(x=>x))];
   if(!ids.length) return;
+  if(OFFLINE){
+    if(token!==ATTR_TOKEN) return;
+    for(const c of list){
+      const el=document.getElementById('attr-'+c.id);
+      if(!el) continue;
+      const t=SNAP&&SNAP.attrib?SNAP.attrib[String(c.id)]:null;
+      el.textContent=t||attribFallback(c);
+    }
+    return;
+  }
   try{
     const pw=prevWindow();
     const res=await fetch('/api/attrib',{
@@ -270,6 +283,17 @@ let curReportId=null;
 let reviewLocked=false;
 async function generateReport(){
   const c=CUSTOMERS[curIdx];
+  if(OFFLINE){
+    const rep=SNAP&&SNAP.reports?SNAP.reports[String(c.id)]:null;
+    document.getElementById('mTitle').innerText=c.name+' · 复盘报告（静态快照）';
+    document.getElementById('reportModal').classList.add('on');
+    document.getElementById('shareLink').classList.remove('on');
+    document.getElementById('reviewBar').classList.remove('on');
+    document.getElementById('rvResult').innerHTML='<span class="muted">静态快照 · 只读，生成 / 审核请在本地后端操作</span>';
+    if(rep){ renderReportModal(rep, c); }
+    else { document.getElementById('mBody').innerHTML='<div class="loading">该客户暂未在线上生成报告（可在本地后端生成后重新导出快照）。</div>'; }
+    return;
+  }
   const btn=document.getElementById('genBtn');
   document.getElementById('mTitle').innerText=c.name+' · '+META.window+' 复盘报告';
   document.getElementById('mBody').innerHTML='<div class="loading">报告生成中：LLM 基于当前窗口真实数据撰写八章节，约需 30~90 秒，请勿关闭弹层…</div>';
@@ -729,27 +753,85 @@ async function doIngestForm(){
 
 /* ---------------- 启动 ---------------- */
 async function boot(){
-  const [custs, daily]=await Promise.all([
-    fetch('/api/customers?light=1').then(r=>r.json()),
-    fetch('/api/daily').then(r=>r.json())
-  ]);
-  DAILY=daily.customers||{};
-  META.maxd=daily.maxd||'';
-  document.getElementById('fDate').value=todayStr();   // 默认与真实今天同步
-  const iDate=document.getElementById('iDate'); if(iDate&&!iDate.value) iDate.value=todayStr();
-  CUSTOMERS=(custs||[]).map(c=>({
-    id:c.id, name:c.name, ind:c.industry, sector:c.sector, cats:c.categories,
-    st:'正常', spend:0, delta:0, imp:0, click:0, open:0, lead:0, cpl:0, cplPrev:0, cplRise:0, series:[]
-  }));
+  // 开发/调试：?offline=1 强制走静态快照（即使本地有后端）
+  if(new URLSearchParams(location.search).get('offline')==='1'){
+    await loadSnapshot();
+    return;
+  }
+  try{
+    const [custs, daily]=await Promise.all([
+      fetch('/api/customers?light=1').then(r=>r.ok?r.json():Promise.reject()),
+      fetch('/api/daily').then(r=>r.ok?r.json():Promise.reject())
+    ]);
+    if(!Array.isArray(custs) || !daily || !daily.customers){
+      throw new Error('后端数据格式异常');
+    }
+    DAILY=daily.customers||{};
+    META.maxd=daily.maxd||'';
+    document.getElementById('fDate').value=todayStr();   // 默认与真实今天同步
+    const iDate=document.getElementById('iDate'); if(iDate&&!iDate.value) iDate.value=todayStr();
+    CUSTOMERS=(custs||[]).map(c=>({
+      id:c.id, name:c.name, ind:c.industry, sector:c.sector, cats:c.categories,
+      st:'正常', spend:0, delta:0, imp:0, click:0, open:0, lead:0, cpl:0, cplPrev:0, cplRise:0, series:[]
+    }));
+    fillFilterOptions();
+    document.getElementById('fQ').addEventListener('input',applyFilter);
+    document.getElementById('fDate').addEventListener('change',onTimeChange);
+    document.getElementById('fRange').addEventListener('change',onTimeChange);
+    await onTimeChange();
+  }catch(e){
+    console.warn('未检测到后端 API，切换到静态快照模式：', e);
+    await loadSnapshot();
+  }
+}
+function fillFilterOptions(){
   const inds=[...new Set(CUSTOMERS.map(c=>c.ind))];
   document.getElementById('fInd').innerHTML='<option value="">全部行业</option>'+inds.map(i=>'<option>'+esc(i)+'</option>').join('');
   const sectors=[...new Set(CUSTOMERS.map(c=>c.sector).filter(Boolean))];
   document.getElementById('fSector').innerHTML='<option value="">全部赛道</option>'+sectors.map(s=>'<option>'+esc(s)+'</option>').join('');
   const cats=[...new Set(CUSTOMERS.flatMap(c=>c.cats||[]))];
   document.getElementById('fCat').innerHTML='<option value="">全部品类</option>'+cats.map(s=>'<option>'+esc(s)+'</option>').join('');
+}
+/* 无后端时加载静态快照（部署到静态托管后自动走此路） */
+async function loadSnapshot(){
+  OFFLINE=true;
+  const snap=await fetch('./snapshot.json').then(r=>r.json());
+  SNAP=snap;
+  const customers=snap.customers||[];
+  const daily=snap.daily||{};
+  DAILY=daily.customers||{};
+  META.maxd=(snap.meta&&snap.meta.maxd)||'';
+  CUSTOMERS=customers.map(c=>({
+    id:c.id, name:c.name, ind:c.industry, sector:c.sector, cats:c.categories,
+    st:'正常', spend:0, delta:0, imp:0, click:0, open:0, lead:0, cpl:0, cplPrev:0, cplRise:0, series:[]
+  }));
+  document.getElementById('fDate').value=META.maxd||todayStr();
+  const iDate=document.getElementById('iDate'); if(iDate) iDate.value=META.maxd||todayStr();
+  document.getElementById('fRange').value='近7天';
+  BASE_DATA=snap.base||null;
+  fillFilterOptions();
   document.getElementById('fQ').addEventListener('input',applyFilter);
   document.getElementById('fDate').addEventListener('change',onTimeChange);
   document.getElementById('fRange').addEventListener('change',onTimeChange);
+  showOfflineBanner();
+  disableBackendUI();
   await onTimeChange();
+}
+function showOfflineBanner(){
+  let b=document.getElementById('offlineBanner');
+  if(!b){
+    b=document.createElement('div'); b.id='offlineBanner';
+    b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:999;background:#E8F0FE;color:#1D4ED8;'+
+      'font-size:12px;text-align:center;padding:6px 10px;border-bottom:1px solid #BACBFA;';
+    document.body.prepend(b);
+  }
+  b.textContent='📋 当前为静态只读快照（云端托管，无需后端）。生成新报告 / 审核入库请在本地后端操作。';
+}
+function disableBackendUI(){
+  // 隐藏「手动录入」视图（依赖后端写入）
+  const nav=document.querySelector('.nav-item[data-view="ingest"]');
+  if(nav) nav.style.display='none';
+  const gb=document.getElementById('genBtn');
+  if(gb) gb.innerText='查看报告（静态快照）';
 }
 boot();

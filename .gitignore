@@ -9,6 +9,7 @@ __pycache__/
 # local runtime artifacts (keep generated reports out of source control)
 诊断台/reports/
 诊断台/web/reports/
+诊断台/web/snapshot.json
 *.log
 
 # 本地数据库(由 seed/scheduler 重建,不入库)
