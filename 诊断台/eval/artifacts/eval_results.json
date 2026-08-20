@@ -1,6 +1,6 @@
 {
-  "passed": 122,
-  "total": 122,
+  "passed": 126,
+  "total": 126,
   "scores": {
     "E13": {
       "pass": 3,
@@ -67,7 +67,7 @@
         {
           "name": "dry-run ×2 指纹一致",
           "ok": true,
-          "detail": "overall=正常/正常 fp=bd80ae49"
+          "detail": "overall=正常/正常 fp=da96df8c"
         }
       ]
     },
@@ -702,6 +702,32 @@
           "name": "[银龄声乐课堂] 摘要无周值/日值混淆",
           "ok": true,
           "detail": "无"
+        }
+      ]
+    },
+    "E15": {
+      "pass": 4,
+      "total": 4,
+      "asserts": [
+        {
+          "name": "search_cases 被调用",
+          "ok": true,
+          "detail": "check_data_completeness,check_data_completeness,get_customer_profile,get_period_comparison,get_period_comparison,get_funnel,get_infrastructure,get_trend,get_trend,detect_anomalies,get_funnel,split_by_dimension"
+        },
+        {
+          "name": "引用的案例全部 referenceable=1 且非 badcase",
+          "ok": true,
+          "detail": "n=1 statuses=['reference']"
+        },
+        {
+          "name": "badcase 不出现",
+          "ok": true,
+          "detail": "n=1"
+        },
+        {
+          "name": "case_ref_log 留痕",
+          "ok": true,
+          "detail": "rows=1"
         }
       ]
     },
