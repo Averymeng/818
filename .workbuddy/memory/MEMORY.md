@@ -21,6 +21,11 @@
 - 评测三层：L1–L8 业务链路落库断言 / 端到端 A 报告硬断言 / 端到端 B judge 三档(1/2/3，3票中位数)。
 - API key：取 `~/.zshrc` 最后一行真 key（3 行，前两行是占位符）。
 
+## 用户偏好：节省模型积分（2026-08-20 明确「以后都这样」）
+- 验证/检查类任务**默认走零成本路径**：跑 `python3 eval/run_eval.py`（默认零成本模式，122 硬断言）+ `python3 eval/ci_check.py`（横切扫描），再用 curl 核验 `/api/customers` `/api/daily` `/api/base` 等 JSON 接口，必要时对前端做 dry_run；**不要一上来就真跑 LLM 生成**。
+- 模型选择：积分有限时优先用 Hy3（若限时免费 0.00×），否则选 MiniMax-M3（0.25×），避开 Kimi-K3（1.62×）；报告类真实生成仅在用户明确要验收内容时才触发。
+- 用户明确「先回答/先改好不要执行」的回合，遵守不打实际命令、不改文件；确认后再动手。
+
 ## 非阻塞待办 / 下一阶段（2026-08-19 重排）
 - CI 自动回归 **已完成**（ci_check.py + GitHub Actions，替代原 A/B 手动门槛；`git log` 见 df56310）。
 - **Phase 1 = 参考案例库(RAG) + 独立 badcase 库 = 已完成（2026-08-19 交付）**：`search_cases` 工具(code/agent/tools.py) 原本已实现（按行业/赛道/品类/signature 召回 diag_case，自动过滤 badcase），本次把 `diag_case` 净化为纯 referenceable=1 参考案例（eval/seed_cases.py 移除 badcase 行）；**新建 `diag_badcase` 表**(db/schema.sql) 物理独立，`data/seed_badcase.py` 把评测期 3 缺陷(周值日值混淆/依据不可核验/观察清单漏项)首批入库。注：原 system_prompt 用 referenceable=0 逻辑隔离，用户要的是物理分表，现已达成。
