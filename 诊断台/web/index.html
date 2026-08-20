@@ -134,6 +134,20 @@
       <button class="close" onclick="closeModal()">×</button>
     </div>
     <div class="modal-body" id="mBody"></div>
+    <div class="review-bar" id="reviewBar">
+      <div class="rv-left">
+        <span class="rv-title">报告审核</span>
+        <span class="rv-hint">通过后自动沉淀进案例库（RAG 检索源），驳回理由记入 badcase 库</span>
+      </div>
+      <div class="rv-mid">
+        <input type="text" id="rejectReason" placeholder="驳回理由（驳回时必填，将记入 badcase 库）">
+      </div>
+      <div class="rv-right">
+        <button class="rv-approve" id="rvOkBtn" onclick="submitReview('approve')">✓ 通过，入案例库</button>
+        <button class="rv-reject" id="rvNoBtn" onclick="submitReview('reject')">✗ 驳回</button>
+      </div>
+      <div class="rv-result" id="rvResult"></div>
+    </div>
   </div>
 </div>
 

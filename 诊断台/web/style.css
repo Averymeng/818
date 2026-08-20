@@ -179,6 +179,22 @@ body{background:var(--bg);color:var(--ink);font-size:13px;line-height:1.5;}
 .chapter .item{margin-bottom:10px;}
 .loading{color:var(--sub);font-size:13px;text-align:center;padding:40px 0;}
 
+/* 报告审核条（通过入案例库 / 驳回记 badcase） */
+.review-bar{display:none;border-top:1px solid var(--line);padding:12px 20px;background:#FAFBFE;}
+.review-bar.on{display:block;}
+.rv-left{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+.rv-title{font-size:12px;font-weight:800;color:var(--ink);}
+.rv-hint{font-size:11px;color:var(--sub);}
+.rv-mid{margin-bottom:8px;}
+.rv-mid input{width:100%;border:1px solid var(--line);border-radius:6px;padding:7px 10px;font-size:12px;}
+.rv-mid input:focus{outline:none;border-color:var(--red);}
+.rv-right{display:flex;gap:8px;}
+.rv-right button{padding:7px 14px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;border:none;}
+.rv-right button:disabled{opacity:.6;cursor:default;}
+.rv-approve{background:var(--green);color:#fff;}
+.rv-reject{background:#fff;color:var(--red);border:1px solid var(--red)!important;}
+.rv-result{margin-top:8px;font-size:12px;min-height:16px;}
+
 .view{display:none;}
 .view.on{display:block;}
 .btn-back{background:#fff;border:1px solid var(--line);padding:6px 12px;border-radius:8px;cursor:pointer;font-weight:700;margin-bottom:12px;}

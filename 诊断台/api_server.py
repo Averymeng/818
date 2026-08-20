@@ -19,6 +19,9 @@ API：
   GET  /api/compare?customer_id=&weeks=w1,w2,w3   多周指标对比
   GET  /api/cases?industry=&sector=&signature=    案例检索（现有 SQL 匹配 RAG）
   POST /api/ingest             手动录入客户（接 ingest.ingest_customer）
+  POST /api/review             JSON body: {report_id, action:approve|reject, reason, reviewer}
+                               审核闭环：通过→report_review落confirm+自动沉淀diag_case（RAG案例库）；
+                               驳回→report_review落reject+缺陷记入diag_badcase（open，待修复）
 
 用法：
   python3 api_server.py                 # 默认 http://127.0.0.1:8000
@@ -44,6 +47,7 @@ sys.path.insert(0, DATA_DIR)
 import tools
 import orchestrator
 import ingest as ingest_mod
+import review_actions
 
 DEFAULT_DB = os.path.join(HERE, "data", "ad_review.db")
 
@@ -496,7 +500,51 @@ def api_report_generate(db_path, body):
     os.makedirs(os.path.dirname(fpath), exist_ok=True)
     with open(fpath, "w", encoding="utf-8") as f:
         f.write(render_report_html(report))
-    return {"report": report, "share_url": "/reports/" + fname}
+    conn = get_conn(db_path)
+    rid = conn.execute("SELECT id FROM report WHERE task_id=? ORDER BY id DESC LIMIT 1",
+                       (report.get("task_id"),)).fetchone()
+    ncase = conn.execute("SELECT COUNT(*) n FROM diag_case").fetchone()["n"]
+    conn.close()
+    report["report_id"] = rid["id"] if rid else None
+    return {"report": report, "share_url": "/reports/" + fname,
+            "report_id": report["report_id"], "case_count": ncase}
+
+
+def api_review(db_path, body):
+    """POST /api/review：报告审核闭环（approve→入案例库；reject→记 badcase）"""
+    try:
+        payload = json.loads(body)
+    except Exception as e:
+        return {"error": f"JSON 解析失败: {e}"}
+    try:
+        report_id = int(payload.get("report_id", 0))
+    except Exception:
+        return {"error": "report_id 无效"}
+    action = payload.get("action")
+    reason = (payload.get("reason") or "").strip()
+    reviewer = payload.get("reviewer") or "web"
+    conn = get_conn(db_path)
+    try:
+        if action == "approve":
+            res = review_actions.approve_report(conn, report_id, reviewer=reviewer)
+            if "error" in res:
+                return res
+            promo = review_actions.promote_to_case(conn, report_id)
+            ncase = conn.execute("SELECT COUNT(*) n FROM diag_case").fetchone()["n"]
+            return {"ok": True, "report_id": report_id, "action": "approve",
+                    "promote": promo, "case_count": ncase}
+        if action == "reject":
+            if not reason:
+                return {"error": "驳回必须填写理由（reason），用于沉淀 badcase"}
+            res = review_actions.reject_report(conn, report_id, reason=reason, reviewer=reviewer)
+            if "error" in res:
+                return res
+            bad = review_actions.record_badcase(conn, report_id, title="报告驳回：" + reason)
+            return {"ok": True, "report_id": report_id, "action": "reject",
+                    "badcase": bad}
+        return {"error": "action 必须为 approve 或 reject"}
+    finally:
+        conn.close()
 
 
 # ---------------------------------------------------------------- HTTP 处理
@@ -580,6 +628,11 @@ class Handler(BaseHTTPRequestHandler):
         elif path == "/api/attrib":
             try:
                 self._send_json(api_attrib(self.db_path, body.decode("utf-8")))
+            except Exception as e:
+                self._send_json({"error": f"{type(e).__name__}: {e}"}, 500)
+        elif path == "/api/review":
+            try:
+                self._send_json(api_review(self.db_path, body.decode("utf-8")))
             except Exception as e:
                 self._send_json({"error": f"{type(e).__name__}: {e}"}, 500)
         else:

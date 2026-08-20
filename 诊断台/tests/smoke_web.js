@@ -36,7 +36,7 @@ global.fetch=(u,o)=>realFetch('http://127.0.0.1:8000'+u,o);
 
 (async ()=>{
   const code=fs.readFileSync(path.join(__dirname,'..','web','app.js'),'utf8')
-    + '\n;global.__T={showView, onTimeChange, openDetail, ovApply};'
+    + '\n;global.__T={showView, onTimeChange, openDetail, ovApply, submitReview};'
     + 'Object.defineProperty(global.__T,"WIN",{get:()=>WIN});'
     + 'Object.defineProperty(global.__T,"CUSTOMERS",{get:()=>CUSTOMERS});'
     + 'Object.defineProperty(global.__T,"OV_FILTER",{get:()=>OV_FILTER});';
@@ -109,5 +109,17 @@ global.fetch=(u,o)=>realFetch('http://127.0.0.1:8000'+u,o);
   document.getElementById('fRange').value='今日';
   await T.onTimeChange();
   console.log('after 今日 WIN:', T.WIN, '| chart cells:', (document.getElementById('detailCharts').innerHTML.match(/small-cell/g)||[]).length, '| table rows:', (document.getElementById('detailTable').innerHTML.match(/<tr>/g)||[]).length);
+  // 审核闭环（不写库：只测路由与校验错误分支；approve 正向路径已在临时库验证）
+  const rv404=await fetch('/api/review',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({report_id:999999,action:'approve'})}).then(r=>r.json());
+  console.log('review api route:', {reached: rv404 && ('error' in rv404), msg: rv404.error||''});
+  const rvNoReason=await fetch('/api/review',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({report_id:1,action:'reject'})}).then(r=>r.json());
+  console.log('review reject-reason guard:', {enforced: !!(rvNoReason&&rvNoReason.error)});
+  const idxHtml=fs.readFileSync(path.join(__dirname,'..','web','index.html'),'utf8');
+  console.log('review bar in modal:', idxHtml.includes('id="reviewBar"')&&idxHtml.includes('入案例库'));
+  console.log('submitReview defined:', typeof T.submitReview==='function');
+  // reviewBar 初始隐藏，generateReport 成功后才显示
+  console.log('reviewBar hidden initially:', !els['reviewBar'] || !els['reviewBar'].classList.contains('on'));
   process.exit(0);
 })().catch(e=>{ console.error('SMOKE FAIL:', e); process.exit(1); });
