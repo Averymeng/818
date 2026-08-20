@@ -480,14 +480,16 @@ def search_cases(conn, industry=None, sector=None, category=None, signature_term
              LEFT JOIN category k ON k.id=dc.category_id
              WHERE dc.referenceable=1 AND dc.status!='badcase'"""
     args = []
-    if industry:
-        sql += " AND i.name LIKE ?"
-        args.append(f"%{industry}%")
     if sector:
+        # 赛道命中即可召回（放宽原「行业+赛道+签名」同时 AND，提升第6章召回率）
         sql += " AND s.name LIKE ?"
         args.append(f"%{sector}%")
-    if signature_terms:
-        # 归一化后再 LIKE，口径与入库签名（中文）一致
+    elif industry:
+        # 无赛道维度时退化为行业匹配
+        sql += " AND i.name LIKE ?"
+        args.append(f"%{industry}%")
+    if signature_terms and not sector:
+        # 归一化后再 LIKE，口径与入库签名（中文）一致；仅无赛道时作为补充过滤
         terms = [norm_sig_term(t) for t in signature_terms if t]
         like = " OR ".join("dc.anomaly_signature LIKE ?" for _ in terms)
         sql += f" AND ({like})"

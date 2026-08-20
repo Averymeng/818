@@ -746,6 +746,10 @@ async function doIngestForm(){
     if(i>=0){ curIdx=i; openDetail(i); }
     await generateReport();                          // 自动 LLM 诊断
     res.textContent='录入成功：'+JSON.stringify(out)+'\n诊断报告已生成（见弹层）。';
+    // 清空录入表单，便于下一次录入（日期复位为今天）
+    ['iName','iInd','iSec','iCat','iSpend','iImp','iNc','iBc','iOpen','iLead']
+      .forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
+    const iDate=document.getElementById('iDate'); if(iDate) iDate.value=todayStr();
   }catch(e){
     res.textContent='请求失败：'+(e.message||e);
   }
