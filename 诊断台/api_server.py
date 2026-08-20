@@ -313,6 +313,8 @@ METRIC_CN = {"CPM": "CPM", "CTR": "CTR", "CPC": "CPC", "button_rate": "按钮率
              "open_rate": "开口率", "lead_rate": "留资率", "lead_cvr": "留资转化率",
              "open_cost": "开口成本", "lead_cost": "留资成本"}
 LAYER_CN = {"placement": "版位", "plan": "计划", "note": "笔记", "funnel": "漏斗"}
+# 比率类指标（派生值为小数，渲染时需 ×100 并补 %）
+RATE_METRICS = {"CTR", "button_rate", "open_rate", "lead_rate", "lead_cvr"}
 
 
 def _esc(s):
@@ -321,6 +323,8 @@ def _esc(s):
 
 def _trend_svg(t, mname):
     """第 3 章趋势折线图（与站内当日监控分面小图同款视觉：折线+均值虚线+端点标注+斜放横轴）"""
+    if not isinstance(t, dict):
+        return ""
     daily = [d for d in (t.get("daily") or []) if d.get("value") is not None]
     if len(daily) < 2:
         return ""
@@ -389,35 +393,44 @@ def render_report_html(report):
             chg = f"{(cur-prev)/prev*100:+.1f}%"
         else:
             chg = "—"
-        rows += f"<tr><td>{esc(METRIC_CN.get(k, k))}</td><td>{_num(cur)}</td><td>{_num(prev)}</td><td>{chg}</td></tr>"
+        cfmt = lambda v: f"{v*100:.2f}%" if isinstance(v, (int, float)) else "—"
+        ccur = cfmt(cur) if k in RATE_METRICS else _num(cur)
+        cprev = cfmt(prev) if k in RATE_METRICS else _num(prev)
+        rows += f"<tr><td>{esc(METRIC_CN.get(k, k))}</td><td>{ccur}</td><td>{cprev}</td><td>{chg}</td></tr>"
 
     layer_html = "".join(
         f"<div class='item'><b>{esc(LAYER_CN.get(x.get('layer'), x.get('layer')))}</b> · <span class='st'>{esc(x.get('status'))}</span>"
         f"<p>{esc(x.get('judgement',''))}</p></div>" for x in layers)
 
-    anom_html = "".join(
-        f"<div class='item'><b>{x.get('rank')} {esc(x.get('location'))}</b>"
-        f"<p>{esc(x.get('reason',''))}</p><ul>"
-        + "".join(f"<li>{esc(e)}</li>" for e in x.get("evidence", []))
-        + "</ul></div>" for x in anomalies.get("top3_detail", []))
+    td = anomalies.get("top3_detail", [])
+    if isinstance(td, str):
+        anom_html = f"<p>{esc(td)}</p>"
+    elif isinstance(td, list):
+        anom_html = "".join(
+            f"<div class='item'><b>{x.get('rank')} {esc(tools.norm_report_text(x.get('location','')))}</b>"
+            f"<p>{esc(tools.norm_report_text(x.get('reason','')))}</p><ul>"
+            + "".join(f"<li>{esc(tools.norm_report_text(e))}</li>" for e in x.get("evidence", []))
+            + "</ul></div>" for x in td)
+    else:
+        anom_html = ""
 
     case_html = ""
     if cases.get("cases"):
-        case_html = "".join(f"<div class='item'>{esc(c)}</div>" for c in cases["cases"])
+        case_html = "".join(f"<div class='item'>{esc(tools.norm_report_text(str(c)))}</div>" for c in cases["cases"])
     else:
         case_html = f"<p class='muted'>{esc(cases.get('note', '暂无可引用案例'))}</p>"
 
     sug_html = "".join(
         f"<div class='item'><span class='tag {esc(x.get('priority',''))}'>{esc(x.get('priority'))}</span>"
-        f"<p>{esc(x.get('text',''))}</p><p class='muted'>依据：{esc(x.get('basis',''))}</p></div>"
+        f"<p>{esc(tools.norm_report_text(x.get('text','')))}</p><p class='muted'>依据：{esc(tools.norm_report_text(x.get('basis','')))}</p></div>"
         for x in suggests)
 
     act_rows = "".join(
-        f"<tr><td>{esc(x.get('action',''))}</td><td>{esc(x.get('date',''))}</td>"
-        f"<td>{esc(x.get('expect_metric',''))}</td></tr>" for x in actions)
+        f"<tr><td>{esc(tools.norm_report_text(x.get('action','')))}</td><td>{esc(x.get('date',''))}</td>"
+        f"<td>{esc(tools.norm_report_text(x.get('expect_metric','')))}</td></tr>" for x in actions)
 
     top3_html = "".join(
-        f"<li>{esc(x.get('location'))}：{_pct(x.get('change', 0))}（权重 {x.get('weight')}）</li>"
+        f"<li>{esc(tools.norm_report_text(x.get('location','')))}：{_pct(x.get('change', 0))}（权重 {x.get('weight')}）</li>"
         for x in concl.get("top3", []))
 
     status = report.get("overall_status", concl.get("overall_status", ""))
@@ -445,6 +458,9 @@ td{{padding:7px 8px;border-bottom:1px solid #E9EDF5;}}
 .trendbox{{margin:10px 0 4px;}}
 .trendhead{{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;}}
 .trendbox svg{{width:100%;height:auto;}}
+.trend-pair{{display:flex;gap:14px;}}
+.trend-pair > div{{flex:1;min-width:0;}}
+@media(max-width:640px){{.trend-pair{{flex-direction:column;}}}}
 .ax{{font-size:10px;fill:#94A3B8;}}
 .status{{display:inline-block;padding:2px 10px;border-radius:20px;font-weight:800;font-size:12px;}}
 .status.需行动{{background:#FEE4E2;color:#B42318;}} .status.观察{{background:#FEF0C7;color:#B54708;}} .status.正常{{background:#D1FADF;color:#027A48;}}
@@ -454,12 +470,12 @@ td{{padding:7px 8px;border-bottom:1px solid #E9EDF5;}}
 <div class="meta">周期 {esc(cover.get('period',''))} · 生成于 {esc(cover.get('generated_at',''))}</div></div>
 <div class="card"><h3>① 核心结论</h3>
 <p><span class="status {esc(status)}">{esc(status)}</span> 数据状态：{esc(concl.get('data_status',''))}</p>
-<p>{esc(concl.get('summary',''))}</p>
+<p>{esc(tools.norm_report_text(concl.get('summary','')))}</p>
 <ul>{top3_html}</ul></div>
 <div class="card"><h3>② 指标与趋势</h3>
 <table><thead><tr><th>指标</th><th>本期</th><th>上期</th><th>环比</th></tr></thead><tbody>{rows}</tbody></table>
-{_trend_svg(metrics.get('trend_spend'), '消耗')}
-{_trend_svg(metrics.get('trend_14d'), METRIC_CN.get(metrics.get('trend_metric')) or metrics.get('trend_metric') or '目标成本')}</div>
+<div class="trend-pair">{_trend_svg(metrics.get('trend_spend'), '消耗')}
+{_trend_svg(metrics.get('trend_14d'), METRIC_CN.get(metrics.get('trend_metric')) or metrics.get('trend_metric') or '目标成本')}</div></div>
 <div class="card"><h3>③ 分层诊断</h3>{layer_html or "<p class='muted'>无</p>"}</div>
 <div class="card"><h3>④ 异常与原因</h3>{anom_html or "<p class='muted'>无明显异常</p>"}</div>
 <div class="card"><h3>⑤ 案例参考</h3>{case_html}</div>

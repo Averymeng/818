@@ -373,6 +373,11 @@ function reportTrendChart(t, mName){
     +'</svg></div>';
 }
 
+function normReportText(s){
+  if(typeof s!=='string') return s;
+  return s.replace(/open_cost/g,'开口成本').replace(/lead_cost/g,'留资成本')
+          .replace(/feed/g,'信息流').replace(/search/g,'搜索');
+}
 function renderReportModal(report, c){
   const ch=(report&&report.chapters)||{};
   const cover=ch['1_封面']||{}, concl=ch['2_核心结论']||{}, metrics=ch['3_指标与趋势']||{},
@@ -382,13 +387,16 @@ function renderReportModal(report, c){
   let h='';
   h+='<div class="chapter"><h4>① 封面</h4><p>'+esc(cover.customer||c.name)+' · '+esc(cover.industry||c.ind)+' / '+esc(cover.sector||'')+' / '+esc((cover.categories||[]).join('、'))+'</p><p class="muted">周期 '+esc(cover.period||'')+' · 生成于 '+esc(cover.generated_at||'')+'</p></div>';
   const status=report.overall_status||concl.overall_status||'';
-  h+='<div class="chapter"><h4>② 核心结论</h4><p><span class="tag">'+esc(status)+'</span>数据状态：'+esc(concl.data_status||'')+'</p><p>'+esc(concl.summary||'')+'</p>'
-    +((concl.top3||[]).length?'<ul>'+concl.top3.map(x=>'<li>'+esc(x.location)+'：'+(typeof x.change==='number'?((x.change*100).toFixed(1)+'%'):esc(x.change))+'</li>').join('')+'</ul>':'')+'</div>';
+  h+='<div class="chapter"><h4>② 核心结论</h4><p><span class="tag">'+esc(status)+'</span>数据状态：'+esc(concl.data_status||'')+'</p><p>'+esc(normReportText(concl.summary||''))+'</p>'
+    +((concl.top3||[]).length?'<ul>'+concl.top3.map(x=>'<li>'+esc(normReportText(x.location||''))+'：'+(typeof x.change==='number'?((x.change*100).toFixed(1)+'%'):esc(x.change))+'</li>').join('')+'</ul>':'')+'</div>';
+  const RATE_METRICS=new Set(['CTR','button_rate','open_rate','lead_rate','lead_cvr']);
   let mrows='';
   Object.keys(mc).forEach(k=>{
     const cur=mc[k], prev=mp[k];
     const chg=(typeof cur==='number'&&typeof prev==='number'&&prev)?(((cur-prev)/prev*100).toFixed(1)+'%'):'—';
-    const f=v=>(typeof v==='number')?(Math.abs(v)>=100?Math.round(v).toLocaleString('en-US'):v.toFixed(2)):'—';
+    const f=v=>{ if(typeof v!=='number') return '—';
+                 if(RATE_METRICS.has(k)) return (v*100).toFixed(2)+'%';
+                 return (Math.abs(v)>=100?Math.round(v).toLocaleString('en-US'):v.toFixed(2)); };
     mrows+='<tr><td>'+esc(METRIC_CN[k]||k)+'</td><td>'+f(cur)+'</td><td>'+f(prev)+'</td><td>'+chg+'</td></tr>';
   });
   const tName=METRIC_CN[metrics.trend_metric]||metrics.trend_metric||'目标成本';
@@ -396,9 +404,10 @@ function renderReportModal(report, c){
   const chartCost=reportTrendChart(metrics.trend_14d,tName);
   h+='<div class="chapter"><h4>③ 指标与趋势</h4>'+(mrows?'<table><thead><tr><th>指标</th><th>本期</th><th>上期</th><th>环比</th></tr></thead><tbody>'+mrows+'</tbody></table>':'<p class="muted">无</p>')+'<div class="report-trend-pair">'+chartSpend+chartCost+'</div></div>';
   h+='<div class="chapter"><h4>④ 分层诊断</h4>'+((layers||[]).length?layers.map(x=>'<div class="item"><span class="tag">'+esc(LAYER_CN[x.layer]||x.layer)+'</span><b>'+esc(x.status)+'</b><p style="margin:4px 0 0;">'+esc(x.judgement||'')+'</p></div>').join(''):'<p class="muted">无</p>')+'</div>';
-  h+='<div class="chapter"><h4>⑤ 异常与原因</h4>'+(((anomalies.top3_detail)||[]).length?anomalies.top3_detail.map(x=>'<div class="item"><b>'+x.rank+' '+esc(x.location)+'</b><p>'+esc(x.reason||'')+'</p>'+((x.evidence||[]).length?'<ul>'+x.evidence.map(e=>'<li>'+esc(e)+'</li>').join('')+'</ul>':'')+'</div>').join(''):'<p class="muted">无明显异常</p>')+'</div>';
-  h+='<div class="chapter"><h4>⑥ 案例参考</h4>'+(((cases.cases)||[]).length?cases.cases.map(x=>'<div class="item">'+esc(typeof x==='string'?x:JSON.stringify(x))+'</div>').join(''):'<p class="muted">'+esc(cases.note||'暂无可引用案例')+'</p>')+'</div>';
-  h+='<div class="chapter"><h4>⑦ 优化建议</h4>'+((suggests||[]).length?suggests.map(x=>'<div class="item">'+(x.priority?'<span class="ptag '+esc(x.priority)+'">'+esc(x.priority)+'</span>':'')+'<p>'+esc(x.text||'')+'</p>'+(x.basis?'<p class="muted">依据：'+esc(x.basis)+'</p>':'')+'</div>').join(''):'<p class="muted">正常周无待办建议</p>')+'</div>';
+  const top3detail = Array.isArray(anomalies.top3_detail) ? anomalies.top3_detail : [];
+  h+='<div class="chapter"><h4>⑤ 异常与原因</h4>'+(top3detail.length?top3detail.map(x=>'<div class="item"><b>'+x.rank+' '+esc(normReportText(x.location||''))+'</b><p>'+esc(normReportText(x.reason||''))+'</p>'+((x.evidence||[]).length?'<ul>'+x.evidence.map(e=>'<li>'+esc(normReportText(e))+'</li>').join('')+'</ul>':'')+'</div>').join(''):'<p class="muted">无明显异常</p>')+'</div>';
+  h+='<div class="chapter"><h4>⑥ 案例参考</h4>'+(((cases.cases)||[]).length?cases.cases.map(x=>'<div class="item">'+esc(normReportText(typeof x==='string'?x:JSON.stringify(x)))+'</div>').join(''):'<p class="muted">'+esc(cases.note||'暂无可引用案例')+'</p>')+'</div>';
+  h+='<div class="chapter"><h4>⑦ 优化建议</h4>'+((suggests||[]).length?suggests.map(x=>'<div class="item">'+(x.priority?'<span class="ptag '+esc(x.priority)+'">'+esc(x.priority)+'</span>':'')+'<p>'+esc(normReportText(x.text||''))+'</p>'+(x.basis?'<p class="muted">依据：'+esc(normReportText(x.basis||''))+'</p>':'')+'</div>').join(''):'<p class="muted">正常周无待办建议</p>')+'</div>';
   h+='<div class="chapter"><h4>⑧ 行动计划</h4>'+((actions||[]).length?'<table><thead><tr><th>行动</th><th>日期</th><th>预期指标</th></tr></thead><tbody>'+actions.map(x=>'<tr><td>'+esc(x.action||'')+'</td><td>'+esc(x.date||'')+'</td><td>'+esc(x.expect_metric||'')+'</td></tr>').join('')+'</tbody></table>':'<p class="muted">无行动计划</p>')
     +'<p class="muted" style="margin-top:8px;">LLM 调用 '+esc(report.llm_calls!=null?report.llm_calls:'-')+' 次 · 成本 ¥'+esc(report.llm_cost_yuan!=null?report.llm_cost_yuan:'-')+'</p></div>';
   document.getElementById('mBody').innerHTML=h;

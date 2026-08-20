@@ -21,6 +21,8 @@ from metrics import derive_metrics, pct_change, agg_row
 
 # 报告文本归一化：修正维度英文名、贡献度小数、delta 单位，保证展示一致
 PLACEMENT_CN = {"feed": "信息流", "search": "搜索"}
+# 指标英文名→中文（用于归一化 LLM/摘要文本，避免正文残留 open_cost/lead_cost 等）
+METRIC_TEXT_CN = {"open_cost": "开口成本", "lead_cost": "留资成本"}
 _CONTRIB_RE = re.compile(r"贡献度\s*(\d+(?:\.\d+)?)(?!%)")
 _DELTA_RE = re.compile(r"delta\s*([+-]?\d[\d.]+)")
 
@@ -30,6 +32,8 @@ def norm_report_text(s):
     if not isinstance(s, str):
         return s
     for en, cn in PLACEMENT_CN.items():
+        s = s.replace(en, cn)
+    for en, cn in METRIC_TEXT_CN.items():
         s = s.replace(en, cn)
     s = _CONTRIB_RE.sub(lambda m: "贡献度{:.2f}%".format(float(m.group(1)) * 100), s)
     s = _DELTA_RE.sub(lambda m: "变化 ¥{}".format(m.group(1)), s)
