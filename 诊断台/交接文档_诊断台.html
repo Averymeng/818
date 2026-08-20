@@ -499,7 +499,7 @@ cd 诊断台 && python3 data/seed_customers.py</pre>
 <!-- ========== 14 ========== -->
 <section id="changelog">
   <h2>14. 操作日志（全量 commit 记录）</h2>
-  <p>以下按时间线记录所有 git commit（截至 <code>377a678</code>，共 67 次）。<span class="pill p-acc">记忆</span> 标记的为纯记忆日志 commit，<span class="pill p-warn">决策日志</span> 为决策记录 commit，无代码变更但记录了思路上下文。</p>
+  <p>以下按时间线记录所有 git commit（截至 <code>0c99d42</code>，共 97 次）。<span class="pill p-acc">记忆</span> 标记的为纯记忆日志 commit，<span class="pill p-warn">决策日志</span> 为决策记录 commit，无代码变更但记录了思路上下文。</p>
 
   <h3>14.1 Phase 1：Agent 核心搭建（8/18 20:53 — 8/18 22:35）</h3>
   <table>
@@ -612,6 +612,19 @@ cd 诊断台 && python3 data/seed_customers.py</pre>
     <tr><td><code>377a678</code></td><td>8/20 09:00</td><td><strong>审核闭环打通（RAG 飞轮入库口）</strong>：报告审核通过自动沉淀进 diag_case 案例库。review_actions.py 新增 promote_to_case()（从 report_json 第 5 章 top3_detail 提取 anomaly_signature+key_evidence，第 7/8 章提取 action_taken，幂等）与 record_badcase()（驳回理由入 diag_badcase，status=open）；api_server.py 新增 POST /api/review；POST /api/report 返回 report_id+case_count；前端报告弹层新增审核条（通过入案例库 / 驳回必填理由，显示案例库条数）；smoke 测试新增审核断言，零成本评测 122/122 仍通过</td><td>agent/review_actions.py, api_server.py, web/index.html, web/app.js, web/style.css, tests/smoke_web.js</td></tr>
     <tr><td><code>9be87c9</code></td><td>8/20 09:55</td><td><strong>周报呈现四项修改</strong>（用户大白话需求）：①指标表后六项中文名（button_rate→按钮率等，METRIC_CN 渲染层映射）②分层诊断层级中文（plan→计划等）+ judgement 细化为带数字表达（"在投笔记数 12→8（-4篇/-33.3%），触发基建异动门槛"）③异常与原因去掉"置信度 高"显示（confidence 字段保留供权重计算，仅不展示）④第 3 章新增近 14 天目标成本折线图（站内弹层 reportTrendChart + 分享 HTML _trend_svg，与当日监控分面小图同款视觉）。system_prompt.md 新增全中文命名红线+证据具体性红线。重要认知：八章节由代码组装，英文残留非 LLM 输出而是渲染层直接显示数据字段名——光改 prompt 改不动，需渲染层同步改</td><td>agent/system_prompt.md, agent/orchestrator.py, agent/tools.py, api_server.py, web/app.js</td></tr>
     <tr><td><code>aa816ab</code></td><td>8/20 10:30</td><td><strong>周报呈现再优化（用户确认执行）</strong>：①第 3 章改为两张折线图（消耗趋势 + 目标成本趋势）②异常与原因去掉序号 # 前缀 ③文本归一化_search→搜索版位、feed→信息流、贡献度裸小数→百分数（如 1.3036→130.36%）、delta→带货币单位（如 delta -245.92→变化 ¥-245.92）；prompt 口径标签红线强化。根因修复：get_trend 只支持派生指标导致消耗趋势全 None（derive_metrics 不返回原始 spend），新增原始量纲支持；端到端生成报告验证双图出现、无 #、无裸小数。零成本评测 122/122 通过</td><td>agent/tools.py, agent/orchestrator.py, api_server.py, web/app.js, agent/system_prompt.md</td></tr>
+    <tr><td><code>c6681fb</code></td><td>8/20 10:45</td><td><strong>修复分享链接复制按钮白底白字 + 报告趋势图并排</strong>：.report-actions .link button 单独设 ink 色避免白底白字；报告弹层第 3 章消耗趋势+目标成本趋势两张 SVG 由上下堆叠改并排（.report-trend-pair flex，响应式转纵向）</td><td>web/style.css, api_server.py</td></tr>
+    <tr><td><code>4be9f39</code></td><td>8/20 10:47</td><td><span class="pill p-acc">记忆</span> 记录分享链接按钮与趋势图并排修复</td><td>.workbuddy/memory/</td></tr>
+    <tr><td><code>27614b4</code></td><td>8/20 11:03</td><td><strong>网站产出检查清单</strong>：零成本核验（全站卡片+报告输出）+ 人工勾选项</td><td>outputs/网站产出检查清单_2026-08-20.html</td></tr>
+    <tr><td><code>3cf9137</code></td><td>8/20 11:03</td><td><span class="pill p-acc">记忆</span> 记录节省积分偏好（零成本优先）</td><td>.workbuddy/memory/</td></tr>
+    <tr><td><code>1a1c2ed</code></td><td>8/20 11:38</td><td><strong>修复卡片点击错位</strong>：applyFilter 渲染 list 索引传给 openDetail 取全局 CUSTOMERS 导致错客户；改传 customer_id + 新增 openDetailById 定位</td><td>web/app.js</td></tr>
+    <tr><td><code>958a42e</code></td><td>8/20 11:39</td><td><span class="pill p-acc">记忆</span> 记录卡片点击修复完成</td><td>.workbuddy/memory/</td></tr>
+    <tr><td><code>14c9110</code></td><td>8/20 12:12</td><td><span class="pill p-acc">记忆</span> 记录本地开发服务器持久化（后台任务回收）+ 重启日志</td><td>.workbuddy/memory/</td></tr>
+    <tr><td><code>3277293</code></td><td>8/20 12:24</td><td><span class="pill p-acc">记忆</span> 记录 Gemini 复核悦颜报告 + 我的核验结论</td><td>.workbuddy/memory/</td></tr>
+    <tr><td><code>70681e6</code></td><td>8/20 12:45</td><td><strong>修复报告英文残留 + 比率补% + 分享页趋势并排</strong>：核心结论残留 open_cost/lead_cost→开口成本/留资成本（tools.norm_report_text 新增 METRIC_TEXT_CN，summary/top3/异常/建议/案例/行动计划全文本归一化）；比率类指标纯小数漏%→×100 补%；分享页两张趋势图包 .trend-pair 并排；_trend_svg 加 None 防护、top3_detail 兼容 str/list</td><td>agent/tools.py, api_server.py, web/app.js</td></tr>
+    <tr><td><code>b288644</code></td><td>8/20 12:46</td><td><span class="pill p-acc">记忆</span> 记录报告英文残留/比率%/趋势并排修复</td><td>.workbuddy/memory/</td></tr>
+    <tr><td><code>5997cbc</code></td><td>8/20 13:12</td><td><strong>审核重复入库 bug 修复</strong>：promote_to_case 改为按 (customer_id + 归一化签名) 去重（报告 JSON 存原始英文、显示层才归一化，去重需自行再归一化）；清理 customer_id=44 重复案例（6→5）；前端 /api/report 返回 customer_has_case，已入案例库则审核条置灰锁死</td><td>agent/review_actions.py, api_server.py, web/app.js</td></tr>
+    <tr><td><code>de76f8f</code></td><td>8/20 13:12</td><td><span class="pill p-acc">记忆</span> 记录审核重复入库 bug 根因与去重修复</td><td>.workbuddy/memory/</td></tr>
+    <tr><td><code>0c99d42</code></td><td>8/20 13:42</td><td><strong>promote_to_case 兼容 str/list 防崩溃 + 批量补案例库</strong>：修复 promote_to_case 对 top3_detail/行动计划 str 元素崩溃（空壳报告"待 LLM 归因"）；批量将 25 份真实 draft 报告入 diag_case（排除 28 份空壳），案例库 5→20 条、去重客户 11，新增 15 跳过 10；本次提交为代码健壮性修复，批量入库为一次性数据操作</td><td>agent/review_actions.py</td></tr>
   </table>
 
   <div class="callout">
