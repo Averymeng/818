@@ -26,6 +26,13 @@
 - 模型选择：积分有限时优先用 Hy3（若限时免费 0.00×），否则选 MiniMax-M3（0.25×），避开 Kimi-K3（1.62×）；报告类真实生成仅在用户明确要验收内容时才触发。
 - 用户明确「先回答/先改好不要执行」的回合，遵守不打实际命令、不改文件；确认后再动手。
 
+## 本地开发服务器持久化说明（2026-08-20）
+- `诊断台/api_server.py` 是本地开发服务器（`http://127.0.0.1:8000`），**不是常驻后台服务**。`run_in_background` 启动的任务会在后台运行，但可能被环境回收，导致一段时间后浏览器出现 `ERR_CONNECTION_REFUSED`。
+- 浏览器若走代理，访问 `127.0.0.1` 也可能返回 502；可尝试在代理设置中添加 bypass `127.0.0.1, localhost`，或直接用无代理 curl 验证：
+  `curl --noproxy '*' http://127.0.0.1:8000/`
+- 手动重启命令：`cd /Users/zerzerrr/WorkBuddy/2026-08-18-14-34-17/诊断台 && python3 api_server.py`
+- 长期稳定方案：将 Flask 后端部署到 Python 运行环境的主机，而不是依赖本地 `http.server`。
+
 ## 非阻塞待办 / 下一阶段（2026-08-19 重排）
 - CI 自动回归 **已完成**（ci_check.py + GitHub Actions，替代原 A/B 手动门槛；`git log` 见 df56310）。
 - **Phase 1 = 参考案例库(RAG) + 独立 badcase 库 = 已完成（2026-08-19 交付）**：`search_cases` 工具(code/agent/tools.py) 原本已实现（按行业/赛道/品类/signature 召回 diag_case，自动过滤 badcase），本次把 `diag_case` 净化为纯 referenceable=1 参考案例（eval/seed_cases.py 移除 badcase 行）；**新建 `diag_badcase` 表**(db/schema.sql) 物理独立，`data/seed_badcase.py` 把评测期 3 缺陷(周值日值混淆/依据不可核验/观察清单漏项)首批入库。注：原 system_prompt 用 referenceable=0 逻辑隔离，用户要的是物理分表，现已达成。
