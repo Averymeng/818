@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>诊断台 · 产出检查清单 2026-08-20</title>
+<style>
+  body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#F8F9FC;color:#1F2937;margin:0;padding:24px;}
+  .wrap{max-width:860px;margin:0 auto;}
+  h1{font-size:20px;margin-bottom:6px;}
+  .sub{color:#94A3B8;font-size:13px;margin-bottom:20px;}
+  .card{background:#fff;border:1px solid #E9EDF5;border-radius:12px;padding:16px;margin-bottom:14px;}
+  .card h2{font-size:14px;color:#1E6FD9;margin:0 0 10px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{padding:8px 10px;border-bottom:1px solid #E9EDF5;text-align:left;vertical-align:top;}
+  th{color:#94A3B8;font-size:11px;}
+  .badge{display:inline-block;padding:1px 8px;border-radius:20px;font-size:11px;font-weight:700;}
+  .ok{background:#D1FADF;color:#027A48;}
+  .warn{background:#FEF0C7;color:#B54708;}
+  .tick{font-size:13px;color:#475569;}
+  .note{font-size:12px;color:#94A3B8;margin-top:6px;}
+  .num{font-variant-numeric:tabular-nums;text-align:right;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>诊断台 · 产出检查清单</h1>
+  <div class="sub">生成于 2026-08-20 · 采用零成本方式（零成本评测 + 接口核验，未触发额外 LLM 消耗）</div>
+
+  <div class="card">
+    <h2>一、数据层 / 卡片数据源</h2>
+    <table>
+      <tr><th>检查项</th><th>结果</th><th>明细</th></tr>
+      <tr><td>客户总数</td><td><span class="badge ok">OK</span></td><td class="num">50</td></tr>
+      <tr><td>日度明细覆盖客户</td><td><span class="badge ok">OK</span></td><td class="num">50（daily_metric 含 50 客）</td></tr>
+      <tr><td>数据最新日期</td><td><span class="badge ok">OK</span></td><td class="num">2026-08-20（已刷新到今天）</td></tr>
+      <tr><td>/api/customers 接口</td><td><span class="badge ok">OK</span></td><td class="tick">返回 50 条，字段 industry/sector/categories 完整</td></tr>
+      <tr><td>/api/daily 接口</td><td><span class="badge ok">OK</span></td><td class="tick">50 客户端×日期聚合，含 CTR/按钮率/留资CVR/CPC/CPL 派生</td></tr>
+      <tr><td>/api/base 基建情况</td><td><span class="badge ok">OK</span></td><td class="tick">在投笔记 1080、在投计划 309、新投笔记 19，非空</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>二、报告链路（零成本评测）</h2>
+    <table>
+      <tr><th>检查项</th><th>结果</th><th>明细</th></tr>
+      <tr><td>硬断言（L1–L8 + 横切 E24 75 条）</td><td><span class="badge ok">OK</span></td><td class="num">122/122 通过</td></tr>
+      <tr><td>CI 静态回归（ci_check.py）</td><td><span class="badge ok">OK</span></td><td class="tick">committed 122/122 + 横切扫描全过</td></tr>
+      <tr><td>八章节结构完整性</td><td><span class="badge ok">OK</span></td><td class="tick">封面/结论/指标趋势/分层/异常/案例/建议/行动 齐全</td></tr>
+      <tr><td>中文命名（指标/层级）</td><td><span class="badge ok">OK</span></td><td class="tick">button_rate→按钮率；placement→版位/plan→计划/note→笔记/funnel→漏斗</td></tr>
+      <tr><td>异常章节序号 #</td><td><span class="badge ok">OK</span></td><td class="tick">已去除</td></tr>
+      <tr><td>双趋势图（消耗+目标成本）</td><td><span class="badge ok">OK</span></td><td class="tick">已并排，响应式</td></tr>
+      <tr><td>文本归一化</td><td><span class="badge ok">OK</span></td><td class="tick">search→搜索版位、贡献度→%、delta→¥ 单位</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>三、需你人工勾选的视觉/业务项（无法自动判定的部分）</h2>
+    <table>
+      <tr><th>区域</th><th>待确认项</th></tr>
+      <tr><td>卡片</td><td class="tick">☐ 客户卡片「状态胶囊」颜色是否符合约定（涨红跌绿）</td></tr>
+      <tr><td>卡片</td><td class="tick">☐ KPI 环比箭头方向是否正确（涨红跌绿）</td></tr>
+      <tr><td>卡片</td><td class="tick">☐ 详情页趋势小图 X 轴标签是否清晰不重叠</td></tr>
+      <tr><td>报告</td><td class="tick">☐ 弹层双趋势图并排后是否过于拥挤</td></tr>
+      <tr><td>报告</td><td class="tick">☐ 分享链接「复制链接」按钮文字是否可见（已修白底白字）</td></tr>
+      <tr><td>报告</td><td class="tick">☐ 第 3 章指标表后六项中文显示无误</td></tr>
+      <tr><td>报告</td><td class="tick">☐ 分层诊断「证据」是否呈现具体数字（非「双门槛」占位）</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>四、RAG / 案例库现状</h2>
+    <table>
+      <tr><th>项</th><th>数量</th><th>说明</th></tr>
+      <tr><td>diag_case（案例库 / RAG）</td><td class="num">1</td><td class="tick">仅种子案例；需你审核报告「通过」后才会沉淀</td></tr>
+      <tr><td>review_task / report</td><td class="num">37 份报告（7 个客户）</td><td class="tick">报告按「手动生成 / 录入自动生成」触发，非全员自动</td></tr>
+      <tr><td>磁盘报告 HTML</td><td class="  num">4</td><td class="tick">web/reports 下可见 4 份独立分享页</td></tr>
+    </table>
+    <div class="note">「24」应为评测集设计稿中的 24 个评测场景（评测集设计稿_v2.md），并非线上客户报告数量。线上报告是按需生成，不是 50 客户全量自动跑。</div>
+  </div>
+</div>
+</body>
+</html>
