@@ -457,6 +457,20 @@ def drill_down_object(conn, obj_type, obj_id, start, end):
 
 
 # ---------------------------------------------------------------- D 类
+# 签名归一化唯一来源：报告/异常里指标与版位是原始英文（open_cost/lead_cost/feed/search），
+# 入库签名已归一化中文（见 review_actions._norm_sig，二者共用本映射）。
+# 召回时若不先归一化，open_cost/lead_cost 类签名 LIKE 匹配不上（静默漏匹配）。
+SIG_MAP_EN2CN = {"open_cost": "开口成本", "lead_cost": "留资成本",
+                 "feed": "信息流", "search": "搜索"}
+
+
+def norm_sig_term(s):
+    s = s or ""
+    for en, cn in SIG_MAP_EN2CN.items():
+        s = s.replace(en, cn)
+    return s
+
+
 def search_cases(conn, industry=None, sector=None, category=None, signature_terms=None, limit=5):
     """行业/赛道/品类/异常签名 → 可引用案例（referenceable=1 且非 badcase；差异判断由 LLM 做）"""
     sql = """SELECT dc.*, i.name industry, s.name sector, k.name category
@@ -473,9 +487,11 @@ def search_cases(conn, industry=None, sector=None, category=None, signature_term
         sql += " AND s.name LIKE ?"
         args.append(f"%{sector}%")
     if signature_terms:
-        like = " OR ".join("dc.anomaly_signature LIKE ?" for _ in signature_terms)
+        # 归一化后再 LIKE，口径与入库签名（中文）一致
+        terms = [norm_sig_term(t) for t in signature_terms if t]
+        like = " OR ".join("dc.anomaly_signature LIKE ?" for _ in terms)
         sql += f" AND ({like})"
-        args += [f"%{t}%" for t in signature_terms]
+        args += [f"%{t}%" for t in terms]
     sql += " ORDER BY dc.created_at DESC LIMIT ?"
     args.append(limit)
     rows = conn.execute(sql, args).fetchall()

@@ -16,18 +16,11 @@
 """
 import json
 
-# 签名归一化（与前端 normReportText / tools.norm_report_text 保持一致）：
-# 报告 JSON 里 location 是原始英文（feed/lead_cost/open_cost/search），
-# 但历史入库案例的 anomaly_signature 已归一化，必须统一口径才能正确去重。
-_SIG_MAP = {"open_cost": "开口成本", "lead_cost": "留资成本",
-            "feed": "信息流", "search": "搜索"}
-
-
-def _norm_sig(s):
-    s = s or ""
-    for en, cn in _SIG_MAP.items():
-        s = s.replace(en, cn)
-    return s
+# 签名归一化唯一来源：从 tools 复用 SIG_MAP_EN2CN / norm_sig_term，
+# 保证入库签名与 search_cases 召回口径一致（避免 open_cost/lead_cost 类静默漏匹配）。
+import tools as _tools
+_SIG_MAP = _tools.SIG_MAP_EN2CN
+_norm_sig = _tools.norm_sig_term
 
 
 def _resolve_report(conn, report_id):
