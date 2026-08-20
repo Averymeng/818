@@ -67,7 +67,7 @@
         {
           "name": "dry-run ×2 指纹一致",
           "ok": true,
-          "detail": "overall=正常/正常 fp=bf6b11e3"
+          "detail": "overall=正常/正常 fp=bd80ae49"
         }
       ]
     },

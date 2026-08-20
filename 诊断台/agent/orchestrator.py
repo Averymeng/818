@@ -178,10 +178,14 @@ class ReviewOrchestrator:
         trend = self._call(s3, "get_trend", customer_id=customer_id, metric=target_metric, days=14, end=ce)
         self.context["trend"] = trend
         self.context["trend_metric"] = target_metric
+        # 第 3 章双趋势：消耗趋势（单独取 spend 序列）
+        spend_trend = self._call(s3, "get_trend", customer_id=customer_id, metric="spend", days=14, end=ce)
+        self.context["trend_spend"] = spend_trend
         layers = self._layer_diagnosis(degraded)
         for lay in layers:
+            lay["judgement"] = tools.norm_report_text(lay["judgement"])
             self.conn.execute(
-                "INSERT INTO layer_diagnosis(task_id, layer, status, judgement, evidence_json) VALUES (?,?,?,?,?)",
+                "INSERT INTO layer_diagnosis(task_id, layer,  status, judgement, evidence_json) VALUES (?,?,?,?,?)",
                 (self.task_id, lay["layer"], lay["status"], lay["judgement"], _s(lay["evidence"])))
         self.conn.commit()
         self._step("layer_diagnosis", "done", output_summary={"layers": {l["layer"]: l["status"] for l in layers}})
@@ -416,7 +420,8 @@ class ReviewOrchestrator:
         diag = plan.get("diagnosis") if isinstance(plan, dict) else None
         diag = diag if isinstance(diag, dict) else {}
         self.context["llm_summary"] = diag.get("summary") or plan.get("summary") or plan.get("conclusion") or "（下钻未生成摘要）"
-        self.context["llm_top3_detail"] = diag.get("top3_events") or plan.get("top3_events") or plan.get("top3_detail") or []
+        self.context["llm_top3_detail"] = [tools.norm_top3(x) for x in
+                                            (diag.get("top3_events") or plan.get("top3_events") or plan.get("top3_detail") or [])]
         # LLM 指定的深挖对象执行 drill_down_object（每个 ≤1 次）
         for d in (diag.get("drill_next") or plan.get("drill_next") or [])[:2]:
             res = self._call(step_seq, "drill_down_object", obj_type=d.get("obj_type", "note"),

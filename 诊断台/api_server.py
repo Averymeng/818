@@ -319,9 +319,8 @@ def _esc(s):
     return str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
-def _trend_svg(metrics):
+def _trend_svg(t, mname):
     """第 3 章趋势折线图（与站内当日监控分面小图同款视觉：折线+均值虚线+端点标注+斜放横轴）"""
-    t = metrics.get("trend_14d") or {}
     daily = [d for d in (t.get("daily") or []) if d.get("value") is not None]
     if len(daily) < 2:
         return ""
@@ -354,7 +353,6 @@ def _trend_svg(metrics):
     dots = "".join(
         f"<circle cx='{X(i):.1f}' cy='{Y(v):.1f}' r='2.2' fill='#1E6FD9' opacity='{1 if i == len(vals)-1 else 0.45}'/>"
         for i, v in enumerate(vals))
-    mname = METRIC_CN.get(metrics.get("trend_metric")) or metrics.get("trend_metric") or "目标成本"
     return (f"<div class='trendbox'><div class='trendhead'><span>近14天{_esc(mname)}趋势</span>"
             f"<span class='muted'>均值 ¥{fv(avg)}</span></div>"
             f"<svg viewBox='0 0 {W} {H}'>"
@@ -398,7 +396,7 @@ def render_report_html(report):
         f"<p>{esc(x.get('judgement',''))}</p></div>" for x in layers)
 
     anom_html = "".join(
-        f"<div class='item'><b>#{x.get('rank')} {esc(x.get('location'))}</b>"
+        f"<div class='item'><b>{x.get('rank')} {esc(x.get('location'))}</b>"
         f"<p>{esc(x.get('reason',''))}</p><ul>"
         + "".join(f"<li>{esc(e)}</li>" for e in x.get("evidence", []))
         + "</ul></div>" for x in anomalies.get("top3_detail", []))
@@ -460,7 +458,8 @@ td{{padding:7px 8px;border-bottom:1px solid #E9EDF5;}}
 <ul>{top3_html}</ul></div>
 <div class="card"><h3>② 指标与趋势</h3>
 <table><thead><tr><th>指标</th><th>本期</th><th>上期</th><th>环比</th></tr></thead><tbody>{rows}</tbody></table>
-{_trend_svg(metrics)}</div>
+{_trend_svg(metrics.get('trend_spend'), '消耗')}
+{_trend_svg(metrics.get('trend_14d'), METRIC_CN.get(metrics.get('trend_metric')) or metrics.get('trend_metric') or '目标成本')}</div>
 <div class="card"><h3>③ 分层诊断</h3>{layer_html or "<p class='muted'>无</p>"}</div>
 <div class="card"><h3>④ 异常与原因</h3>{anom_html or "<p class='muted'>无明显异常</p>"}</div>
 <div class="card"><h3>⑤ 案例参考</h3>{case_html}</div>

@@ -13,10 +13,41 @@
   - 每次调用经 ToolTracer 落库 agent_tool_call（见 orchestrator.py）
 """
 import json
+import re
 import sqlite3
 from datetime import date, datetime, timedelta
 
 from metrics import derive_metrics, pct_change, agg_row
+
+# 报告文本归一化：修正维度英文名、贡献度小数、delta 单位，保证展示一致
+PLACEMENT_CN = {"feed": "信息流", "search": "搜索"}
+_CONTRIB_RE = re.compile(r"贡献度\s*(\d+(?:\.\d+)?)(?!%)")
+_DELTA_RE = re.compile(r"delta\s*([+-]?\d[\d.]+)")
+
+
+def norm_report_text(s):
+    """归一化 LLM / 原始维度名文本：维度英文名→中文、贡献度小数→百分数、delta→带货币单位。"""
+    if not isinstance(s, str):
+        return s
+    for en, cn in PLACEMENT_CN.items():
+        s = s.replace(en, cn)
+    s = _CONTRIB_RE.sub(lambda m: "贡献度{:.2f}%".format(float(m.group(1)) * 100), s)
+    s = _DELTA_RE.sub(lambda m: "变化 ¥{}".format(m.group(1)), s)
+    return s
+
+
+def norm_top3(item):
+    """归一化 Top3 异常条目（location / reason / evidence 文本）。"""
+    if not isinstance(item, dict):
+        return item
+    item = dict(item)
+    if item.get("location"):
+        item["location"] = norm_report_text(item["location"])
+    if item.get("reason"):
+        item["reason"] = norm_report_text(item["reason"])
+    if isinstance(item.get("evidence"), list):
+        item["evidence"] = [norm_report_text(e) for e in item["evidence"]]
+    return item
 
 DB_PATH_DEFAULT = None  # 由调用方注入
 
@@ -174,7 +205,13 @@ def get_trend(conn, customer_id, metric, days, end=None):
                   SUM(button_clicks) button_clicks, SUM(open_msg) open_msg, SUM(lead_cnt) lead_cnt
            FROM daily_metric WHERE customer_id=? AND date>=? AND date<=? GROUP BY date ORDER BY date""",
         (customer_id, start, end)).fetchall()
-    daily = [{"date": r["date"], "value": derive_metrics(agg_row(r)).get(metric)} for r in rows]
+    raw_keys = {"spend", "impressions", "note_clicks", "button_clicks", "open_msg", "lead_cnt"}
+    daily = []
+    for r in rows:
+        base = derive_metrics(agg_row(r))
+        raw = agg_row(r)
+        val = base.get(metric) if metric in base else raw.get(metric)
+        daily.append({"date": r["date"], "value": val})
     vals = [x["value"] for x in daily if x["value"] is not None]
     n14 = vals[-14:] if len(vals) >= 14 else vals
     n28 = vals[-28:] if len(vals) >= 28 else vals
@@ -513,6 +550,7 @@ def assemble_report(context):
         "3_指标与趋势": {"metrics_cur": comp["metrics_cur"], "metrics_prev": comp["metrics_prev"],
                          "metrics_change": comp["metrics_change"],
                          "funnel": context.get("funnel"), "trend_14d": context.get("trend"),
+                         "trend_spend": context.get("trend_spend"),
                          "trend_metric": context.get("trend_metric")},
         "4_分层诊断": context.get("layer_diagnosis", []),
         "5_异常与原因": {"top3_detail": context.get("llm_top3_detail", "（待 LLM 归因）"),
