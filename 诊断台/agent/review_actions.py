@@ -117,8 +117,16 @@ def promote_to_case(conn, report_id):
         rj = json.loads(row["report_json"]) if row["report_json"] else {}
         ch = rj.get("chapters", {}) if isinstance(rj, dict) else {}
         top3 = ch.get("5_异常与原因", {}).get("top3_detail") or []
+        # 兼容：空壳报告 top3_detail 可能是占位字符串（如"待 LLM 归因"）
+        if isinstance(top3, str):
+            top3 = []
+        top3 = [t for t in top3 if isinstance(t, dict)]
         plan = ch.get("8_行动计划", []) or []
         sugg = ch.get("7_优化建议", []) or []
+        if isinstance(plan, str):
+            plan = []
+        if isinstance(sugg, str):
+            sugg = []
         actions = [a.get("action", "") for a in plan if isinstance(a, dict) and a.get("action")]
         actions += [s.get("text", "") for s in sugg if isinstance(s, dict) and s.get("text")]
     except Exception:
