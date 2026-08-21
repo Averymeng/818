@@ -16,3 +16,6 @@ __pycache__/
 诊断台/data/*.db
 诊断台/data/*.db-shm
 诊断台/data/*.db-wal
+
+# 个人求职材料（不入库/不推送）
+求职材料/
